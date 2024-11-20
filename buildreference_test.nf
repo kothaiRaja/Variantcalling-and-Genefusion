@@ -86,6 +86,7 @@ process DOWNLOAD_SNPEFF_TOOL {
 	publishDir "${params.test_data_dir}", mode: 'copy'
     output:
     path "${params.snpeff_jar_dir}/snpEff.jar"
+	path "${params.snpeff_jar_dir}/snpEff.config"
 
     script:
     """
@@ -134,9 +135,9 @@ workflow {
     CHECK_JAVA()
 
     // Download the SnpEff tool
-    def snpeff_jar = DOWNLOAD_SNPEFF_TOOL()
+    def snpeff_jar_and_config = DOWNLOAD_SNPEFF_TOOL()
 
     // Download the SnpEff database
-    DOWNLOAD_SNPEFF_DB(params.genomedb, snpeff_jar)
+    DOWNLOAD_SNPEFF_DB(params.genomedb, snpeff_jar_and_config[0])
     
 }

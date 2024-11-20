@@ -6,22 +6,33 @@ process ANNOTATE_VARIANTS {
 
     input:
         tuple val(sampleId), path(vcf)
+        path("/home/kothai/cq-git-sample/Variantcalling-and-Genefusion/data/test/snpEff/snpEff.jar")
+        path("/home/kothai/cq-git-sample/Variantcalling-and-Genefusion/data/test/snpEff/snpEff.config")
+        path("/home/kothai/cq-git-sample/Variantcalling-and-Genefusion/data/test/snpEff/snpEff/data")
 
     output:
         tuple val(sampleId), path("${sampleId}.annotated.vcf"), path("${sampleId}.summary.html")
 
     script:
     """
-    java -Xmx16G -jar ${params.snpeff_jar_dir}/snpEff.jar \\
-        -c ${params.snpeff_jar_dir}/snpEff.config \\
-        -v ${params.genomedb} \\
-        -dataDir ${params.snpeff_db_dir} \\
+    # Define absolute paths for SnpEff files
+    SNPEFF_JAR="/home/kothai/cq-git-sample/Variantcalling-and-Genefusion/data/test/snpEff/snpEff.jar"
+    SNPEFF_CONFIG="/home/kothai/cq-git-sample/Variantcalling-and-Genefusion/data/test/snpEff/snpEff.config"
+    SNPEFF_DB_DIR="/home/kothai/cq-git-sample/Variantcalling-and-Genefusion/data/test/snpEff/snpEff/data"
+    GENOME="${params.genomedb}"
+
+    # Annotate variants using SnpEff
+    java -Xmx16G -jar \$SNPEFF_JAR \\
+        -c \$SNPEFF_CONFIG \\
+        -v \$GENOME \\
+        -dataDir \$SNPEFF_DB_DIR \\
         ${vcf} > ${sampleId}.annotated.vcf
 
-    java -Xmx16G -jar ${params.snpeff_jar_dir}/snpEff.jar \\
-        -c ${params.snpeff_jar_dir}/snpEff.config \\
-        -v ${params.genomedb} \\
-        -dataDir ${params.snpeff_db_dir} \\
+    # Generate a summary HTML file
+    java -Xmx16G -jar \$SNPEFF_JAR \\
+        -c \$SNPEFF_CONFIG \\
+        -v \$GENOME \\
+        -dataDir \$SNPEFF_DB_DIR \\
         -stats ${sampleId}.summary.html \\
         ${vcf} > /dev/null
     """

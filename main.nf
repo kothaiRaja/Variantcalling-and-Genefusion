@@ -75,7 +75,18 @@ workflow {
     variant_vcf = RNASEQ_CALL_VARIANTS(params.genome, genome_index_samtools, genome_dict, indexed_split_bam)
  
 	//Step 13: Annotations
-	annotated_vcf = ANNOTATE_VARIANTS(variant_vcf)
+	// Define required paths for SnpEff
+    def snpeff_jar = file("/home/kothai/cq-git-sample/Variantcalling-and-Genefusion/data/test/snpEff/snpEff.jar")
+    def snpeff_config = file("/home/kothai/cq-git-sample/Variantcalling-and-Genefusion/data/test/snpEff/snpEff.config")
+    def snpeff_db_dir = file("/home/kothai/cq-git-sample/Variantcalling-and-Genefusion/data/test/snpEff/snpEff/data")
+
+    // Pass all required inputs to ANNOTATE_VARIANTS
+    annotated_vcf = ANNOTATE_VARIANTS(
+        variant_vcf,
+        snpeff_jar,
+        snpeff_config,
+        snpeff_db_dir
+    )
     
 	// Step 14: Run MultiQC to aggregate all results
     multiqc_results = multiqc(Channel.fromPath("${params.outdir}"))
