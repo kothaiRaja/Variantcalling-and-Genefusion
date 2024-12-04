@@ -1,2 +1,0 @@
-# Variantcalling-and-Genefusion
-Internship

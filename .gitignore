@@ -1,6 +1,0 @@
-*.pdf
-*.html
-**/.nextflow*
-**/*.fasta
-**/work/
-**/.nextflow.log*
