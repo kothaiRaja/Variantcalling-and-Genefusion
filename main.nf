@@ -1,24 +1,25 @@
 nextflow.enable.dsl = 2
 
 // Include the QC Subworkflow
-include { fastqc_raw } from './modules/QC/fastqc_raw.nf'
-include { fastp } from './modules/QC/fastp.nf'
-include { fastqc_trimmed } from './modules/QC/fastqc_trimmed.nf'
-include { PREPARE_GENOME_PICARD } from './modules/prepare/dict_genome.nf'
-include { PREPARE_GENOME_SAMTOOLS } from './modules/prepare/index_genome.nf'
-include { PREPARE_VCF_FILE } from './modules/prepare/prepare_vcf.nf'
-include { PREPARE_STAR_GENOME_INDEX } from './modules/prepare/starindex_genome.nf'
-include { RNASEQ_MAPPING_STAR } from './modules/mapping/mapping_star.nf'
-include { SAMTOOLS_FLAGSTAT  } from './modules/mapping/flagstat.nf'
-include { SAMTOOLS_FILTER_INDEX  } from './modules/mapping/filter_index.nf'
-include { ADD_READ_GROUP  } from './modules/mapping/addrg.nf'
-include { RNASEQ_GATK_SPLITNCIGAR  } from './modules/split/splitncigar.nf'
-include { SAMTOOLS_INDEX_SPLIT_BAM  } from './modules/split/index_splitbam.nf'
-include { RNASEQ_GATK_RECALIBRATE  } from './modules/recalibrate/recalibrate.nf'
-include { SAMTOOLS_INDEX_BAM  } from './modules/recalibrate/index_bam.nf'
-include { RNASEQ_CALL_VARIANTS  } from './modules/variant_calling/variant.nf'
-include { ANNOTATE_VARIANTS  } from './modules/annotations/snpeff.nf'
-include { multiqc  } from './modules/multiqc/multiqc.nf'
+include { STAR_ALIGNMENT } from './modules/STAR_mapping/star_varaint.nf'
+include { SAMTOOLS_SORT_INDEX } from './modules/SAMTOOLS_sort_index/samtools_sort_index.nf'
+include { SAMTOOLS_FLAGSTAT } from './modules/SAMTOOLS_flagstat/samtools_stat.nf'
+include { GATK_MARK_DUPLICATES } from './modules/GATK_mark_duplicates/mark_duplicates.nf'
+include { SPLIT_NCIGAR_READS } from './modules/Split_NCIGAR_reads/splitNCIGAR.nf'
+include { GATK_RECALIBRATION } from './modules/GATK_recalibration/recalibration.nf'
+include { BED_TO_INTERVAL_LIST } from './modules/BED_to_INTERVAL_list/Interval_list.nf'
+include { SCATTER_INTERVAL_LIST  } from './modules/Scatter_interval_list/scatter_intervals.nf'
+include { GATK_HAPLOTYPE_CALLER  } from './modules/GATK_Haplotype_caller/variant_call.nf'
+include {GATK_MERGE_VCFS  } from './modules/GATK_merge_VCFs/merge_vcfs.nf'
+include { GATK_VARIANT_FILTER  } from './modules/GATK_varaint_filter/variant_filter.nf'
+include { ANNOTATE_VARIANTS  } from './modules/SnpEFF_Annotations/annotations.nf'
+
+
+
+
+// Include statements for ARRIBA fusion
+//include { STAR_ALIGN_FUSION } from './modules/STAR_mapping/star_fusion.nf'
+//include { ARRIBA } from './modules/ARRIBA/arriba_fusion.nf'
 
 
 
@@ -27,67 +28,59 @@ include { multiqc  } from './modules/multiqc/multiqc.nf'
 
 
 workflow {
-    // Step 1: Define the data directory dynamically
-    def data_dir = params.data_dir ?: 'data/test' // Use test data by default if not specified
-
-    // Step 2: Create a channel for paired-end reads
-    reads_channel = Channel
-        .fromFilePairs(params.reads, checkIfExists: true)
-        .map { sample_id, reads -> tuple(sample_id, reads.sort()) }
-
-    reads_channel.view()
-
-    // Step 3: Run FastQC on raw reads
-    fastqc_raw_results = fastqc_raw(reads_channel)
-
-    // Step 4: Run Fastp for trimming
-    fastp_results = fastp(reads_channel)
-
-    // Step 5: Extract and regroup trimmed reads
-    fastp_trimmed_reads = fastp_results.trimmed_reads
-        .map { sample_id, r1, r2 -> tuple(sample_id, [r1, r2]) }
-
-    // Step 6: Run FastQC on trimmed reads
-    fastqc_trimmed_results = fastqc_trimmed(fastp_trimmed_reads)
-
-    // Step 7: Data Preparation - Prepare genome indices and filtered VCF
-    def genome_index_samtools = PREPARE_GENOME_SAMTOOLS(params.genome)
-	def genome_dict = PREPARE_GENOME_PICARD(params.genome)
-	def star_genome_dir = PREPARE_STAR_GENOME_INDEX(params.genome)
-	def filtered_vcf = PREPARE_VCF_FILE(params.variants, params.denylist)
-
-
-    // Step 8: STAR RNA-Seq Mapping
-    star_aligned_bam = RNASEQ_MAPPING_STAR(star_genome_dir, fastp_trimmed_reads)
-
-    // Step 9: Generate alignment statistics
-    alignment_stats = SAMTOOLS_FLAGSTAT(star_aligned_bam)
-
-    // Step 10: Process mapped reads with Samtools, Add Read Group, and SplitNCigar
-    filtered_bam = SAMTOOLS_FILTER_INDEX(star_aligned_bam)
-    bam_with_rg = ADD_READ_GROUP(filtered_bam)
-
-    // Step 11: Base Recalibration and Indexing
-    split_bam = RNASEQ_GATK_SPLITNCIGAR(params.genome, genome_index_samtools, genome_dict, bam_with_rg)
-    indexed_split_bam = SAMTOOLS_INDEX_SPLIT_BAM(split_bam)
-
-    // Step 12: Variant Calling 
-    variant_vcf = RNASEQ_CALL_VARIANTS(params.genome, genome_index_samtools, genome_dict, indexed_split_bam)
- 
-	//Step 13: Annotations
-	// Define required paths for SnpEff
-    def snpeff_jar = file("/home/kothai/cq-git-sample/Variantcalling-and-Genefusion/data/test/snpEff/snpEff.jar")
-    def snpeff_config = file("/home/kothai/cq-git-sample/Variantcalling-and-Genefusion/data/test/snpEff/snpEff.config")
-    def snpeff_db_dir = file("/home/kothai/cq-git-sample/Variantcalling-and-Genefusion/data/test/snpEff/snpEff/data")
-
-    // Pass all required inputs to ANNOTATE_VARIANTS
-    annotated_vcf = ANNOTATE_VARIANTS(
-        variant_vcf,
-        snpeff_jar,
-        snpeff_config,
-        snpeff_db_dir
-    )
     
-	// Step 14: Run MultiQC to aggregate all results
-    multiqc_results = multiqc(Channel.fromPath("${params.outdir}"))
+//PartA: Variant calling
+    // Load trimmed reads
+    trimmed_reads_ch = Channel.fromFilePairs(params.reads, flat: true)
+        
+    // Run STAR Alignment
+    aligned_bams = STAR_ALIGNMENT(trimmed_reads_ch, params.star_index_dir)
+	
+	// Sort and index BAM files
+    sorted_bams = SAMTOOLS_SORT_INDEX(aligned_bams)
+	
+	// Generate alignment statistics
+    alignment_stats = SAMTOOLS_FLAGSTAT(sorted_bams)
+	
+	// Mark duplicates
+    marked_bams = GATK_MARK_DUPLICATES(sorted_bams)
+	
+	// Split N CIGAR reads
+    split_bams = SPLIT_NCIGAR_READS(marked_bams.map { tuple(it[0], it[1], it[2], params.genome, params.fasta_index, params.genome_dict) })
+	
+	// Recalibrate and Apply BQSR in one step
+    recalibrated_bams = GATK_RECALIBRATION(
+        split_bams.map { tuple(it[0], it[1], it[2], params.genome, params.fasta_index, params.genome_dict, params.filtered_vcf, params.filtered_vcf_index) })
+		
+	// Convert BED to interval list
+    interval_list_ch = BED_TO_INTERVAL_LIST(params.denylist, params.genome, params.genome_dict)
+	
+	// Scatter the Interval List
+    scattered_intervals_ch = SCATTER_INTERVAL_LIST(interval_list_ch, params.genome_dict)
+	
+	//GATK HaplotypeCaller
+	gvcf_output = GATK_HAPLOTYPE_CALLER(recalibrated_bams, params.genome,params.fasta_index,params.genome_dict,  scattered_intervals_ch)
+	
+
+	// Combine GVCFs
+	merged_vcf = GATK_MERGE_VCFS(params.genome,params.fasta_index, params.genome_dict,gvcf_output)
+
+	//// Variant Filtering
+    filtered_vcf = GATK_VARIANT_FILTER(merged_vcf,params.genome,params.fasta_index, params.genome_dict )
+	
+	// Pass all required inputs to ANNOTATE_VARIANTS
+    annotated_vcf = ANNOTATE_VARIANTS(filtered_vcf, file('./data/test/snpEff/snpEff.jar'),
+        file('./data/test/snpEff/snpEff.config'),
+        file('./data/test/snpEff/data') , params.genomedb) 
+
+//PART B:
+
+	// PART 2: STAR RNA-Seq Mapping
+      //star_align_ch = STAR_ALIGN_FUSION( trimmed_reads_ch,params.star_index_dir, params.gtf_file)
+	  
+	  
+	  
+	  //Part 3: ARRIBA
+	  //ARRIBA_ch = ARRIBA(star_align_ch, params.genome, params.gtf_file, params.denylist, params.known_fusions)
+
 }
