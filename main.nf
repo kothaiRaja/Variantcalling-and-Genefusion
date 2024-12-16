@@ -23,8 +23,10 @@ include { ANNOTATE_VARIANTS  } from './modules/SnpEFF_ANNOTATIONS/annotations.nf
 // Include statements for ARRIBA fusion
 include { STAR_ALIGN_FUSION } from './modules/STAR_mapping/star_fusion.nf'
 include { ARRIBA } from './modules/ARRIBA/arriba_fusion.nf'
+include { ARRIBA_VISUALIZATION  } from './modules/ARRIBA/arriba_visualisation.nf'
 
-
+//Include statement for multiqc
+include { MULTIQC_REPORT } from './modules/QUALITY_CONTROL/multiqc.nf'
 
 
 workflow {
@@ -98,8 +100,14 @@ workflow {
 //Step 20: Fusion detection using ARRIBA
 	ARRIBA_ch = ARRIBA(star_align_fusion_ch, params.genome, params.gtf_file, params.test_blacklist_fusion, params.test_knownfusion)
 	
+//Step 21: Visualization step
+    fusion_visuals = ARRIBA_VISUALIZATION(ARRIBA_ch, params.scripts_dir, params.genome, params.gtf_file)
 	
-//Collect all the results to generate multiQC report
-	//multiqc_results = MULTIQC_REPORT(Channel.fromPath("${params.outdir}"))
+	
+collect_results_ch = Channel.fromPath("${params.outdir}", checkIfExists: true)
 
+
+	
+    // Run MultiQC
+    MULTIQC_REPORT(collect_results_ch)
 }
