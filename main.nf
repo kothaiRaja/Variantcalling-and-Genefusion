@@ -12,10 +12,13 @@ include { GATK_RECALIBRATION } from './modules/GATK/recalibration.nf'
 include { BED_TO_INTERVAL_LIST } from './modules/PREPARE_INTERVALS/Interval_list.nf'
 include { SCATTER_INTERVAL_LIST  } from './modules/PREPARE_INTERVALS/scatter_intervals.nf'
 include { GATK_HAPLOTYPE_CALLER  } from './modules/GATK/variant_call.nf'
-include {BCFTOOLS_MERGE  } from './modules/BCFTOOLS/merge.nf'
 include {BCFTOOLS_STATS  } from './modules/BCFTOOLS/bcf_stats.nf'
 include { GATK_VARIANT_FILTER  } from './modules/GATK/variant_filter.nf'
+include {BCFTOOLS_QUERY  } from './modules/BCFTOOLS/bcf_query.nf'
+include { ANNOTATE_INDIVIDUAL_VARIANTS  } from './modules/SnpEFF_ANNOTATIONS/annotations_individual.nf'
+include {BCFTOOLS_MERGE  } from './modules/BCFTOOLS/merge.nf'
 include { ANNOTATE_VARIANTS  } from './modules/SnpEFF_ANNOTATIONS/annotations.nf'
+include { VCF_TO_TABLE  } from './modules/SCRIPTS/CSV_python.nf'
 
 
 
@@ -67,30 +70,48 @@ workflow {
     scattered_intervals_ch = SCATTER_INTERVAL_LIST(interval_list_ch, params.genome_dict)
 	
 //Step 13: GATK HaplotypeCaller
-	gvcf_output = GATK_HAPLOTYPE_CALLER(recalibrated_bams, params.genome, params.fasta_index, params.genome_dict, scattered_intervals_ch)
-				  .map { it[1] } 
-				  .collect()
+	gvcf_output = GATK_HAPLOTYPE_CALLER(recalibrated_bams, params.genome, params.fasta_index, params.genome_dict, scattered_intervals_ch,params.filtered_vcf, params.filtered_vcf_index )
+				
 	
 	gvcf_output.view { "Raw GVCF output: $it" }
-
-
-//Step 14: Merge VCF files
-        merged_vcf_ch = BCFTOOLS_MERGE(gvcf_output)
-
 	
-//Step 15: provide stats
-	bcftools_stats_ch = BCFTOOLS_STATS(merged_vcf_ch)
-
-//Step 16: Variant Filtering
-    filtered_vcf = GATK_VARIANT_FILTER(merged_vcf_ch,params.genome,params.fasta_index, params.genome_dict )
+//Step 14: provide stats
+	bcftools_stats_ch = BCFTOOLS_STATS(gvcf_output)
 	
-//Step 17: Dynamically set paths based on the mode (test or actual)
-    def snpEffJar = file(params.mode == 'test' ? './data/test/snpEff/snpEff.jar' : './data/actual/snpEff/snpEff.jar')
-    def snpEffConfig = file(params.mode == 'test' ? './data/test/snpEff/snpEff.config' : './data/actual/snpEff/snpEff.config')
-    def snpEffDbDir = file(params.mode == 'test' ? './data/test/snpEff/snpEff/data' : './data/actual/snpEff/data')
+// Step 15: Filter individual VCF files
+	filtered_individual_vcfs = GATK_VARIANT_FILTER(gvcf_output, params.genome, params.fasta_index, params.genome_dict)
+	
+//Step 16: Provide Stats
+	filtered_vcf_stats = BCFTOOLS_QUERY(filtered_individual_vcfs) 
 
-//Step 18:  ANNOTATE_VARIANTS
-    annotated_vcf = ANNOTATE_VARIANTS(filtered_vcf, snpEffJar, snpEffConfig, snpEffDbDir, params.genomedb)
+//Step 17: Create a mapped collection of filtered VCF paths for merging
+	filtered_vcf = filtered_individual_vcfs
+                  .map { it[1] } // Extract paths to filtered VCF files
+                  .collect()     // Collect them into a list
+
+	filtered_vcf.view { "Filtered VCF output: $it" }
+
+//Step 18: Dynamically set paths based on the mode (test or actual)
+	def snpEffJar = file(params.mode == 'test' ? './data/test/snpEff/snpEff.jar' : './data/actual/snpEff/snpEff.jar')
+	def snpEffConfig = file(params.mode == 'test' ? './data/test/snpEff/snpEff.config' : './data/actual/snpEff.config')
+	def snpEffDbDir = file(params.mode == 'test' ? './data/test/snpEff/snpEff/data' : './data/actual/snpEff/data')
+
+//Step 19: Conditional processing for merging or annotating individual files
+	if (params.merge_vcf) {
+// Merge filtered VCFs
+		merged_filtered_vcfs = BCFTOOLS_MERGE(filtered_vcf)
+
+//Annotate the merged VCF file
+    annotated_merged_vcf = ANNOTATE_VARIANTS(merged_filtered_vcfs, snpEffJar, snpEffConfig, snpEffDbDir, params.genomedb)
+
+    println "Merging and annotating VCF files completed."
+	} else {
+// Annotate individual VCF files
+    annotated_individual_vcfs = ANNOTATE_INDIVIDUAL_VARIANTS(filtered_individual_vcfs, snpEffJar, snpEffConfig, snpEffDbDir, params.genomedb)
+
+    println "Individual VCF annotation completed."
+}
+
 	
 //===============Workflow for ARRIBA===================//
 
