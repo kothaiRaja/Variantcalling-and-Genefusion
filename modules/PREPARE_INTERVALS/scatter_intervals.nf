@@ -1,7 +1,7 @@
 process SCATTER_INTERVAL_LIST {
     tag "Scatter interval list"
 
-    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.2.6.0--hdfd78af_0"
+    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
     publishDir "${params.outdir}/scattered_intervals", mode: 'copy'
 
     input:
@@ -20,12 +20,20 @@ process SCATTER_INTERVAL_LIST {
         --SCATTER_COUNT ${params.scatter_count} \
         --UNIQUE true
 
-    # Move and rename the output files to the working directory with .interval_list extension
+    # Move and rename the output files to the working directory with unique names
     for f in scattered_intervals/*/*; do
-        mv "\$f" "\$(dirname \$f)/\$(basename \$f).interval_list"
+        dir_name=\$(basename \$(dirname "\$f"))  # Get subdirectory name
+        file_name=\$(basename "\$f")            # Get original file name
+        mv "\$f" "scattered_intervals/\${dir_name}_\${file_name}.interval_list"
     done
 
-    mv scattered_intervals/*/*.interval_list .
+    # Move the uniquely renamed files to the working directory
+    mv scattered_intervals/*.interval_list .
     rm -r scattered_intervals
+	
+	# Log the generated intervals
+    echo "Scattered intervals:"
+    cat *.interval_list
     """
 }
+

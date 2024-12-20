@@ -1,7 +1,7 @@
 process GATK_MARK_DUPLICATES {
     tag { sample_id }
 
-    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.2.6.0--hdfd78af_0"
+    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
     publishDir "${params.outdir}/mark_duplicates", mode: "copy"
 
     input:
@@ -19,6 +19,9 @@ process GATK_MARK_DUPLICATES {
         -I ${sorted_bam} \
         -O ${sample_id}_marked_duplicates.bam \
         -M ${sample_id}_dup_metrics.txt \
-        --CREATE_INDEX true
+        --CREATE_INDEX true \
+		--REMOVE_DUPLICATES ${params.remove_duplicates ? 'true' : 'false'} \
+        --VALIDATION_STRINGENCY ${params.validation_stringency ?: 'LENIENT'}
+
     """
 }

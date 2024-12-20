@@ -5,17 +5,15 @@ process BCFTOOLS_STATS {
     publishDir "${params.outdir}/bcftools_stats/beforefilteration", mode: "copy"
 
     input:
-    path(vcf_file)    // Input VCF file
-    path(vcf_index)   // Input VCF index (.tbi) file
-	path(tsv_file)
+    tuple val(sample_id), path(vcf_file), path(vcf_index)   
 
     output:
-    path("stats.txt")     // Output stats file
+    path ("haplotypecaller_stats_${sample_id}.txt")     // Output stats file
 
     script:
     """
     # Generate stats
-    bcftools stats ${vcf_file} > stats.txt
+    bcftools stats output_${sample_id}.vcf.gz > haplotypecaller_stats_${sample_id}.txt
 
     """
 }

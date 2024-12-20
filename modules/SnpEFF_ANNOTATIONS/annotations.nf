@@ -7,6 +7,7 @@ process ANNOTATE_VARIANTS {
     input:
     path vcf	// Filtered VCF file
 	path index
+	path tsv
     path snpEffJar  // Path to the SnpEff JAR file
     path snpEffConfig  // Path to the SnpEff configuration file
     path snpEffDbDir	// Path to the SnpEff database directory

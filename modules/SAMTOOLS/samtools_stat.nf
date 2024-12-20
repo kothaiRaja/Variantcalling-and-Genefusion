@@ -8,10 +8,17 @@ process SAMTOOLS_FLAGSTAT {
     tuple val(sample_id), path(sorted_bam), path(bai)
 
     output:
-    tuple val(sample_id), path("${sample_id}_flagstat.txt")
+    tuple val(sample_id), path("${sample_id}_flagstat.txt"), path("${sample_id}_stats_report.txt")
 
     script:
     """
+    # Validate BAM file to ensure it is not corrupted
+    samtools quickcheck -v ${sorted_bam} || (echo "BAM file validation failed for ${sample_id}" && exit 1)
+
+    # Run samtools flagstat to generate alignment metrics
     samtools flagstat ${sorted_bam} > ${sample_id}_flagstat.txt
+
+    # Generate additional quality metrics with samtools stats
+    samtools stats ${sorted_bam} > ${sample_id}_stats_report.txt
     """
 }

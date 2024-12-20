@@ -1,7 +1,7 @@
 process SPLIT_NCIGAR_READS {
     tag { sample_id }
 
-    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.2.6.0--hdfd78af_0"
+    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
     publishDir "${params.outdir}/split_ncigar", mode: "copy"
 
     input:
@@ -18,6 +18,7 @@ process SPLIT_NCIGAR_READS {
         -R ${genome_fasta} \
         -I ${bam} \
         -O ${sample_id}_split.bam \
-        --create-output-bam-index true
-    """
+        --create-output-bam-index true  
+		
+	"""
 }

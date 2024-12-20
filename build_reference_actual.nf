@@ -1,21 +1,20 @@
 nextflow.enable.dsl = 2
 
-include { DOWNLOAD_TEST_GENOME } from './modules/REFERENCES_DOWNLOAD/ref_genome_test.nf'
-include { DOWNLOAD_TEST_VARIANTS_SNP } from './modules/REFERENCES_DOWNLOAD/known_variants_snps.nf'
-include { DOWNLOAD_TEST_VARIANTS_INDELS } from './modules/REFERENCES_DOWNLOAD/known_variants_indels.nf'
-include { DOWNLOAD_TEST_DENYLIST } from './modules/REFERENCES_DOWNLOAD/denylist_test.nf'
-include { DOWNLOAD_TEST_GTF } from './modules/REFERENCES_DOWNLOAD/gft_file_test.nf'
-include { CREATE_FASTA_INDEX } from './modules/PREPARE_REFs/fasta_index.nf'
-include { CREATE_GENOME_DICT } from './modules/PREPARE_REFs/genome_dict.nf'
-include { CREATE_STAR_INDEX } from './modules/PREPARE_REFs/star_index.nf'
-include { PREPARE_VCF_FILE } from './modules/PREPARE_REFs/filtered_vcf.nf'
+include { DOWNLOAD_TEST_GENOME } from './modules/REFERENCES_DOWNLOAD/ref_genome_actual.nf'
+include { DOWNLOAD_TEST_VARIANTS_SNP } from './modules/REFERENCES_DOWNLOAD/known_variants_snps_actual.nf'
+include { DOWNLOAD_TEST_VARIANTS_INDELS } from './modules/REFERENCES_DOWNLOAD/known_variants_indels_actual.nf'
+include { DOWNLOAD_TEST_DENYLIST } from './modules/REFERENCES_DOWNLOAD/denylist_actual.nf'
+include { DOWNLOAD_TEST_GTF } from './modules/REFERENCES_DOWNLOAD/gft_file_actual.nf'
+include { CREATE_FASTA_INDEX } from './modules/PREPARE_REFs/fasta_index_actual.nf'
+include { CREATE_GENOME_DICT } from './modules/PREPARE_REFs/genome_dict_actual.nf'
+include { CREATE_STAR_INDEX } from './modules/PREPARE_REFs/star_index_actual.nf'
+include { PREPARE_VCF_FILE } from './modules/PREPARE_REFs/filtered_vcf_actual.nf'
 include { CHECK_JAVA } from './modules/TOOLS and DBs/check_java.nf'
 include { DOWNLOAD_SNPEFF_TOOL } from './modules/TOOLS and DBs/SnpEff_tool.nf'
 include { DOWNLOAD_SNPEFF_DB } from './modules/TOOLS and DBs/SnpEff_DB.nf'
 include { DOWNLOAD_ARRIBA } from './modules/TOOLS and DBs/Arriba_tool.nf'
 include { FASTQC_RAW } from './modules/QUALITY_CONTROL/fastqc.nf'
 include { TRIM_READS } from './modules/QUALITY_CONTROL/fastp.nf'
-
 
 
 workflow {
@@ -47,7 +46,7 @@ workflow {
 	Arriba_Toolsetup = DOWNLOAD_ARRIBA()
 
     //=========Step 8: Load and parse sample metadata==============//
-    samples_channel = Channel.fromPath(params.test_csv_file)
+    samples_channel = Channel.fromPath(params.csv_file)
         .splitCsv(header: true)
         .map { row ->  tuple(row.sample_id, row.fastq_1, row.fastq_2) }
 		
@@ -62,4 +61,3 @@ workflow {
 
     
 }
-

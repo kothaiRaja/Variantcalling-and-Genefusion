@@ -1,7 +1,7 @@
 process GATK_RECALIBRATION {
     tag { sample_id }
 
-    container "https://depot.galaxyproject.org-singularity/gatk4%3A4.2.6.0--hdfd78af_0"
+    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
     publishDir "${params.outdir}/recalibrated_bams", mode: "copy"
 
     input:
@@ -20,7 +20,8 @@ process GATK_RECALIBRATION {
         -R ${genome_fasta} \
         -I ${bam} \
         --known-sites ${known_variants} \
-        -O ${sample_id}_recal_data.table
+        -O ${sample_id}_recal_data.table 
+		
 
     # Step 2: ApplyBQSR
     gatk ApplyBQSR \
@@ -28,5 +29,12 @@ process GATK_RECALIBRATION {
         -I ${bam} \
         --bqsr-recal-file ${sample_id}_recal_data.table \
         -O ${sample_id}_recalibrated.bam
+
+	# Step 3: Validation
+	gatk ValidateSamFile \
+		-I ${sample_id}_recalibrated.bam \
+		-MODE SUMMARY 
+
+
     """
 }

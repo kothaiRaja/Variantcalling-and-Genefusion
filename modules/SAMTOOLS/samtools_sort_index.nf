@@ -1,4 +1,5 @@
 process SAMTOOLS_SORT_INDEX {
+	tag { sample_id }
     container "https://depot.galaxyproject.org/singularity/samtools%3A1.18--hd87286a_0"
     publishDir "${params.outdir}/sorted_bam", mode: "copy"
 

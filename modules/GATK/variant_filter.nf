@@ -1,20 +1,17 @@
 process GATK_VARIANT_FILTER {
-    tag "variant_filter"
+    tag "${sample_id}_variant_filter"
 
     container "https://depot.galaxyproject.org/singularity/gatk4%3A4.2.6.0--hdfd78af_0"
     publishDir "${params.outdir}/variant_filter", mode: "copy"
 
     input:
-    path(vcf_file)
-	path(vcf_index)  // Input VCF and index
-	path(tsv_file)
-    path genome 	// Reference genome
-	path genome_index
-	path genome_dict
+    tuple val(sample_id), path(vcf_file), path(vcf_index)
+          path(genome)
+		  path(genome_index)
+		  path(genome_dict)
 
     output:
-          path("final.vcf.gz") 
-          path("final.vcf.gz.tbi")  // Filtered VCF and index
+    tuple val(sample_id), path("${sample_id}_filtered.vcf.gz"), path("${sample_id}_filtered.vcf.gz.tbi")
 
     script:
     """
@@ -25,7 +22,17 @@ process GATK_VARIANT_FILTER {
     --filter-name "LowQual" --filter-expression "QUAL < 30.0" \
     --filter-name "LowQD" --filter-expression "QD < 2.0" \
     --filter-name "HighFS" --filter-expression "FS > 60.0" \
-    -O final.vcf.gz
+    --filter-name "LowMQ" --filter-expression "MQ < 40.0" \
+    --filter-name "HighSOR" --filter-expression "SOR > 3.0" \
+    --filter-name "LowReadPosRankSum" --filter-expression "ReadPosRankSum < -5.0" \
+    --filter-name "LowBaseQRankSum" --filter-expression "BaseQRankSum < -3.0" \
+    -O ${sample_id}_filtered.vcf.gz
+	
+	# Validate the filtered VCF
+    if [ ! -s ${sample_id}_filtered.vcf.gz ]; then
+        echo "Error: Filtered VCF is empty for ${sample_id}" >&2
+        exit 1
+    fi
 
     """
 }
