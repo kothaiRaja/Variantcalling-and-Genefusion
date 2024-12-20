@@ -1,4 +1,6 @@
 Pipeline Implementation
+![nextflow_workflow](https://github.com/user-attachments/assets/c6e4f029-acc8-47db-aa0d-4928d50c8538)
+
 1. Working with the pipeline: 
 1.1 Input CSV Files: 
 This pipeline is compatible with paired-end RNA-Seq data, and the input CSV file should contain all the necessary details about the samples you are processing. The file should include the sample identifiers, paths to the raw FASTQ files (both read1 and read2). Below is the structure of the CSV file used in the pipeline.
