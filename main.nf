@@ -12,13 +12,15 @@ include { GATK_RECALIBRATION } from './modules/GATK/recalibration.nf'
 include { BED_TO_INTERVAL_LIST } from './modules/PREPARE_INTERVALS/Interval_list.nf'
 include { SCATTER_INTERVAL_LIST  } from './modules/PREPARE_INTERVALS/scatter_intervals.nf'
 include { GATK_HAPLOTYPE_CALLER  } from './modules/GATK/variant_call.nf'
-include {BCFTOOLS_STATS  } from './modules/BCFTOOLS/bcf_stats.nf'
-include { GATK_VARIANT_FILTER  } from './modules/GATK/variant_filter.nf'
-include {BCFTOOLS_QUERY  } from './modules/BCFTOOLS/bcf_query.nf'
+include { BCFTOOLS_STATS } from './modules/BCFTOOLS/bcf_stats.nf'
+include { GATK_VARIANT_FILTER } from './modules/GATK/variant_filter.nf'
+include { BCFTOOLS_QUERY } from './modules/BCFTOOLS/bcf_query.nf'
 include { ANNOTATE_INDIVIDUAL_VARIANTS  } from './modules/SnpEFF_ANNOTATIONS/annotations_individual.nf'
-include {BCFTOOLS_MERGE  } from './modules/BCFTOOLS/merge.nf'
+include { ANNOTATE_INDIVIDUAL_VARIANTS_VEP  } from './modules/VEP_ANNOTATIONS/annotations_individual_vep.nf'
+include { BCFTOOLS_MERGE } from './modules/BCFTOOLS/merge.nf'
 include { ANNOTATE_VARIANTS  } from './modules/SnpEFF_ANNOTATIONS/annotations.nf'
 include { VCF_TO_TABLE  } from './modules/SCRIPTS/CSV_python.nf'
+include { ANNOTATE_VARIANTS_VEP  } from './modules/VEP_ANNOTATIONS/annotations_vep.nf'
 
 
 
@@ -98,18 +100,32 @@ workflow {
 
 //Step 19: Conditional processing for merging or annotating individual files
 	if (params.merge_vcf) {
-// Merge filtered VCFs
+		// Merge filtered VCFs
 		merged_filtered_vcfs = BCFTOOLS_MERGE(filtered_vcf)
 
-//Annotate the merged VCF file
+    // Annotate the merged VCF file snpeff
     annotated_merged_vcf = ANNOTATE_VARIANTS(merged_filtered_vcfs, snpEffJar, snpEffConfig, snpEffDbDir, params.genomedb)
+	
+	//Annotate the merged vcfs ensembl_vep
+	annotated_merged_vcf_ensemblvep = ANNOTATEVARIANTS_VEP(merged_filtered_vcfs, params.vep_cache, params.clinvar, params.clinvartbi)
 
     println "Merging and annotating VCF files completed."
+	
+	// Create a table from the annotated merged VCF
+    def vcf_to_table_script = file('convert_vcf_to_table.py') 
+    table_creation = VCF_TO_TABLE(annotated_merged_vcf, vcf_to_table_script)
+
+    println "Table creation from merged VCF completed."
+	
 	} else {
-// Annotate individual VCF files
+    // Annotate individual VCF files
     annotated_individual_vcfs = ANNOTATE_INDIVIDUAL_VARIANTS(filtered_individual_vcfs, snpEffJar, snpEffConfig, snpEffDbDir, params.genomedb)
+	
+	//Annotate individual VCF files ensemblvep
+	annotated_individual_vcf_ensemblvep = ANNOTATE_INDIVIDUAL_VARIANTS_VEP (filtered_individual_vcfs, params.vep_cache, , params.clinvar, params.clinvartbi)
 
     println "Individual VCF annotation completed."
+    println "Table creation step skipped because merging is disabled."
 }
 
 	

@@ -13,6 +13,8 @@ include { CHECK_JAVA } from './modules/TOOLS and DBs/check_java.nf'
 include { DOWNLOAD_SNPEFF_TOOL } from './modules/TOOLS and DBs/SnpEff_tool.nf'
 include { DOWNLOAD_SNPEFF_DB } from './modules/TOOLS and DBs/SnpEff_DB.nf'
 include { DOWNLOAD_ARRIBA } from './modules/TOOLS and DBs/Arriba_tool.nf'
+include { DOWNLOAD_VEP_CACHE  } from './modules/VEP_ANNOTATIONS/vep_prepare.nf'
+include { DOWNLOAD_CLINVAR  } from './modules/VEP_ANNOTATIONS/clinvar.nf'
 include { FASTQC_RAW } from './modules/QUALITY_CONTROL/fastqc.nf'
 include { TRIM_READS } from './modules/QUALITY_CONTROL/fastp.nf'
 
@@ -45,6 +47,10 @@ workflow {
     def snpeff_jar_and_config = DOWNLOAD_SNPEFF_TOOL()
     def snpeff_db = DOWNLOAD_SNPEFF_DB(params.genomedb, snpeff_jar_and_config[0])
 	Arriba_Toolsetup = DOWNLOAD_ARRIBA()
+	
+	//========Step 8: Download ensembl_vep dependencies==========//
+	vep_cache_dir = DOWNLOAD_VEP_CACHE()
+    clinvar_files = DOWNLOAD_CLINVAR()
 
     //=========Step 8: Load and parse sample metadata==============//
     samples_channel = Channel.fromPath(params.test_csv_file)
