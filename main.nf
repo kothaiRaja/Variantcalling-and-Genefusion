@@ -15,12 +15,12 @@ include { GATK_HAPLOTYPE_CALLER  } from './modules/GATK/variant_call.nf'
 include { BCFTOOLS_STATS } from './modules/BCFTOOLS/bcf_stats.nf'
 include { GATK_VARIANT_FILTER } from './modules/GATK/variant_filter.nf'
 include { BCFTOOLS_QUERY } from './modules/BCFTOOLS/bcf_query.nf'
-include { ANNOTATE_INDIVIDUAL_VARIANTS  } from './modules/SnpEFF_ANNOTATIONS/annotations_individual.nf'
+include { ANNOTATE_INDIVIDUAL_VARIANTS  } from './modules/SnpEFF_ANNOTATIONS/annotate_individual.nf'
 include { ANNOTATE_INDIVIDUAL_VARIANTS_VEP  } from './modules/VEP_ANNOTATIONS/annotations_individual_vep.nf'
 include { BCFTOOLS_MERGE } from './modules/BCFTOOLS/merge.nf'
 include { ANNOTATE_VARIANTS  } from './modules/SnpEFF_ANNOTATIONS/annotations.nf'
 include { VCF_TO_TABLE  } from './modules/SCRIPTS/CSV_python.nf'
-include { ANNOTATE_VARIANTS_VEP  } from './modules/VEP_ANNOTATIONS/annotations_vep.nf'
+include { ANNOTATEVARIANTS_VEP  } from './modules/VEP_ANNOTATIONS/annotations_vep.nf'
 include { MULTIQC_REPORT  } from './modules/multiqc/multiqc.nf'
 
 
@@ -30,8 +30,7 @@ include { STAR_ALIGN_FUSION } from './modules/STAR_mapping/star_fusion.nf'
 include { ARRIBA } from './modules/ARRIBA/arriba_fusion.nf'
 include { ARRIBA_VISUALIZATION  } from './modules/ARRIBA/arriba_visualisation.nf'
 
-//Include statement for multiqc
-include { MULTIQC_REPORT } from './modules/QUALITY_CONTROL/multiqc.nf'
+
 
 
 workflow {
@@ -140,7 +139,7 @@ workflow {
 
 // Step 26: Multiqc report
 	multiqc_results = MULTIQC_REPORT(qc_outputs_ch)
-}
+
 
 	
 //===============Workflow for ARRIBA===================//
