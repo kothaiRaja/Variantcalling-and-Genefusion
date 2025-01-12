@@ -1,7 +1,7 @@
 nextflow.enable.dsl = 2
 
 include { DOWNLOAD_REF_GENOME } from './modules/REFERENCES_DOWNLOAD/ref_genome_actual.nf'
-include { DOWNLOAD_VARIANTS_SNP } from './modules/REFERENCES_DOWNLOAD/known_variants_snps_actual.nf'
+include { DOWNLOAD_VARIANTS_SNP } from './modules/REFERENCES_DOWNLOAD/known_varaints_snps_actual.nf'
 include { DOWNLOAD_VARIANTS_INDELS } from './modules/REFERENCES_DOWNLOAD/known_variants_indels_actual.nf'
 include { DOWNLOAD_DENYLIST } from './modules/REFERENCES_DOWNLOAD/denylist_actual.nf'
 include { DOWNLOAD_GTF } from './modules/REFERENCES_DOWNLOAD/gft_actual.nf'
