@@ -1,7 +1,7 @@
 process DOWNLOAD_VEP_CACHE {
     tag "Downloading VEP Cache"
-	container "none"
-
+	container null
+	publishDir "${params.test_data_dir}/VEP", mode: 'copy'
     output:
     path "vep_cache"
 

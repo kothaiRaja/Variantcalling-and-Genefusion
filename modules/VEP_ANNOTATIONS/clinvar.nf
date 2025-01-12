@@ -1,6 +1,7 @@
 process DOWNLOAD_CLINVAR {
     tag "Downloading ClinVar VCF"
-
+	container null
+	publishDir "${params.test_data_dir}/VEP", mode: 'copy'
     output:
     path "clinvar.vcf.gz"
     path "clinvar.vcf.gz.tbi"
