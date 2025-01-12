@@ -8,7 +8,7 @@ process BCFTOOLS_QUERY {
     tuple val(sample_id), path(filtered_vcf), path(filtered_vcf_index)
 
     output:
-    path("filtered_variants_summary_${sample_id}.txt")
+    tuple val(sample_id), path("filtered_variants_summary_${sample_id}.txt")
 
     script:
     """

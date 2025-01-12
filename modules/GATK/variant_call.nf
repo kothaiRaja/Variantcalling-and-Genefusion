@@ -10,15 +10,12 @@ process GATK_HAPLOTYPE_CALLER {
 	path (genome_index)
 	path (genome_dict)
 	path (interval_list)
-	path (known_variants)
-	path (known_variants_index)
 
     output:
     tuple val(sample_id), path("output_${sample_id}.vcf.gz"), path("output_${sample_id}.vcf.gz.tbi") 
 
     script:
 	def intervals_args = interval_list.collect { "--intervals ${it}" }.join(' ')
-
 	
     """
     gatk HaplotypeCaller \
@@ -26,20 +23,12 @@ process GATK_HAPLOTYPE_CALLER {
     --reference ${genome} \
     --output output_${sample_id}.vcf.gz \
     -I $bam \
-    --standard-min-confidence-threshold-for-calling 10.0 \
+    --standard-min-confidence-threshold-for-calling 5.0 \
     --dont-use-soft-clipped-bases true \
     --min-base-quality-score 10 \
-    --output-mode EMIT_VARIANTS_ONLY \
+	--output-mode EMIT_VARIANTS_ONLY \
     ${intervals_args} \
-    --verbosity DEBUG \
-	--dbsnp ${known_variants}
-	
-	# Ensure output VCF file is not empty
-    if [ ! -s output_${sample_id}.vcf.gz ]; then
-        echo "Error: Output VCF is empty for ${sample_id}" >&2
-        exit 1
-    fi
-
+    --verbosity DEBUG
 
     """
 }

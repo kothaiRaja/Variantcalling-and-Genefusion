@@ -1,6 +1,6 @@
 process ANNOTATEVARIANTS_VEP {
     container 'https://depot.galaxyproject.org/singularity/ensembl-vep%3A110.1--pl5321h2a3209d_0'
-
+	publishDir "${params.outdir}/annotations", mode: 'copy'
     input:
     path "input.vcf.gz"          // Input VCF file
     path "input.vcf.gz.tbi"      // Tabix index file for the VCF

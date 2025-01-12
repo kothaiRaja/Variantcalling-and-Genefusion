@@ -21,7 +21,7 @@ include { BCFTOOLS_MERGE } from './modules/BCFTOOLS/merge.nf'
 include { ANNOTATE_VARIANTS  } from './modules/SnpEFF_ANNOTATIONS/annotations.nf'
 include { VCF_TO_TABLE  } from './modules/SCRIPTS/CSV_python.nf'
 include { ANNOTATE_VARIANTS_VEP  } from './modules/VEP_ANNOTATIONS/annotations_vep.nf'
-
+include { MULTIQC_REPORT  } from './modules/multiqc/multiqc.nf'
 
 
 
@@ -72,7 +72,7 @@ workflow {
     scattered_intervals_ch = SCATTER_INTERVAL_LIST(interval_list_ch, params.genome_dict)
 	
 //Step 13: GATK HaplotypeCaller
-	gvcf_output = GATK_HAPLOTYPE_CALLER(recalibrated_bams, params.genome, params.fasta_index, params.genome_dict, scattered_intervals_ch,params.filtered_vcf, params.filtered_vcf_index )
+	gvcf_output = GATK_HAPLOTYPE_CALLER(recalibrated_bams, params.genome, params.fasta_index, params.genome_dict, scattered_intervals_ch)
 				
 	
 	gvcf_output.view { "Raw GVCF output: $it" }
@@ -83,68 +83,75 @@ workflow {
 // Step 15: Filter individual VCF files
 	filtered_individual_vcfs = GATK_VARIANT_FILTER(gvcf_output, params.genome, params.fasta_index, params.genome_dict)
 	
-//Step 16: Provide Stats
+// Step 16: Provide Stats
 	filtered_vcf_stats = BCFTOOLS_QUERY(filtered_individual_vcfs) 
 
-//Step 17: Create a mapped collection of filtered VCF paths for merging
+// Step 17: Create a mapped collection of filtered VCF paths for merging
 	filtered_vcf = filtered_individual_vcfs
                   .map { it[1] } // Extract paths to filtered VCF files
                   .collect()     // Collect them into a list
 
 	filtered_vcf.view { "Filtered VCF output: $it" }
 
-//Step 18: Dynamically set paths based on the mode (test or actual)
+// Step 18: Dynamically set paths based on the mode (test or actual)
 	def snpEffJar = file(params.mode == 'test' ? './data/test/snpEff/snpEff.jar' : './data/actual/snpEff/snpEff.jar')
 	def snpEffConfig = file(params.mode == 'test' ? './data/test/snpEff/snpEff.config' : './data/actual/snpEff.config')
 	def snpEffDbDir = file(params.mode == 'test' ? './data/test/snpEff/snpEff/data' : './data/actual/snpEff/data')
 
-//Step 19: Conditional processing for merging or annotating individual files
+// Step 19: Conditional processing for merging or annotating individual files
 	if (params.merge_vcf) {
 		// Merge filtered VCFs
 		merged_filtered_vcfs = BCFTOOLS_MERGE(filtered_vcf)
 
-    // Annotate the merged VCF file snpeff
+// Step 20: Annotate the merged VCF file snpeff
     annotated_merged_vcf = ANNOTATE_VARIANTS(merged_filtered_vcfs, snpEffJar, snpEffConfig, snpEffDbDir, params.genomedb)
 	
-	//Annotate the merged vcfs ensembl_vep
+// Step 21: Annotate the merged vcfs ensembl_vep
 	annotated_merged_vcf_ensemblvep = ANNOTATEVARIANTS_VEP(merged_filtered_vcfs, params.vep_cache, params.clinvar, params.clinvartbi)
 
     println "Merging and annotating VCF files completed."
 	
-	// Create a table from the annotated merged VCF
+// Step 22: Create a table from the annotated merged VCF
     def vcf_to_table_script = file('convert_vcf_to_table.py') 
     table_creation = VCF_TO_TABLE(annotated_merged_vcf, vcf_to_table_script)
 
     println "Table creation from merged VCF completed."
 	
 	} else {
-    // Annotate individual VCF files
+    
+// Step 23: Annotate individual VCF files
     annotated_individual_vcfs = ANNOTATE_INDIVIDUAL_VARIANTS(filtered_individual_vcfs, snpEffJar, snpEffConfig, snpEffDbDir, params.genomedb)
 	
-	//Annotate individual VCF files ensemblvep
-	annotated_individual_vcf_ensemblvep = ANNOTATE_INDIVIDUAL_VARIANTS_VEP (filtered_individual_vcfs, params.vep_cache, , params.clinvar, params.clinvartbi)
+// Step 24: Annotate individual VCF files ensemblvep
+	annotated_individual_vcf_ensemblvep = ANNOTATE_INDIVIDUAL_VARIANTS_VEP (filtered_individual_vcfs, params.vep_cache, params.clinvar, params.clinvartbi)
 
     println "Individual VCF annotation completed."
     println "Table creation step skipped because merging is disabled."
 }
 
+// Step 25: Creating channels for multiqc
+	qc_outputs_ch = alignment_stats
+    .map { it[1] } // Extract path from tuple
+    .mix(
+        bcftools_stats_ch.map { it[1] }, // Extract path
+        filtered_vcf_stats.map { it[1] } // Extract path
+    )
+    .collect()
+
+// Step 26: Multiqc report
+	multiqc_results = MULTIQC_REPORT(qc_outputs_ch)
+}
+
 	
 //===============Workflow for ARRIBA===================//
 
-//Step 19: STAR alignment for fusion detection
+//Step 27: STAR alignment for fusion detection
 	star_align_fusion_ch = STAR_ALIGN_FUSION(trimmed_reads_ch, params.star_index_dir, params.gtf_file )
 
-//Step 20: Fusion detection using ARRIBA
+//Step 28: Fusion detection using ARRIBA
 	ARRIBA_ch = ARRIBA(star_align_fusion_ch, params.genome, params.gtf_file, params.test_blacklist_fusion, params.test_knownfusion)
 	
-//Step 21: Visualization step
+//Step 29: Visualization step
     fusion_visuals = ARRIBA_VISUALIZATION(ARRIBA_ch, params.scripts_dir, params.genome, params.gtf_file)
 	
-	
-collect_results_ch = Channel.fromPath("${params.outdir}", checkIfExists: true)
-
-
-	
-    // Run MultiQC
-    MULTIQC_REPORT(collect_results_ch)
 }
