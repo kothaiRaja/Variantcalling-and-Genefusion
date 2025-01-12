@@ -1,5 +1,5 @@
 // Process to download gtf files
-process DOWNLOAD_TEST_GTF {
+process DOWNLOAD_GTF {
     tag "Download test GTF"
 	container null
     publishDir "${params.test_data_dir}/reference", mode: 'copy'

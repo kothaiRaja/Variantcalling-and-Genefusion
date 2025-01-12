@@ -1,5 +1,5 @@
 // Process to download the test genome
-process DOWNLOAD_TEST_GENOME {
+process DOWNLOAD_REF_GENOME {
     tag "Download test genome"
 	container null
     publishDir "${params.test_data_dir}/reference", mode: 'copy'

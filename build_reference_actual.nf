@@ -1,10 +1,10 @@
 nextflow.enable.dsl = 2
 
 include { DOWNLOAD_REF_GENOME } from './modules/REFERENCES_DOWNLOAD/ref_genome_actual.nf'
-include { DOWNLOAD_VARIANTS_SNP } from './modules/REFERENCES_DOWNLOAD/known_varaints_snps_actual.nf'
+include { DOWNLOAD_VARIANTS_SNP } from './modules/REFERENCES_DOWNLOAD/known_variants_snps_actual.nf'
 include { DOWNLOAD_VARIANTS_INDELS } from './modules/REFERENCES_DOWNLOAD/known_variants_indels_actual.nf'
 include { DOWNLOAD_DENYLIST } from './modules/REFERENCES_DOWNLOAD/denylist_actual.nf'
-include { DOWNLOAD_GTF } from './modules/REFERENCES_DOWNLOAD/gft_actual.nf'
+include { DOWNLOAD_GTF } from './modules/REFERENCES_DOWNLOAD/gtf_actual.nf'
 include { CREATE_FASTA_INDEX } from './modules/PREPARE_REFs/fasta_index_actual.nf'
 include { CREATE_GENOME_DICT } from './modules/PREPARE_REFs/genome_dict_actual.nf'
 include { CREATE_STAR_INDEX } from './modules/PREPARE_REFs/star_index_actual.nf'

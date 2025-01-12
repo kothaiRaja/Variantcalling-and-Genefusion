@@ -1,5 +1,5 @@
 // Process to download the test denylist BED
-process DOWNLOAD_TEST_DENYLIST {
+process DOWNLOAD_DENYLIST {
     tag "Download test denylist BED"
 	container null	
     publishDir "${params.test_data_dir}/reference", mode: 'copy'

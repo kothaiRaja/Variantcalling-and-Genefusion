@@ -1,10 +1,10 @@
 nextflow.enable.dsl = 2
 
-include { DOWNLOAD_TEST_GENOME } from './modules/REFERENCES_DOWNLOAD/ref_genome_test.nf'
-include { DOWNLOAD_TEST_VARIANTS_SNP } from './modules/REFERENCES_DOWNLOAD/known_variants_snps.nf'
-include { DOWNLOAD_TEST_VARIANTS_INDELS } from './modules/REFERENCES_DOWNLOAD/known_variants_indels.nf'
-include { DOWNLOAD_TEST_DENYLIST } from './modules/REFERENCES_DOWNLOAD/denylist_test.nf'
-include { DOWNLOAD_TEST_GTF } from './modules/REFERENCES_DOWNLOAD/gft_file_test.nf'
+include { DOWNLOAD_REF_GENOME } from './modules/REFERENCES_DOWNLOAD/ref_genome_test.nf'
+include { DOWNLOAD_VARIANTS_SNP } from './modules/REFERENCES_DOWNLOAD/known_variants_snps.nf'
+include { DOWNLOAD_VARIANTS_INDELS } from './modules/REFERENCES_DOWNLOAD/known_variants_indels.nf'
+include { DOWNLOAD_DENYLIST } from './modules/REFERENCES_DOWNLOAD/denylist_test.nf'
+include { DOWNLOAD_GTF } from './modules/REFERENCES_DOWNLOAD/gft_file_test.nf'
 include { CREATE_FASTA_INDEX } from './modules/PREPARE_REFs/fasta_index.nf'
 include { CREATE_GENOME_DICT } from './modules/PREPARE_REFs/genome_dict.nf'
 include { CREATE_STAR_INDEX } from './modules/PREPARE_REFs/star_index.nf'
@@ -22,11 +22,11 @@ include { TRIM_READS } from './modules/QUALITY_CONTROL/fastp.nf'
 
 workflow {
     //=======Step 1: Download reference files==========//
-    def genome = DOWNLOAD_TEST_GENOME()
-    def variants_snp = DOWNLOAD_TEST_VARIANTS_SNP()
-	def variants_indels = DOWNLOAD_TEST_VARIANTS_INDELS()
-    def denylist = DOWNLOAD_TEST_DENYLIST()
-    def genome_gtf = DOWNLOAD_TEST_GTF()
+    def genome = DOWNLOAD_REF_GENOME()
+    def variants_snp = DOWNLOAD_VARIANTS_SNP()
+	def variants_indels = DOWNLOAD_VARIANTS_INDELS()
+    def denylist = DOWNLOAD_DENYLIST()
+    def genome_gtf = DOWNLOAD_GTF()
 	
 	//=======Step 2: Create genome index files===========//
     fasta_index = CREATE_FASTA_INDEX(genome)
