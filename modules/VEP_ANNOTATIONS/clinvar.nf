@@ -2,6 +2,10 @@ process DOWNLOAD_CLINVAR {
     tag "Downloading ClinVar VCF"
 	container null
 	publishDir "${params.test_data_dir}/VEP", mode: 'copy'
+	
+	 when:
+    !file("${params.clinvar}").exists() || !file("${params.clinvartbi}").exists()
+	
     output:
     path "clinvar.vcf.gz"
     path "clinvar.vcf.gz.tbi"

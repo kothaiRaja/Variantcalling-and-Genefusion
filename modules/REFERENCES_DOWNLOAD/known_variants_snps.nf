@@ -1,11 +1,14 @@
 // Process to download the test variants VCF
-process DOWNLOAD_VARIANTS_SNP {
+process DOWNLOAD_TEST_VARIANTS_SNP {
     tag "Download test variants VCF"
-	container null
+    container null
     publishDir "${params.test_data_dir}/reference", mode: 'copy'
 
     output:
     path "variants_snp.vcf"
+
+    when:
+    !file("${params.test_data_dir}/reference/variants_snp.vcf").exists()
 
     script:
     """

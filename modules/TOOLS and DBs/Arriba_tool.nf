@@ -2,6 +2,9 @@ process DOWNLOAD_ARRIBA {
     container null
 	publishDir "${params.test_data_dir}/ARRIBA", mode: 'copy' 
     
+	when:
+    !file("${params.test_data_dir}/ARRIBA/arriba_v2.4.0").exists()
+	
 	output:
     path 'arriba_v2.4.0', emit: 'arriba_dir'
 

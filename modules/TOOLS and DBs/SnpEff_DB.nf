@@ -2,12 +2,14 @@ process DOWNLOAD_SNPEFF_DB {
     tag "Download SnpEff Database"
 	publishDir "${params.test_data_dir}/snpEff", mode: 'copy'
 	container null
-    input:
+    
+	input:
     val genome
     path snpeff_jar_path
 
     output:
     path "${params.snpeff_db_dir}/${genome}"
+	
 
     script:
     """
