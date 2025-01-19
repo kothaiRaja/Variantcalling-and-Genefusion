@@ -1,10 +1,10 @@
 nextflow.enable.dsl = 2
 
 include { DOWNLOAD_REF_GENOME } from './modules/REFERENCES_DOWNLOAD/ref_genome_test.nf'
-include { DOWNLOAD_TEST_VARIANTS_SNP } from './modules/REFERENCES_DOWNLOAD/known_variants_snps.nf'
-include { DOWNLOAD_TEST_VARIANTS_INDELS } from './modules/REFERENCES_DOWNLOAD/known_variants_indels.nf'
-include { DOWNLOAD_TEST_DENYLIST } from './modules/REFERENCES_DOWNLOAD/denylist_test.nf'
-include { DOWNLOAD_TEST_GTF } from './modules/REFERENCES_DOWNLOAD/gft_file_test.nf'
+include { DOWNLOAD_VARIANTS_SNP } from './modules/REFERENCES_DOWNLOAD/known_variants_snps.nf'
+include { DOWNLOAD_VARIANTS_INDELS } from './modules/REFERENCES_DOWNLOAD/known_variants_indels.nf'
+include { DOWNLOAD_DENYLIST } from './modules/REFERENCES_DOWNLOAD/denylist_test.nf'
+include { DOWNLOAD_GTF } from './modules/REFERENCES_DOWNLOAD/gft_file_test.nf'
 include { CREATE_FASTA_INDEX } from './modules/PREPARE_REFs/fasta_index.nf'
 include { CREATE_GENOME_DICT } from './modules/PREPARE_REFs/genome_dict.nf'
 include { CREATE_STAR_INDEX } from './modules/PREPARE_REFs/star_index.nf'
@@ -49,10 +49,10 @@ workflow {
 
         // Step 1: Download reference files (if they do not exist)
         def genome = file(genome_path).exists() ? file(genome_path) : DOWNLOAD_TEST_GENOME()
-        def variants_snp = file(variants_snp_path).exists() ? file(variants_snp_path) : DOWNLOAD_TEST_VARIANTS_SNP()
-        def variants_indels = file(variants_indels_path).exists() ? file(variants_indels_path) : DOWNLOAD_TEST_VARIANTS_INDELS()
-        def denylist = file(denylist_path).exists() ? file(denylist_path) : DOWNLOAD_TEST_DENYLIST()
-        def genome_gtf = file(genome_gtf_path).exists() ? file(genome_gtf_path) : DOWNLOAD_TEST_GTF()
+        def variants_snp = file(variants_snp_path).exists() ? file(variants_snp_path) : DOWNLOAD_VARIANTS_SNP()
+        def variants_indels = file(variants_indels_path).exists() ? file(variants_indels_path) : DOWNLOAD_VARIANTS_INDELS()
+        def denylist = file(denylist_path).exists() ? file(denylist_path) : DOWNLOAD_DENYLIST()
+        def genome_gtf = file(genome_gtf_path).exists() ? file(genome_gtf_path) : DOWNLOAD_GTF()
 
         // Step 2: Prepare reference files (if they do not exist)
         def fasta_index = file(fasta_index_path).exists() ? file(fasta_index_path) : create_fasta_index(genome)
