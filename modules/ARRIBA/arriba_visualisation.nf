@@ -34,10 +34,11 @@ process ARRIBA_VISUALIZATION {
         exit 1
     fi
 	
-	# Verify the fusions file is not empty
-    if [ ! -s ${fusions_tsv} ]; then
-        echo "No fusions found for ${sample_id}. Skipping visualization." >&2
-        touch "\${PREFIX}.fusion_plot.pdf"
+	# Check if the TSV file has more than just headers
+    DATA_LINES=\$(awk 'NR > 1 {print; exit}' ${fusions_tsv})
+    if [ -z "\$DATA_LINES" ]; then
+        echo "No fusions detected for ${sample_id}. Skipping visualization." >&2
+        touch \${PREFIX}.fusion_plot.pdf
         exit 0
     fi
 
