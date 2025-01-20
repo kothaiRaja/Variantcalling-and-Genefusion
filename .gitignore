@@ -3,3 +3,4 @@ work/
 data/
 results/
 .nextflow.log*
+output/
