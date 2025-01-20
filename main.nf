@@ -106,7 +106,7 @@ workflow {
     annotated_merged_vcf = ANNOTATE_VARIANTS(merged_filtered_vcfs, snpEffJar, snpEffConfig, snpEffDbDir, params.genomedb)
 	
 // Step 21: Annotate the merged vcfs ensembl_vep
-	annotated_merged_vcf_ensemblvep = ANNOTATEVARIANTS_VEP(merged_filtered_vcfs, params.vep_cache, params.clinvar, params.clinvartbi)
+	annotated_merged_vcf_ensemblvep = ANNOTATEVARIANTS_VEP(merged_filtered_vcfs, params.vep_cache, params.clinvar, params.clinvar_tbi)
 
     println "Merging and annotating VCF files completed."
 	
@@ -122,7 +122,7 @@ workflow {
     annotated_individual_vcfs = ANNOTATE_INDIVIDUAL_VARIANTS(filtered_individual_vcfs, snpEffJar, snpEffConfig, snpEffDbDir, params.genomedb)
 	
 // Step 24: Annotate individual VCF files ensemblvep
-	annotated_individual_vcf_ensemblvep = ANNOTATE_INDIVIDUAL_VARIANTS_VEP (filtered_individual_vcfs, params.vep_cache, params.clinvar, params.clinvartbi)
+	annotated_individual_vcf_ensemblvep = ANNOTATE_INDIVIDUAL_VARIANTS_VEP (filtered_individual_vcfs, params.vep_cache, params.clinvar, params.clinvar_tbi)
 
     println "Individual VCF annotation completed."
     println "Table creation step skipped because merging is disabled."

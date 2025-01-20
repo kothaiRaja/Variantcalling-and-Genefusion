@@ -15,10 +15,10 @@ process BCFTOOLS_QUERY {
     # Generate a summary of filtered variants
     bcftools query -f '%CHROM\\t%POS\\t%REF\\t%ALT\\n' ${filtered_vcf} > filtered_variants_summary_${sample_id}.txt
 
-    # Validate the output
+   # Handle cases where the output file is empty
     if [ ! -s filtered_variants_summary_${sample_id}.txt ]; then
-        echo "Error: Summary of filtered variants is empty for ${sample_id}" >&2
-        exit 1
+        echo "No variants detected for ${sample_id}" > filtered_variants_summary_${sample_id}.txt
+        exit 0
     fi
     """
 }
