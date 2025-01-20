@@ -2,7 +2,8 @@ process DOWNLOAD_SNPEFF_DB {
     tag "Download SnpEff Database"
 	publishDir "${params.actual_data_dir}/snpEff", mode: 'copy'
 	container null
-    input:
+    
+	input:
     val genome
     path snpeff_jar_path
 

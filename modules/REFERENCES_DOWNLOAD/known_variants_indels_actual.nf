@@ -6,6 +6,9 @@ process DOWNLOAD_VARIANTS_INDELS {
 
     output:
     path "variants_indels.vcf"
+	
+	when:
+    !file("${params.actual_data_dir}/reference/variants_indels.vcf").exists()
 
     script:
     """

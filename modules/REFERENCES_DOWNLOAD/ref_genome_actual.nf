@@ -6,6 +6,10 @@ process DOWNLOAD_REF_GENOME {
 
     output:
     path "genome.fa"
+	
+	when:
+    !file("${params.actual_data_dir}/reference/genome.fa").exists()
+
 
     script:
     """

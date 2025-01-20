@@ -7,6 +7,10 @@ process DOWNLOAD_GTF {
     output:
     path "annotations.gtf"
 
+	when:
+    !file("${params.actual_data_dir}/reference/annotations.gtf").exists()
+	
+	
     script:
     """
     wget -q -O annotations.gtf ${params.actual_data_gtf}

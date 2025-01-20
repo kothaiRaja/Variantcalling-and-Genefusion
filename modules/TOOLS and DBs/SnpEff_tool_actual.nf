@@ -2,7 +2,8 @@ process DOWNLOAD_SNPEFF_TOOL {
     tag "Download SnpEff Tool"
 	publishDir "${params.actual_data_dir}", mode: 'copy'
 	container null
-    output:
+    
+	output:
     path "${params.snpeff_jar_dir}/snpEff.jar"
 	path "${params.snpeff_jar_dir}/snpEff.config"
 

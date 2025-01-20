@@ -6,11 +6,13 @@ process DOWNLOAD_DENYLIST {
 
     output:
     path "denylist.bed"
+	
+	when:
+    !file("${params.actual_data_dir}/reference/denylist.bed").exists()
 
     script:
     """
     wget -q -O denylist.bed ${params.actual_data_denylist}
 	
-	
-    """
+	"""
 }

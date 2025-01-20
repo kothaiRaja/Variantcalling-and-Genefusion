@@ -55,9 +55,9 @@ workflow {
         def genome_gtf = file(genome_gtf_path).exists() ? file(genome_gtf_path) : DOWNLOAD_GTF()
 
         // Step 2: Prepare reference files (if they do not exist)
-        def fasta_index = file(fasta_index_path).exists() ? file(fasta_index_path) : create_fasta_index(genome)
-        def genome_dict = file(genome_dict_path).exists() ? file(genome_dict_path) : create_genome_dict(genome)
-        def star_index = file(star_index_path).exists() ? file(star_index_path) : create_star_index(genome, genome_gtf)
+        def fasta_index = file(fasta_index_path).exists() ? file(fasta_index_path) : CREATE_FASTA_INDEX(genome)
+        def genome_dict = file(genome_dict_path).exists() ? file(genome_dict_path) : CREATE_GENOME_DICT(genome)
+        def star_index = file(star_index_path).exists() ? file(star_index_path) : CREATE_STAR_INDEX(genome, genome_gtf)
 
         def prepared_vcf = file(prepared_vcf_path).exists() ? file(prepared_vcf_path) : PREPARE_VCF_FILE(variants_snp, variants_indels, denylist)
 

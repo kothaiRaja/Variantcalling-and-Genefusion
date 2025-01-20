@@ -6,6 +6,9 @@ process DOWNLOAD_VARIANTS_SNP {
 
     output:
     path "variants_snp.vcf"
+	
+	when:
+    !file("${params.actual_data_dir}/reference/variants_snp.vcf").exists()
 
     script:
     """
