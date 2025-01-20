@@ -66,8 +66,8 @@ The `buildreference.nf` pipeline prepares reference files and ensures data quali
 
 3. **Flexible Quality Control**  
    - **FastQC**: Assesses raw read quality and detects potential issues.
-   -**Fastp**: Trims low-quality bases and removes adapter contamination.
-   -Allows running only FastQC and Fastp by setting the parameter --only_fastp_fastqc true.
+   - **Fastp**: Trims low-quality bases and removes adapter contamination.
+   - Allows running only FastQC and Fastp by setting the parameter --only_fastp_fastqc true.
 
 #### Outputs  
 - Cleaned and trimmed FASTQ files.  
