@@ -1,7 +1,7 @@
 # RNA-Seq Variant Calling and Gene Fusion Detection Pipeline  
 
 This repository contains a **Nextflow pipeline** designed for RNA-Seq analysis, including **variant calling**, **gene fusion detection**, and **variant annotation**. It consists of two key pipelines:  
-1. **buildreference.nf**: Prepares references and performs quality control.  
+1. **buildreference.nf**: Prepares references, performs quality control, and manages resources efficiently by building/downloading only if files are unavailable.
 2. **main.nf**: Conducts downstream analyses such as variant calling, gene fusion detection, and variant annotation.  
 
 ![Pipeline Workflow](https://github.com/user-attachments/assets/c6e4f029-acc8-47db-aa0d-4928d50c8538)  
@@ -33,7 +33,7 @@ cd Variantcalling-and-Genefusion
 
 #### a. Build Reference Files  
   
-nextflow run buildreference.nf -c nextflow_ref.config -mode <test/actual> -profile singularity  
+nextflow run build_reference_<test/actual>.nf -c nextflow_ref.config --only_fastqc_fastp <false/true> -profile singularity  
  
 
 #### b. Main Analysis  
@@ -60,17 +60,14 @@ The `buildreference.nf` pipeline prepares reference files and ensures data quali
      sample_2,/path/to/sample_2_R1.fastq.gz,/path/to/sample_2_R2.fastq.gz  
        
 
-2. **Quality Control**  
-   - **FastQC**: Assesses raw read quality and detects potential issues.  
-   - **Fastp**: Trims low-quality bases and removes adapter contamination.  
+2. **Efficient Reference Preparation**  
+   - Downloads and prepares all necessary reference files only if they are not available in the specified data directory  
+   - Ensures no redundant operations, saving time and computational resources.  
 
-3. **Reference Preparation**  
-   - Downloads and prepares all necessary reference files for alignment and variant analysis.  
-
-#### Command to Run  
- 
-nextflow run buildreference.nf -c nextflow_ref.config -mode <test/actual> -profile singularity  
- 
+3. **Flexible Quality Control**  
+   - **FastQC**: Assesses raw read quality and detects potential issues.
+   -**Fastp**: Trims low-quality bases and removes adapter contamination.
+   -Allows running only FastQC and Fastp by setting the parameter --only_fastp_fastqc true.
 
 #### Outputs  
 - Cleaned and trimmed FASTQ files.  
@@ -98,12 +95,7 @@ The `main.nf` pipeline performs the core analysis, including alignment, variant 
 4. **Comprehensive Reporting**  
    - Produces annotated VCF files, HTML reports, and gene fusion details in TSV format.  
 
-#### Command to Run  
-  
-nextflow run main.nf -c nextflow_main.config -mode <test/actual> -profile singularity  
- 
-
-#### Outputs  
+ #### Outputs  
 - **Variants**: Annotated VCF file (`final.vcf`) with detailed variant information.  
 - **Gene Fusion**: TSV file (`fusion.tsv`) summarizing detected gene fusions.  
 - **Annotation Report**: HTML file providing detailed functional and gene information for variants.  
@@ -116,6 +108,7 @@ nextflow run main.nf -c nextflow_main.config -mode <test/actual> -profile singul
 - **Comprehensive Workflow**: From reference preparation to functional annotations, the pipeline handles all steps of RNA-Seq analysis.  
 - **Customizable Modes**: Supports "test" and "actual" modes for easy testing and production runs.  
 - **Scalability**: Leveraging Nextflow, the pipelines are scalable across computational environments.  
+- **Standalone QC Option**: Allows running only FastQC and Fastp with --only_fastp_fastqc.
 
 ---
 

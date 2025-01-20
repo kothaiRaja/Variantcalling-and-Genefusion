@@ -19,8 +19,9 @@ include { FASTQC_RAW } from './modules/QUALITY_CONTROL/fastqc_actual.nf'
 include { TRIM_READS } from './modules/QUALITY_CONTROL/fastp_actual.nf'
 
 
+workflow{
 
-// Define paths for all required files
+	// Define paths for all required files
     def genome_path = "${params.actual_data_dir}/reference/genome.fa"
     def variants_snp_path = "${params.actual_data_dir}/reference/variants_snp.vcf"
     def variants_indels_path = "${params.actual_data_dir}/reference/variants_indels.vcf"
