@@ -67,8 +67,8 @@ workflow {
 		def java_check = CHECK_JAVA()
 
 		log.info "Checking SnpEff tool existence..."
-		def snpeff_jar_path = "${params.snpeff_jar_dir}/snpEff.jar"
-		def snpeff_config_path = "${params.snpeff_jar_dir}/snpEff.config"
+		def snpeff_jar_path = "${params.test_data_dir}/snpEff/snpEff.jar"
+		def snpeff_config_path = "${params.test_data_dir}/snpEff/snpEff.config"
 		// Execute or skip SnpEff tool download
 		def snpeff_tool = (!file(snpeff_jar_path).exists() || !file(snpeff_config_path).exists()) ?
 			DOWNLOAD_SNPEFF_TOOL() :
@@ -79,7 +79,7 @@ workflow {
 
 		// Step 2: Check for SnpEff database existence
 		log.info "Checking SnpEff database existence..."
-		def snpeff_db_path = "${params.snpeff_db_dir}/${params.genomedb}"
+		def snpeff_db_path = "${params.test_data_dir}/snpEff/snpEff/data/${params.genomedb}"
 		def snpeff_db = !file(snpeff_db_path).exists() ?
 			DOWNLOAD_SNPEFF_DB(params.genomedb, snpeff_tool[0]) :
 			file(snpeff_db_path)
