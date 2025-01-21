@@ -1,14 +1,14 @@
 process DOWNLOAD_VEP_CACHE {
     tag "Downloading VEP Cache"
 	container null
-	publishDir "${params.actual_data_dir}/VEP", mode: 'copy'
+	publishDir "${params.actual_data_dir}", mode: 'copy'
 	
 	when:
-    !file("${params.vep_cache}/homo_sapiens/110_GRCh38").exists()
+    !file("${params.test_data_dir}/vep_cache").exists() 
 
     output:
-    path "${params.vep_cache}/homo_sapiens/110_GRCh38", type: 'dir'
-
+    path "vep_cache", emit: vep_cache
+	
     script:
     """
     mkdir -p vep_cache

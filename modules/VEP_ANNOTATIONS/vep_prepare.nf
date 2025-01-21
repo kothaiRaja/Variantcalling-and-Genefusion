@@ -1,7 +1,7 @@
 process DOWNLOAD_VEP_CACHE {
     tag "Downloading VEP Cache"
     container null
-    publishDir "${params.test_data_dir}/VEP", mode: 'copy'
+    publishDir "${params.test_data_dir}", mode: 'copy'
 
     when:
     !file("${params.test_data_dir}/vep_cache").exists() 
