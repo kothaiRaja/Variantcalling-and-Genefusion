@@ -94,7 +94,7 @@ workflow {
 			DOWNLOAD_ARRIBA()
 
 		log.info "Checking VEP cache existence..."
-		def vep_cache_path = "${params.test_data_dir}/vep_cache/homo_sapiens/110_GRCh38"
+		def vep_cache_path = "${params.test_data_dir}/vep_cache"
 		def vep_cache = file(vep_cache_path).exists() ? 
 			file(vep_cache_path) : 
 			DOWNLOAD_VEP_CACHE()
