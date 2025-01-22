@@ -22,26 +22,26 @@ process STAR_ALIGN_FUSION {
     """
     STAR --genomeDir $star_index_dir \
      --readFilesIn ${trimmed_r1} ${trimmed_r2} \
-     --runThreadN 4 \
+     --runThreadN 8 \
      --readFilesCommand zcat \
      --outFilterType BySJout \
      --alignSJoverhangMin 8 \
      --alignSJDBoverhangMin 1 \
-     --outFilterMismatchNmax 999 \
+     --outFilterMismatchNmax 10 \
      --outFilterMatchNmin 16 \
      --outFilterMatchNminOverLread 0.3 \
      --outFilterScoreMinOverLread 0.3 \
-     --chimSegmentMin 8 \
-     --chimJunctionOverhangMin 12 \
+     --chimSegmentMin 12 \
+     --chimJunctionOverhangMin 15 \
      --chimOutType WithinBAM SeparateSAMold \
+	 --chimMultimapNmax 10 \
      --chimScoreDropMax 50 \
      --chimScoreSeparation 10 \
      --outSAMtype BAM SortedByCoordinate \
      --outSAMunmapped Within \
      --outSAMattributes NH HI AS nM MD NM \
+	 --limitBAMsortRAM 32000000000 \
      --outFileNamePrefix ${sample_id}_
 
-	 
-	 """
-
+    """
 }
