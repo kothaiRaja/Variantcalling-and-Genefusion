@@ -47,7 +47,7 @@ workflow{
         log.info "Running full pipeline setup and all processes"
 
         // Step 1: Download reference files (if they do not exist)
-        def genome = file(genome_path).exists() ? file(genome_path) : DOWNLOAD_TEST_GENOME()
+        def genome = file(genome_path).exists() ? file(genome_path) : DOWNLOAD_REF_GENOME()
         def variants_snp = file(variants_snp_path).exists() ? file(variants_snp_path) : DOWNLOAD_VARIANTS_SNP()
         def variants_indels = file(variants_indels_path).exists() ? file(variants_indels_path) : DOWNLOAD_VARIANTS_INDELS()
         def denylist = file(denylist_path).exists() ? file(denylist_path) : DOWNLOAD_DENYLIST()
