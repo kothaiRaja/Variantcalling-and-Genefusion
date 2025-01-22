@@ -13,5 +13,10 @@ process DOWNLOAD_DENYLIST {
     script:
     """
     wget -q -O denylist.bed ${params.test_data_denylist}
+	
+	# Check if the file is in .gz format and decompress
+    if [[ -f denylist.bed.gz ]]; then
+        gunzip denylist.bed.gz
+    fi
     """
 }
