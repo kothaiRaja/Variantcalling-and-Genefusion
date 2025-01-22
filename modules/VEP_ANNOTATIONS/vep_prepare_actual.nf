@@ -4,7 +4,7 @@ process DOWNLOAD_VEP_CACHE {
 	publishDir "${params.actual_data_dir}", mode: 'copy'
 	
 	when:
-    !file("${params.test_data_dir}/vep_cache").exists() 
+    !file("${params.actual_data_dir}/vep_cache").exists() 
 
     output:
     path "vep_cache", emit: vep_cache
