@@ -22,6 +22,12 @@ process GATK_RECALIBRATION {
         --known-sites ${known_variants} \
         -O ${sample_id}_recal_data.table 
 		
+	# Check if recalibration table is generated
+    if [ ! -s ${sample_id}_recal_data.table ]; then
+        echo "Error: Recalibration table not generated for ${sample_id}" >&2
+        exit 1
+    fi
+		
 
     # Step 2: ApplyBQSR
     gatk ApplyBQSR \
@@ -29,11 +35,21 @@ process GATK_RECALIBRATION {
         -I ${bam} \
         --bqsr-recal-file ${sample_id}_recal_data.table \
         -O ${sample_id}_recalibrated.bam
+		
+	# Check if recalibrated BAM is generated
+    if [ ! -s ${sample_id}_recalibrated.bam ]; then
+        echo "Error: Recalibrated BAM not generated for ${sample_id}" >&2
+        exit 1
+    fi
+	
+	# Step 3: Index BAM using GATK
+    gatk BuildBamIndex \
+        -I ${sample_id}_recalibrated.bam
 
-	# Step 3: Validation
+	# Step 4: Validation
 	gatk ValidateSamFile \
 		-I ${sample_id}_recalibrated.bam \
-		-MODE SUMMARY 
+		-MODE SUMMARY > ${sample_id}_validation_summary.txt
 
 
     """

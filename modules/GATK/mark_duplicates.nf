@@ -22,6 +22,18 @@ process GATK_MARK_DUPLICATES {
         --CREATE_INDEX true \
 		--REMOVE_DUPLICATES ${params.remove_duplicates ? 'true' : 'false'} \
         --VALIDATION_STRINGENCY ${params.validation_stringency ?: 'LENIENT'}
+		
+	# Check if output BAM is generated
+    if [ ! -s ${sample_id}_marked_duplicates.bam ]; then
+        echo "Error: Marked duplicates BAM file not generated for ${sample_id}" >&2
+        exit 1
+    fi
+
+    # Check if metrics file is generated
+    if [ ! -s ${sample_id}_dup_metrics.txt ]; then
+        echo "Error: Duplicate metrics file not generated for ${sample_id}" >&2
+        exit 1
+    fi
 
     """
 }

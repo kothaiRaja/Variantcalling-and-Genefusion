@@ -21,14 +21,16 @@ process GATK_HAPLOTYPE_CALLER {
     gatk HaplotypeCaller \
     --native-pair-hmm-threads ${task.cpus} \
     --reference ${genome} \
-    --output output_${sample_id}.vcf.gz \
+    --output ${sample_id}_haplotypecaller.vcf.gz \
     -I $bam \
-    --standard-min-confidence-threshold-for-calling 5.0 \
+    --standard-min-confidence-threshold-for-calling 30.0 \
     --dont-use-soft-clipped-bases true \
     --min-base-quality-score 10 \
 	--output-mode EMIT_VARIANTS_ONLY \
+	--read-filter OverclippedReadFilter \
     ${intervals_args} \
-    --verbosity DEBUG
+	--create-output-variant-index true \
+    --verbosity INFO
 
     """
 }

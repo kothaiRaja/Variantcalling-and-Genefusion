@@ -27,14 +27,15 @@ process STAR_ALIGN_FUSION {
      --outFilterType BySJout \
      --alignSJoverhangMin 8 \
      --alignSJDBoverhangMin 1 \
-     --outFilterMismatchNmax 10 \
+     --outFilterMismatchNmax 999 \
      --outFilterMatchNmin 16 \
      --outFilterMatchNminOverLread 0.3 \
      --outFilterScoreMinOverLread 0.3 \
-     --chimSegmentMin 12 \
-     --chimJunctionOverhangMin 15 \
+     --chimSegmentMin 10 \
+     --chimJunctionOverhangMin 10 \
+	 --chimScoreJunctionNonGTAG -4 \
+	 --chimScoreMin 1 \
      --chimOutType WithinBAM SeparateSAMold \
-	 --chimMultimapNmax 10 \
      --chimScoreDropMax 50 \
      --chimScoreSeparation 10 \
      --outSAMtype BAM SortedByCoordinate \
