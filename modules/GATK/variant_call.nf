@@ -18,19 +18,30 @@ process GATK_HAPLOTYPE_CALLER {
 	def intervals_args = interval_list.collect { "--intervals ${it}" }.join(' ')
 	
     """
-    gatk HaplotypeCaller \
-    --native-pair-hmm-threads ${task.cpus} \
-    --reference ${genome} \
-    --output ${sample_id}_haplotypecaller.vcf.gz \
-    -I $bam \
-    --standard-min-confidence-threshold-for-calling 30.0 \
-    --dont-use-soft-clipped-bases true \
-    --min-base-quality-score 10 \
-	--output-mode EMIT_VARIANTS_ONLY \
-	--read-filter OverclippedReadFilter \
-    ${intervals_args} \
-	--create-output-variant-index true \
-    --verbosity INFO
+    # Validate Inputs
+    if [ ! -s ${bam} ]; then
+        echo "Error: BAM file not found or empty." >&2
+        exit 1
+    fi
+    if [ ! -s ${genome} ]; then
+        echo "Error: Reference genome not found or empty." >&2
+        exit 1
+    fi
 
+    # Run HaplotypeCaller
+    gatk HaplotypeCaller \
+        --native-pair-hmm-threads ${task.cpus} \
+        --reference ${genome} \
+        --output output_${sample_id}.vcf.gz \
+        -I ${bam} \
+        --standard-min-confidence-threshold-for-calling 30.0 \
+        --dont-use-soft-clipped-bases true \
+        --min-base-quality-score 10 \
+        --output-mode EMIT_VARIANTS_ONLY \
+        --read-filter OverclippedReadFilter \
+        ${intervals_args} \
+        --verbosity INFO
     """
+
+  
 }
