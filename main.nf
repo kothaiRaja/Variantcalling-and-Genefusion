@@ -19,7 +19,7 @@ include { ANNOTATE_INDIVIDUAL_VARIANTS  } from './modules/SnpEFF_ANNOTATIONS/ann
 include { ANNOTATE_INDIVIDUAL_VARIANTS_VEP  } from './modules/VEP_ANNOTATIONS/annotations_individual_vep.nf'
 include { BCFTOOLS_MERGE } from './modules/BCFTOOLS/merge.nf'
 include { ANNOTATE_VARIANTS  } from './modules/SnpEFF_ANNOTATIONS/annotations.nf'
-include { VCF_TO_TABLE  } from './modules/SCRIPTS/CSV_python.nf'
+include { EXTRACT_VCF  } from './modules/SCRIPTS/CSV_python.nf'
 include { ANNOTATEVARIANTS_VEP  } from './modules/VEP_ANNOTATIONS/annotations_vep.nf'
 include { MULTIQC_REPORT  } from './modules/multiqc/multiqc.nf'
 
@@ -111,8 +111,7 @@ workflow {
     println "Merging and annotating VCF files completed."
 	
 // Step 22: Create a table from the annotated merged VCF
-    def vcf_to_table_script = file('convert_vcf_to_table.py') 
-    table_creation = VCF_TO_TABLE(annotated_merged_vcf, vcf_to_table_script)
+    table_creation = EXTRACT_VCF(annotated_merged_vcf)
 
     println "Table creation from merged VCF completed."
 	
@@ -132,8 +131,8 @@ workflow {
 	qc_outputs_ch = alignment_stats
     .map { it[1] } // Extract path from tuple
     .mix(
-        bcftools_stats_ch.map { it[1] }, // Extract path
-        filtered_vcf_stats.map { it[1] } // Extract path
+        bcftools_stats_ch.map { it[1] }, 
+        filtered_vcf_stats.map { it[1] } 
     )
     .collect()
 
