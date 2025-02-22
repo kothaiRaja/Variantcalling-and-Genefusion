@@ -1,6 +1,6 @@
 process EXTRACT_VCF {
     container params.container
-	publishDir "${params.outdir}/annotations", mode: 'copy'
+	publishDir "${params.resultsdir}/annotations", mode: 'copy'
 
     input:
     path vcf_file

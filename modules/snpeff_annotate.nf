@@ -2,7 +2,7 @@ process ANNOTATE_INDIVIDUAL_VARIANTS {
     tag "${sample_id}_annotate"
 
     container "https://depot.galaxyproject.org/singularity/snpeff%3A5.2--hdfd78af_1"
-    publishDir "${params.outdir}/annotations", mode: 'copy'
+    publishDir "${params.resultsdir}/annotations", mode: 'copy'
 
     input:
     tuple val(sample_id), path(filtered_vcf), path(filtered_index), val(strandedness)

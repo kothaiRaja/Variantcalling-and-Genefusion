@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 
 process MULTIQC_REPORT {
     container "https://depot.galaxyproject.org/singularity/multiqc%3A1.14--pyhdfd78af_0"
-    publishDir "${params.outdir}/multiqc", mode: "copy"
+    publishDir "${params.resultsdir}/multiqc", mode: "copy"
 
     input:
     path fastqc_results

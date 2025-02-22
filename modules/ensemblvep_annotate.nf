@@ -2,7 +2,7 @@ process ANNOTATE_INDIVIDUAL_VARIANTS_VEP {
     tag "${sample_id}_vep_annotate"
 
     container "https://depot.galaxyproject.org/singularity/ensembl-vep%3A110.1--pl5321h2a3209d_0"
-    publishDir "${params.outdir}/annotations", mode: 'copy'
+    publishDir "${params.resultsdir}/annotations", mode: 'copy'
 
     input:
     tuple val(sample_id), path(filtered_vcf), path(filtered_index), val(strandedness) // Input VCF and its index

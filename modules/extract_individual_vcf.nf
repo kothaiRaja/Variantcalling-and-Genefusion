@@ -2,7 +2,7 @@ process EXTRACT_individual_VCF {
 
 	tag { sample_id }
     container params.container
-	publishDir "${params.outdir}/annotations", mode: 'copy'
+	publishDir "${params.resultsdir}/annotations", mode: 'copy'
 	
 	
     input:

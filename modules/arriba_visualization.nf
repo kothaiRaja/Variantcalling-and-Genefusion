@@ -2,7 +2,7 @@ process ARRIBA_VISUALIZATION {
     tag { sample_id }
 
     container "https://depot.galaxyproject.org/singularity/r-base%3A4.4.1"  
-    publishDir "${params.outdir}/ARRIBA_VISUALIZATION", mode: 'copy'
+    publishDir "${params.resultsdir}/ARRIBA_VISUALIZATION", mode: 'copy'
 
     input:
     tuple val(sample_id), path(fusions_tsv), val(strandedness)
