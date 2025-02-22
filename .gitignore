@@ -4,3 +4,4 @@ data/
 results/
 .nextflow.log*
 output/
+*.Zone.Identifier
