@@ -1,11 +1,11 @@
 nextflow.enable.dsl = 2
 
 // Import subworkflows
-include { PREPROCESSING } from './Subworkflows/preprocessing.nf'
-include { VARIANT_CALLING } from './Subworkflows/variant_calling.nf'
-include { ANNOTATION } from './Subworkflows/annotation.nf'
-include { GENE_FUSION } from './Subworkflows/gene_fusion.nf'
-include { MULTIQC_REPORT } from './Subworkflows/multiqc.nf'
+include { PREPROCESSING } from './subworkflows/preprocessing.nf'
+include { VARIANT_CALLING } from './subworkflows/variant_calling.nf'
+include { ANNOTATION } from './subworkflows/annotation.nf'
+include { GENE_FUSION } from './subworkflows/gene_fusion.nf'
+include { MULTIQC_REPORT } from './subworkflows/multiqc.nf'
 
 
 

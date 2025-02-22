@@ -477,42 +477,50 @@ workflow {
 // ========================== ClinVar VCF Handling ========================== //
     def clinvar_vcf_ch, clinvar_tbi_ch
 
-    if (file("${params.clinvar_path}").exists() && file("${params.clinvartbi_path}").exists()) {
-        println " ClinVar VCF and index found in the server directory."
-        clinvar_vcf_ch = Channel.of(file("${params.clinvar_path}"))
-        clinvar_tbi_ch = Channel.of(file("${params.clinvartbi_path}"))
+   
 
-    } else if (file("${params.test_data_dir}/Tools/VEP/clinvar.vcf.gz").exists() && 
-               file("${params.test_data_dir}/Tools/VEP/clinvar.vcf.gz.tbi").exists()) {
-        println " ClinVar VCF and index found in the publish directory."
-        clinvar_vcf_ch = Channel.of(file("${params.test_data_dir}/Tools/VEP/clinvar.vcf.gz"))
-        clinvar_tbi_ch = Channel.of(file("${params.test_data_dir}/Tools/VEP/clinvar.vcf.gz.tbi"))
+if (params.clinvar_path && params.clinvartbi_path && 
+    file(params.clinvar_path).exists() && file(params.clinvartbi_path).exists()) {
 
-    } else {
-        println "️ ClinVar VCF and index not found. Downloading..."
-        def result = DOWNLOAD_CLINVAR()
-        clinvar_vcf_ch = result.out[0]
-        clinvar_tbi_ch = result.out[1]
-    }
+    println "✅ ClinVar VCF and index found in the server directory."
+    clinvar_vcf_ch = Channel.of(file(params.clinvar_path))
+    clinvar_tbi_ch = Channel.of(file(params.clinvartbi_path))
 
-    // ========================== Capture ClinVar Paths ========================== //
-    clinvar_vcf_ch.view { clinvar_vcf_path ->  
+} else if (file("${params.test_data_dir}/Tools/VEP/clinvar.vcf.gz").exists() && 
+           file("${params.test_data_dir}/Tools/VEP/clinvar.vcf.gz.tbi").exists()) {
+
+    println "✅ ClinVar VCF and index found in the publish directory."
+    clinvar_vcf_ch = Channel.of(file("${params.test_data_dir}/Tools/VEP/clinvar.vcf.gz"))
+    clinvar_tbi_ch = Channel.of(file("${params.test_data_dir}/Tools/VEP/clinvar.vcf.gz.tbi"))
+
+} else {
+    println "⚠️ ClinVar VCF and index not found. Downloading..."
+    def clinvar_results = DOWNLOAD_CLINVAR()
+	clinvar_vcf_ch = clinvar_results.clinvar_vcf
+	clinvar_tbi_ch = clinvar_results.clinvar_tbi
+
+}
+
+// ========================== Capture ClinVar Paths ========================== //
+clinvar_vcf_ch.view { clinvar_vcf_path ->  
     if (clinvar_vcf_path.toString().contains('/work/')) {
         clinvarVcfPath = "${params.test_data_dir}/Tools/VEP/clinvar.vcf.gz"
     } else {
         clinvarVcfPath = clinvar_vcf_path.toString()
     }
-    println " ClinVar VCF path set to: ${clinvarVcfPath}"
+    println "📂 ClinVar VCF path set to: ${clinvarVcfPath}"
 }
 
-	clinvar_tbi_ch.view { clinvar_tbi_path ->  
+clinvar_tbi_ch.view { clinvar_tbi_path ->  
     if (clinvar_tbi_path.toString().contains('/work/')) {
         clinvarTbiPath = "${params.test_data_dir}/Tools/VEP/clinvar.vcf.gz.tbi"
     } else {
         clinvarTbiPath = clinvar_tbi_path.toString()
     }
-    println " ClinVar VCF Index path set to: ${clinvarTbiPath}"
+    println "📂 ClinVar VCF Index path set to: ${clinvarTbiPath}"
 }
+
+
 
 
 
