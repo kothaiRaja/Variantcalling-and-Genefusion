@@ -11,8 +11,12 @@ process ANNOTATE_INDIVIDUAL_VARIANTS {
 	path (snpEffDbDir)
 	val (genomedb)
 
+    
     output:
-    tuple val(sample_id), path("${sample_id}.annotated.vcf"),val(strandedness), path("${sample_id}.annotated.summary.html")
+    tuple val(sample_id), path("${sample_id}.annotated.vcf"),val(strandedness), emit: annotated_vcf
+    path("${sample_id}.annotated.summary.html"), emit: summary_html
+    
+
 
     script:
     """

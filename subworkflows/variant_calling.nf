@@ -112,7 +112,7 @@ workflow VARIANT_CALLING {
 			// Step 22: Create a table from the annotated merged VCF
 			extracted_csv = EXTRACT_VCF(annotated_merged_vcf)
 
-            final_vcf_output = annotated_merged_vcf_vep
+            final_vcf_output = annotated_merged_vcf
         } else {
             log.info "📄 Keeping individual VCFs..."
 
@@ -123,9 +123,13 @@ workflow VARIANT_CALLING {
             annotated_individual_vcf_vep = ANNOTATE_INDIVIDUAL_VARIANTS_VEP(filtered_individual_vcfs, vep_cache, clinvar_vcf, clinvar_index)
 
             // **Step 19: Convert Individual VCF to CSV**
-            extracted_csv = EXTRACT_individual_VCF(annotated_individual_vcfs.map { tuple(it[0], it[1], it[2]) })
+            extracted_csv = EXTRACT_individual_VCF(annotated_individual_vcfs)
 
-            final_vcf_output = annotated_individual_vcf_vep
+
+
+
+            final_vcf_output = annotated_individual_vcfs
+
         }
 
         log.info "✅ Variant Annotation Completed."

@@ -6,10 +6,13 @@ process EXTRACT_individual_VCF {
 	
 	
     input:
-    tuple val(sample_id), path(vcf_file),val(strandedness), path(html)
+    tuple val(sample_id), path(vcf_file),val(strandedness)
+	path(html)
 
     output:
-    path '*'
+    
+    path "${sample_id}_parsed_annotations.csv", emit: extracted_csv
+
 
     script:
     """
