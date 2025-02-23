@@ -1,118 +1,146 @@
-# RNA-Seq Variant Calling and Gene Fusion Detection Pipeline  
+# **RNA-Seq Variant Calling & Fusion Detection Pipeline**  
 
-This repository contains a **Nextflow pipeline** designed for RNA-Seq analysis, including **variant calling**, **gene fusion detection**, and **variant annotation**. It consists of two key pipelines:  
-1. **buildreference.nf**: Prepares references, performs quality control, and manages resources efficiently by building/downloading only if files are unavailable.
-2. **main.nf**: Conducts downstream analyses such as variant calling, gene fusion detection, and variant annotation.  
+**A scalable, reproducible, and modular Nextflow pipeline for RNA-seq variant calling and fusion detection.**  
 
-![Pipeline Workflow](https://github.com/user-attachments/assets/c6e4f029-acc8-47db-aa0d-4928d50c8538)  
+**GitHub Repository:** [Variantcalling-and-Genefusion](https://github.com/kothaiRaja/Variantcalling-and-Genefusion.git)  
 
 ---
 
-## Features  
-- **Variant Calling**: Using GATK HaplotypeCaller.  
-- **Gene Fusion Detection**: Utilizing ARRIBA for comprehensive fusion identification.  
-- **Annotation**: Functional annotation with Ensembl VEP and SnpEff.  
-- **Quality Control**: Implements FastQC and Fastp for data preprocessing.  
-- **Scalability**: Modular design supporting test and actual datasets.  
+## **Overview**  
+
+This pipeline processes RNA-seq data to:  
+**Identify genetic variants (SNPs & Indels)** from transcriptomic data.  
+**Detect RNA fusion events** critical in cancer research.  
+**Perform quality control, alignment, annotation, and reporting** in an automated workflow.  
+
+**Built With:**  
+- **Nextflow DSL2** for modularity & scalability.  
+- **Singularity/Docker** for containerized execution.  
+- **FastQC, STAR, GATK, SnpEff, VEP, Arriba** for high-accuracy analysis.  
+
+**Key Features:**  
+**Preprocessing**: FASTQ quality control and trimming (FastQC, Fastp).  
+**Variant Calling**: STAR alignment, GATK HaplotypeCaller, and variant annotation.  
+**Fusion Detection**: STAR + Arriba for RNA fusion detection.  
+**MultiQC Reports**: Aggregated QC statistics for easy review.  
+**Automated Reference Preparation**: Downloads and indexes necessary reference files.  
 
 ---
 
-## Setup Instructions  
+## **Workflow Overview**  
 
-### 1. Clone the Repository  
-  
-git clone https://github.com/kothaiRaja/Variantcalling-and-Genefusion.git  
- 
+### **1️⃣ Preprocessing**  
+FASTQ **concatenation, quality control (FastQC), and trimming (Fastp)**.  
+Generates **MultiQC reports** for aggregated quality analysis.  
 
-### 2. Navigate to the Project Directory  
- 
-cd Variantcalling-and-Genefusion  
-  
+### **2️⃣ Variant Calling**  
+**STAR alignment** → **BAM processing (sorting, marking duplicates)**.  
+**GATK HaplotypeCaller** for SNP & Indel detection.  
+**Variant annotation** using **SnpEff & VEP**.  
+Outputs **annotated VCF files and structured CSV reports**.  
 
-### 3. Run the Pipelines  
+### **3️⃣ RNA Fusion Detection**  
+**STAR fusion mode** aligns reads for fusion detection.  
+**Arriba** identifies gene fusions and generates **visualization reports**.  
 
-#### a. Build Reference Files  
-  
-nextflow run build_reference_<test/actual>.nf -c nextflow_ref.config --only_fastqc_fastp <false/true> -profile singularity  
- 
-
-#### b. Main Analysis  
- 
-nextflow run main.nf -c nextflow_main.config --merge_vcf <true/false> -mode <test/actual> -profile singularity  
-  
+### **4️⃣ Automated Reference Setup**  
+Downloads and processes **reference genomes, annotation files, and known variant databases**.  
 
 ---
 
-## Pipeline Descriptions  
+# **Installation & Setup**  
 
-### Pipeline 1: buildreference.nf  
+## **1️⃣ Install Nextflow & Dependencies**  
+```bash
+curl -s https://get.nextflow.io | bash
+chmod +x nextflow
+mv nextflow /usr/local/bin/
+```
+Ensure **Singularity/Docker** is installed for containerized execution.  
 
-#### Purpose  
-The `buildreference.nf` pipeline prepares reference files and ensures data quality through rigorous quality control, laying the foundation for downstream analysis.  
-
-#### Key Features  
-1. **Input Handling**  
-   - Requires a CSV file listing sample IDs and paths to paired-end FASTQ files.  
-   - Example CSV format:  
-     csv  
-     sample_id,fastq_1,fastq_2  
-     sample_1,/path/to/sample_1_R1.fastq.gz,/path/to/sample_1_R2.fastq.gz  
-     sample_2,/path/to/sample_2_R1.fastq.gz,/path/to/sample_2_R2.fastq.gz  
-       
-
-2. **Efficient Reference Preparation**  
-   - Downloads and prepares all necessary reference files only if they are not available in the specified data directory  
-   - Ensures no redundant operations, saving time and computational resources.  
-
-3. **Flexible Quality Control**  
-   - **FastQC**: Assesses raw read quality and detects potential issues.
-   - **Fastp**: Trims low-quality bases and removes adapter contamination.
-   - Allows running only FastQC and Fastp by setting the parameter --only_fastp_fastqc true.
-
-#### Outputs  
-- Cleaned and trimmed FASTQ files.  
-- Quality reports for raw and processed reads.  
-- Prepared reference files for downstream analysis.  
+## **2️⃣ Clone the Repository**  
+```bash
+git clone https://github.com/kothaiRaja/Variantcalling-and-Genefusion.git
+cd Variantcalling-and-Genefusion
+```
 
 ---
 
-### Pipeline 2: main.nf  
+# **How to Run the Pipeline**  
 
-#### Purpose  
-The `main.nf` pipeline performs the core analysis, including alignment, variant calling, gene fusion detection, and variant annotation.  
+## **Step 1️⃣: Test Pipeline with Default Datasets**  
 
-#### Key Features  
-1. **Alignment and Variant Calling**  
-   - Aligns cleaned reads to the reference genome using STAR.  
-   - Calls variants (SNPs and indels) using GATK HaplotypeCaller.  
+Before running the pipeline on actual data, test it with the provided test dataset to ensure proper setup.  
 
-2. **Gene Fusion Detection**  
-   - Detects gene fusions using ARRIBA, generating detailed reports for downstream analysis.  
+### **A. Prepare References (for Test Data)**  
+```bash
+nextflow run buildreference_test.nf -c nextflow_ref_test.config -profile singularity
+```
 
-3. **Variant Annotation**  
-   - Annotates variants using SnpEff and Ensembl VEP, incorporating functional predictions and gene information.  
-
-4. **Comprehensive Reporting**  
-   - Produces annotated VCF files, HTML reports, and gene fusion details in TSV format.  
-
- #### Outputs  
-- **Variants**: Annotated VCF file (`final.vcf`) with detailed variant information.  
-- **Gene Fusion**: TSV file (`fusion.tsv`) summarizing detected gene fusions.  
-- **Annotation Report**: HTML file providing detailed functional and gene information for variants.  
+### **B. Run the Test Pipeline**  
+```bash
+nextflow run main.nf -c nextflow_main_test.config -profile singularity
+```
+**If the test run is successful**, proceed to the main pipeline.  
 
 ---
 
-## Benefits of This Pipeline  
+## **Step 2️⃣: Run the Pipeline with Actual Data**  
 
-- **Robust Quality Control**: Ensures only high-quality reads are used, improving accuracy.  
-- **Comprehensive Workflow**: From reference preparation to functional annotations, the pipeline handles all steps of RNA-Seq analysis.  
-- **Customizable Modes**: Supports "test" and "actual" modes for easy testing and production runs.  
-- **Scalability**: Leveraging Nextflow, the pipelines are scalable across computational environments.  
-- **Standalone QC Option**: Allows running only FastQC and Fastp with --only_fastp_fastqc.
+Once validated, run the pipeline on actual datasets.  
+
+### **A. Prepare References (for Actual Data)**  
+```bash
+nextflow run build_reference_main.nf -c nextflow_ref_main.config -profile singularity
+```
+
+### **B. Run the Full Pipeline on Actual Data**  
+```bash
+nextflow run main.nf -c nextflow_main.config -profile singularity
+```
 
 ---
 
-## Get Started  
+# **Running Specific Workflows**  
 
-Follow these steps to clone the repository, set up the required files, and execute the pipelines for a complete RNA-Seq analysis workflow.  
+### ** Run Only Variant Calling**  
+```bash
+nextflow run main.nf -c nextflow_main.config -profile singularity --only_variant_calling true
+```
+
+### **  Run Only RNA Fusion Detection**  
+```bash
+nextflow run main.nf -c nextflow_main.config -profile singularity --only_fusion_detection true
+```
+
+---
+
+# **Input: Sample Sheet Format**  
+
+The pipeline requires a **CSV file** (`samplesheet.csv`) with sample metadata.  
+
+| sample_id  | fastq_1                        | fastq_2                        | strandedness  |  
+|------------|--------------------------------|--------------------------------|--------------|  
+| Sample_01  | /path/to/sample_1_R1.fastq.gz | /path/to/sample_1_R2.fastq.gz | forward      |  
+| Sample_02  | /path/to/sample_2_R1.fastq.gz | /path/to/sample_2_R2.fastq.gz | reverse      |  
+
+---
+
+# **Pipeline Outputs**  
+
+**MultiQC Reports**: Summarizes quality control and variant statistics.  
+**Annotated VCF Files**: Identified genetic variants.  
+**Structured CSV Reports**: Variant & fusion details for downstream analysis.  
+**Fusion Detection Results**: Lists fusion genes with graphical representation.  
+
+---
+
+# **Customization & Configuration**  
+
+Modify `params.config` to customize:  
+- `merge_vcf: true` → Merge VCF files for annotation.  
+- `only_variant_calling: true` → Run only variant calling.  
+- `only_fusion_detection: true` → Run only fusion detection.  
+
+---
 
