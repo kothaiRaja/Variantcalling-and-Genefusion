@@ -3,7 +3,6 @@ nextflow.enable.dsl = 2
 // Import subworkflows
 include { PREPROCESSING } from './subworkflows/preprocessing.nf'
 include { VARIANT_CALLING } from './subworkflows/variant_calling.nf'
-include { ANNOTATION } from './subworkflows/annotation.nf'
 include { GENE_FUSION } from './subworkflows/gene_fusion.nf'
 include { MULTIQC_REPORT } from './subworkflows/multiqc.nf'
 
@@ -51,9 +50,15 @@ workflow {
             params.reference_genome_dict,
             params.merged_vcf,
             params.merged_vcf_index,
-            params.denylist_bed
+            params.denylist_bed,
+            params.snpeff_jar,
+            params.snpeff_config,
+            params.snpeff_db,
+            params.genomedb,
+            params.vep_cache_dir,
+            params.clinvar,
+            params.clinvartbi
         )
-		
 		//=======================Outputs from Variant calling Subworkflow===========================//
 
         final_vcf_output = VARIANT_CALLING.out.final_vcf
@@ -65,25 +70,7 @@ workflow {
 		
         log.info " Variant Calling Pipeline Completed."
 		
-		//==============================Step 3: Annotation======================================//
 		
-		log.info("🔬 Running Variant Annotation pipeline...")
-
-		ANNOTATION(
-			VARIANT_CALLING.out.final_vcf,     
-			params.merge_vcf,
-			params.snpeff_jar,
-			params.snpeff_config,
-			params.snpeff_db,
-			params.genomedb,
-			params.vep_cache_dir,
-			params.clinvar,
-			params.clinvartbi
-	)
-
-
-
-    log.info " Variant Annotation Pipeline Completed."
 	
 	//===========================================Step 4: MultiQC===================================//
 	
@@ -135,7 +122,14 @@ workflow {
             params.reference_genome_dict,
             params.merged_vcf,
             params.merged_vcf_index,
-            params.denylist_bed
+            params.denylist_bed,
+            params.snpeff_jar,
+            params.snpeff_config,
+            params.snpeff_db,
+            params.genomedb,
+            params.vep_cache_dir,
+            params.clinvar,
+            params.clinvartbi
         )
 		
 		//=======================Outputs from Variant calling Subworkflow===========================//
@@ -147,20 +141,6 @@ workflow {
         bcftools_stats = VARIANT_CALLING.out.bcftools_stats
 		filtered_vcf_stats = VARIANT_CALLING.out.filtered_vcf_stats
 		
-       
-
-        // Run Annotation
-        ANNOTATION(
-            VARIANT_CALLING.out.final_vcf,     
-            params.merge_vcf,
-            params.snpeff_jar,
-            params.snpeff_config,
-            params.snpeff_db,
-            params.genomedb,
-            params.vep_cache_dir,
-            params.clinvar,
-            params.clinvartbi
-        )
 		
 		//  Run MultiQC ONLY for Variant Calling
         log.info(" Running MultiQC for Variant Calling...")

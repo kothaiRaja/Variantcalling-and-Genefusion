@@ -19,7 +19,34 @@ Integrated tools include **FastQC**, **STAR**, **GATK**, **SnpEff**, and **Arrib
 
 ## Usage
 
-This pipeline leverages **Nextflow DSL 2** for modular design, enabling flexibility and maintainability. Below are the key modules and their functionalities:
+This pipeline leverages **Nextflow DSL 2** for modular design, enabling flexibility and maintainability. Below are the key modules, Subworkflows and their functionalities:
+
+##Subworkflows
+
+-** Preprocessing
+
+The Preprocessing workflow is the first step in the pipeline. It ensures that raw sequencing reads are properly processed before variant calling and annotation.
+
+The Preprocessing step performs the following operations:
+
+Read the samplesheet
+
+The workflow reads the user-provided samplesheet.csv, which contains metadata about sequencing samples.
+It extracts sample IDs, FASTQ file paths, and strandedness information.
+Concatenate FASTQ files (if required)
+
+If params.concatenate = true, multiple FASTQ files for the same sample are concatenated.
+If params.concatenate = false, the original FASTQ files are used as they are.
+Perform Quality Control (QC) on Raw Reads
+
+FastQC is run on raw FASTQ files to generate quality reports.
+Trim Low-Quality Reads
+
+Fastp is used to remove adapters and low-quality bases from reads.
+Produces trimmed FASTQ files and Fastp reports.
+Generate a MultiQC Report
+
+MultiQC aggregates results from FastQC and Fastp into a single report for visualization.
 
 ### References Download
 

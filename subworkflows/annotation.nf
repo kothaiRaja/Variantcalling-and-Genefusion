@@ -23,13 +23,15 @@ workflow ANNOTATION {
 
     main:
         log.info "🔬 Starting Variant Annotation Workflow..."
-
+ 
         if (merge_vcf) {
             log.info "🧬 Annotating Merged VCF..."
+			
+			
 
             // **Step 1: Annotate merged VCF with SnpEff**
             annotated_merged_vcf = ANNOTATE_VARIANTS(
-                final_vcf,
+                final_vcf  ,
                 snpeff_jar,
                 snpeff_config,
                 snpeff_db,
@@ -38,7 +40,7 @@ workflow ANNOTATION {
 
             // **Step 2: Annotate merged VCF with Ensembl VEP**
             annotated_merged_vcf_vep = ANNOTATEVARIANTS_VEP(
-                final_vcf,  
+                final_vcf  ,  
                 vep_cache,
                 clinvar_vcf,
                 clinvar_index
@@ -46,6 +48,8 @@ workflow ANNOTATION {
 
             // **Step 3: Extract data from merged VCF**
             extracted_csv = EXTRACT_VCF(annotated_merged_vcf)
+			
+			annotated_vcf_output = annotated_merged_vcf_vep.map { tuple(it) }
 
             log.info "✅ Merged VCF Annotation Completed."
 
@@ -54,7 +58,7 @@ workflow ANNOTATION {
 
             // **Step 1: Annotate individual VCFs with SnpEff**
             annotated_individual_vcfs = ANNOTATE_INDIVIDUAL_VARIANTS(
-                final_vcf,
+                final_vcf  ,
                 snpeff_jar,
                 snpeff_config,
                 snpeff_db,
@@ -63,7 +67,7 @@ workflow ANNOTATION {
 
             // **Step 2: Annotate individual VCFs with Ensembl VEP**
             annotated_individual_vcf_vep = ANNOTATE_INDIVIDUAL_VARIANTS_VEP(
-                final_vcf,  
+                final_vcf  ,  
                 vep_cache,
                 clinvar_vcf,
                 clinvar_index
@@ -71,6 +75,8 @@ workflow ANNOTATION {
 
             // **Step 3: Extract data from individual VCFs**
             extracted_csv = EXTRACT_individual_VCF(annotated_individual_vcfs)
+			
+			annotated_vcf_output = annotated_individual_vcf
 
             log.info "✅ Individual VCF Annotation Completed."
         }
@@ -79,6 +85,6 @@ workflow ANNOTATION {
 
     // ✅ Correct Placement of `emit` (AFTER the conditional blocks)
     emit:
-        annotated_vcf = merge_vcf ? annotated_merged_vcf_vep : annotated_individual_vcf_vep
-        annotation_reports = extracted_csv
+        annotated_vcf = annotated_vcf_output
+    annotation_reports = extracted_csv
 }

@@ -43,8 +43,8 @@ process ANNOTATEVARIANTS_VEP {
 
     input:
     path input_vcf          // Input VCF file
-    path input_vcf_tbi      // Tabix index file for the VCF
-	path tsv
+	path input_vcf_tbi         // Tabix index file for the VCF
+	path tsv_file   
     path vep_cache          // VEP cache directory
     path clinvar_vcf        // ClinVar VCF file
     path clinvar_vcf_tbi    // Tabix index file for ClinVar

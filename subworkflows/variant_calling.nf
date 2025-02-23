@@ -17,89 +17,127 @@ include { BCFTOOLS_STATS } from '../modules/bcftools_stats.nf'
 include { BCFTOOLS_MERGE } from '../modules/bcftools_merge.nf'
 include { BCFTOOLS_QUERY } from '../modules/bcftools_query.nf'
 
+// ✅ Include required annotation processes
+include { ANNOTATE_INDIVIDUAL_VARIANTS } from '../modules/snpeff_annotate.nf'
+include { ANNOTATE_INDIVIDUAL_VARIANTS_VEP } from '../modules/ensemblvep_annotate.nf'
+include { ANNOTATE_VARIANTS } from '../modules/snpeff_annotate.nf'
+include { ANNOTATEVARIANTS_VEP } from '../modules/ensemblvep_annotate.nf'
+include { EXTRACT_VCF } from '../modules/extract_vcf.nf'
+include { EXTRACT_individual_VCF } from '../modules/extract_individual_vcf.nf'
+
 workflow VARIANT_CALLING {
     take:
-    trimmed_reads_ch
-    star_index
-    reference_genome
-    genome_index
-    genome_dict
-    merged_vcf
-    merged_vcf_index
-    denylist_bed
+        trimmed_reads_ch
+        star_index
+        reference_genome
+        genome_index
+        genome_dict
+        merged_vcf
+        merged_vcf_index
+        denylist_bed
+        snpeff_jar
+        snpeff_config
+        snpeff_db
+        genomedb
+        vep_cache
+        clinvar_vcf
+        clinvar_index
+        
 
     main:
-    
-    log.info "🧬 Starting Variant Calling Workflow..."
+        log.info "🧬 Starting Variant Calling Workflow..."
 
-    // **Step 1: STAR Alignment**
-    star_aligned_ch = STAR_ALIGNMENT(trimmed_reads_ch, star_index)
+        // **Step 1: STAR Alignment**
+        star_aligned_ch = STAR_ALIGNMENT(trimmed_reads_ch, star_index)
 
-    // **Step 2: Sort BAM files**
-    sorted_bams = SAMTOOLS_SORT_INDEX(star_aligned_ch.map { tuple(it[0], it[1], it[5]) })
+        // **Step 2: Sort BAM files**
+        sorted_bams = SAMTOOLS_SORT_INDEX(star_aligned_ch.map { tuple(it[0], it[1], it[5]) })
 
-    // **Step 3: Filter orphan reads**
-    filtered_bams = SAMTOOLS_FILTER_ORPHANS(sorted_bams)
+        // **Step 3: Filter orphan reads**
+        filtered_bams = SAMTOOLS_FILTER_ORPHANS(sorted_bams)
 
-    // **Step 4: Generate alignment statistics**
-    alignment_stats = SAMTOOLS_FLAGSTAT(filtered_bams)
+        // **Step 4: Generate alignment statistics**
+        alignment_stats = SAMTOOLS_FLAGSTAT(filtered_bams)
 
-    // **Step 5: Mark duplicates using GATK**
-    marked_bams = GATK_MARK_DUPLICATES(filtered_bams)
-	 marked_bams.view { "Mark Duplicates Output: $it" }
+        // **Step 5: Mark duplicates using GATK**
+        marked_bams = GATK_MARK_DUPLICATES(filtered_bams)
+        marked_bams.view { "Mark Duplicates Output: $it" }
 
-    // **Step 6: Split N CIGAR Reads**
-    split_bams = SPLIT_NCIGAR_READS(marked_bams.map { 
-            tuple(it[0], it[1], it[2], it[3]) }, reference_genome, genome_index, genome_dict)
+        // **Step 6: Split N CIGAR Reads**
+        split_bams = SPLIT_NCIGAR_READS(marked_bams.map { tuple(it[0], it[1], it[2], it[3]) }, reference_genome, genome_index, genome_dict)
 
-    // **Step 7: SAMTOOLS CALMD**
-    calmd_bams = SAMTOOLS_CALMD(split_bams.map { tuple(it[0], it[1], it[2], it[3]) }, reference_genome, genome_index)
+        // **Step 7: SAMTOOLS CALMD**
+        calmd_bams = SAMTOOLS_CALMD(split_bams.map { tuple(it[0], it[1], it[2], it[3]) }, reference_genome, genome_index)
 
-    // **Step 8: Base Quality Score Recalibration (BQSR)**
-    recalibrated_bams = GATK_RECALIBRATION(calmd_bams.map { 
-            tuple(it[0], it[1], it[2], it[3]) }, reference_genome, genome_index, genome_dict, merged_vcf, merged_vcf_index)
+        // **Step 8: Base Quality Score Recalibration (BQSR)**
+        recalibrated_bams = GATK_RECALIBRATION(calmd_bams.map { tuple(it[0], it[1], it[2], it[3]) }, reference_genome, genome_index, genome_dict, merged_vcf, merged_vcf_index)
 
-    // **Step 9: Convert BED to Interval List**
-    interval_list_ch = BED_TO_INTERVAL_LIST(denylist_bed, reference_genome, genome_dict)
+        // **Step 9: Convert BED to Interval List**
+        interval_list_ch = BED_TO_INTERVAL_LIST(denylist_bed, reference_genome, genome_dict)
 
-    // **Step 10: Scatter the Interval List**
-    scattered_intervals_ch = SCATTER_INTERVAL_LIST(interval_list_ch, genome_dict)
+        // **Step 10: Scatter the Interval List**
+        scattered_intervals_ch = SCATTER_INTERVAL_LIST(interval_list_ch, genome_dict)
 
-    // **Step 11: Perform Variant Calling using GATK HaplotypeCaller**
-    gvcf_output = GATK_HAPLOTYPE_CALLER(recalibrated_bams.map {
-            tuple(it[0], it[1], it[2], it[3]) 
-        }, reference_genome, genome_index, genome_dict, scattered_intervals_ch)
-	
-	gvcf_output.view { "Raw GVCF output: $it" }
-	
-	// **Step 12: Generate variant statistics**
-    bcftools_stats_ch = BCFTOOLS_STATS(gvcf_output)
-	
-    // **Step 13: Apply GATK Variant Filtering**
-    filtered_individual_vcfs = GATK_VARIANT_FILTER(gvcf_output, reference_genome, genome_index, genome_dict)
-	
-	// Step 16: Provide Stats
-	filtered_vcf_stats = BCFTOOLS_QUERY(filtered_individual_vcfs)
+        // **Step 11: Perform Variant Calling using GATK HaplotypeCaller**
+        gvcf_output = GATK_HAPLOTYPE_CALLER(recalibrated_bams.map { tuple(it[0], it[1], it[2], it[3]) }, reference_genome, genome_index, genome_dict, scattered_intervals_ch)
 
-    
+        gvcf_output.view { "Raw GVCF output: $it" }
 
-    // **Step 14: Handle Individual vs Merged VCFs**
-    if (params.merge_vcf) {
-        log.info "🔄 Merging VCF files..."
-        merged_filtered_vcf = BCFTOOLS_MERGE(filtered_individual_vcfs.map { it[1] }.collect())
-        final_vcf_output = merged_filtered_vcf
-    } else {
-        log.info "📄 Keeping individual VCFs..."
-        final_vcf_output = filtered_individual_vcfs
-    }
+        // **Step 12: Generate variant statistics**
+        bcftools_stats_ch = BCFTOOLS_STATS(gvcf_output)
 
-    log.info "✅ Variant Calling Completed."
+        // **Step 13: Apply GATK Variant Filtering**
+        filtered_individual_vcfs = GATK_VARIANT_FILTER(gvcf_output, reference_genome, genome_index, genome_dict)
+
+        // **Step 14: Provide Stats**
+        filtered_vcf_stats = BCFTOOLS_QUERY(filtered_individual_vcfs)
+
+        if (params.merge_vcf) {
+            log.info "🔄 Merging VCF files..."
+
+            // ✅ Collect filtered VCF paths into a channel
+            filtered_vcf_list_ch = filtered_individual_vcfs.map { it[1] }.collect()
+
+            // ✅ Merge VCFs
+            merged_filtered_vcfs = BCFTOOLS_MERGE(filtered_vcf_list_ch)
+
+            println "Merging and annotating VCF files completed."
+
+            // **Step 15: Annotate merged VCF with SnpEff**
+            annotated_merged_vcf = ANNOTATE_VARIANTS(merged_filtered_vcfs, snpeff_jar, snpeff_config, snpeff_db, genomedb)
+
+            // **Step 16: Annotate merged VCF with Ensembl VEP**
+            annotated_merged_vcf_vep = ANNOTATEVARIANTS_VEP(merged_filtered_vcfs, vep_cache, clinvar_vcf, clinvar_index)
+			
+			// Step 22: Create a table from the annotated merged VCF
+			extracted_csv = EXTRACT_VCF(annotated_merged_vcf)
+
+            final_vcf_output = annotated_merged_vcf_vep
+        } else {
+            log.info "📄 Keeping individual VCFs..."
+
+            // **Step 17: Annotate individual VCFs with SnpEff**
+            annotated_individual_vcfs = ANNOTATE_INDIVIDUAL_VARIANTS(filtered_individual_vcfs, snpeff_jar, snpeff_config, snpeff_db, genomedb)
+
+            // **Step 18: Annotate individual VCFs with Ensembl VEP**
+            annotated_individual_vcf_vep = ANNOTATE_INDIVIDUAL_VARIANTS_VEP(filtered_individual_vcfs, vep_cache, clinvar_vcf, clinvar_index)
+
+            // **Step 19: Convert Individual VCF to CSV**
+            extracted_csv = EXTRACT_individual_VCF(annotated_individual_vcfs.map { tuple(it[0], it[1], it[2]) })
+
+            final_vcf_output = annotated_individual_vcf_vep
+        }
+
+        log.info "✅ Variant Annotation Completed."
 
     emit:
-        final_vcf = final_vcf_output
+	
+        final_vcf = final_vcf_output.annotated_vcf
+		final_vcf_html = final_vcf_output.summary_html
+        annotation_reports = extracted_csv
         star_logs = star_aligned_ch.map { [it[2], it[3], it[4]] }.flatten().collect()
         samtools_flagstat = alignment_stats.map { it[1] }.flatten().collect()
         gatk_metrics = marked_bams.map { it[4] }.flatten().collect()
         bcftools_stats = bcftools_stats_ch.map { it[2] }.flatten().collect()
-		filtered_vcf_stats = filtered_vcf_stats.map { it[2] }.flatten().collect()  
+        filtered_vcf_stats = filtered_vcf_stats.map { it[2] }.flatten().collect()
 }

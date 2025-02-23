@@ -41,17 +41,18 @@ process ANNOTATE_VARIANTS {
     publishDir "${params.outdir}/annotations", mode: 'copy'
 
     input:
-    path vcf	// Filtered VCF file
-	path index
-	path tsv
-    path snpEffJar  // Path to the SnpEff JAR file
-    path snpEffConfig  // Path to the SnpEff configuration file
-    path snpEffDbDir	// Path to the SnpEff database directory
-	val genomedb
+    path (vcf)	// Filtered VCF file
+	path (index)
+	path (tsv)
+	path (snpEffJar)  // Path to the SnpEff JAR file
+    path (snpEffConfig)  // Path to the SnpEff configuration file
+    path (snpEffDbDir)	// Path to the SnpEff database directory
+	val (genomedb)
+	
 
     output:
-    path "annotated.vcf", emit: annotated_vcf  // ✅ Ensures correct emission!
-    path "annotated.summary.html", emit: summary_html
+    path "annotated.vcf", emit: annotated_vcf 
+	path "annotated.summary.html", emit: summary_html
 
     script:
 	
@@ -59,13 +60,13 @@ process ANNOTATE_VARIANTS {
     """
     java -Xmx16G -jar ${snpEffJar} \
         -c ${snpEffConfig} \
-        -v ${params.genomedb} \
+        -v ${genomedb} \
         -dataDir ${snpEffDbDir} \
         ${vcf} > annotated.vcf
 
     java -Xmx16G -jar ${snpEffJar} \
         -c ${snpEffConfig} \
-        -v ${params.genomedb} \
+        -v ${genomedb} \
         -dataDir ${snpEffDbDir} \
         -stats annotated.summary.html \
         ${vcf} > /dev/null
