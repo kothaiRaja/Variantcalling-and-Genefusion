@@ -1,6 +1,6 @@
 nextflow.enable.dsl = 2
 
-// ✅ Include required processes
+//  Include required processes
 include { STAR_ALIGN_FUSION } from '../modules/star_align_fusion.nf'
 include { ARRIBA } from '../modules/arriba.nf'
 include { ARRIBA_VISUALIZATION } from '../modules/arriba_visualization.nf'
@@ -8,17 +8,17 @@ include { ARRIBA_VISUALIZATION } from '../modules/arriba_visualization.nf'
 workflow GENE_FUSION {
     
     take:
-        trimmed_reads_ch      // Trimmed reads from preprocessing
-        star_genome_index     // STAR genome index
-        reference_genome      // Reference genome FASTA
-        gtf_annotation        // GTF annotation file
-        arriba_blacklist      // ARRIBA blacklist file
-        arriba_known_fusions  // ARRIBA known fusions file
-        arriba_scripts_dir    // ARRIBA visualization scripts
+        trimmed_reads_ch      
+        star_genome_index     
+        reference_genome      
+        gtf_annotation        
+        arriba_blacklist      
+        arriba_known_fusions  
+        arriba_scripts_dir    
 
     main:
         
-        log.info "🧬 Starting Gene Fusion Detection Workflow..."
+        log.info "Starting Gene Fusion Detection Workflow..."
 
         // **Step 1: STAR Alignment for Fusion Detection**
         star_fusion_aligned = STAR_ALIGN_FUSION(trimmed_reads_ch, star_genome_index, gtf_annotation)
@@ -40,7 +40,7 @@ workflow GENE_FUSION {
             gtf_annotation
         )
 
-        log.info "✅ Gene Fusion Detection Workflow Completed."
+        log.info " Gene Fusion Detection Workflow Completed."
 
     emit:
         fusion_results = arriba_results.fusions

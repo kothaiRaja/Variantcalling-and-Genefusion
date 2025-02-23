@@ -72,7 +72,7 @@ workflow {
 		
 		
 	
-	//===========================================Step 4: MultiQC===================================//
+	//===========================================Step 3: MultiQC===================================//
 	
 	// Run MultiQC ONLY for Variant Calling
         
@@ -91,7 +91,7 @@ workflow {
 		
     }
 	
-	//======================================== Step 5: Gene Fusion Detection===========================//
+	//======================================== Step 4: Gene Fusion Detection===========================//
     
 	else if (params.only_fusion_detection) {
         log.info(" Running only Gene Fusion Detection pipeline...")
@@ -109,7 +109,7 @@ workflow {
         log.info " Gene Fusion Pipeline Completed."
     }
 	
-	//=====================================  Step 6: Run Both (Full Workflow)=============================//
+	//=====================================  Step 5: Run Both (Full Workflow)=============================//
     else {
         log.info(" Running both Variant Calling & Gene Fusion pipelines...")
 

@@ -8,7 +8,7 @@ process DOWNLOAD_GENOME_INDEX {
 
     script:
     """
-    echo "⚠️ Downloading genome index from provided URL..."
+    echo "Downloading genome index from provided URL..."
     wget -q -O genome.fa.fai ${params.genome_index_download_url}
     """
 }
@@ -26,7 +26,7 @@ process CREATE_GENOME_INDEX {
 
     script:
     """
-    echo "⚠️ Creating genome index using samtools..."
+    echo "Creating genome index using samtools..."
     samtools faidx $genome_fa
     """
 }

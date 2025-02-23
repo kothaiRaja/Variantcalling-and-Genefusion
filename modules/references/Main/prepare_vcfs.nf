@@ -18,15 +18,15 @@ process FILTER_AND_MERGE_VCF {
     """
     # Filter SNPs (bcftools will automatically use .tbi if it exists)
     bcftools view -T ^${denylist} ${variants_snp} -Oz -o filtered_snps.vcf.gz
-    tabix -p vcf filtered_snps.vcf.gz  # Ensure indexing if not present
+    tabix -p vcf filtered_snps.vcf.gz  
 
     # Filter INDELs
     bcftools view -T ^${denylist} ${variants_indels} -Oz -o filtered_indels.vcf.gz
-    tabix -p vcf filtered_indels.vcf.gz  # Ensure indexing if not present
+    tabix -p vcf filtered_indels.vcf.gz  
 
     # Merge the filtered SNPs and INDELs into a single VCF file
     bcftools merge filtered_snps.vcf.gz filtered_indels.vcf.gz -Oz -o merged.filtered.recode.vcf.gz
-    tabix -p vcf merged.filtered.recode.vcf.gz  # Index the merged VCF
+    tabix -p vcf merged.filtered.recode.vcf.gz  
 
     # Check and fix contig prefixes before finalizing
     if zcat merged.filtered.recode.vcf.gz | grep -q "^##contig=<ID=chr"; then

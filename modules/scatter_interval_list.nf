@@ -22,8 +22,8 @@ process SCATTER_INTERVAL_LIST {
 
     # Move and rename the output files to the working directory with unique names
     for f in scattered_intervals/*/*; do
-        dir_name=\$(basename \$(dirname "\$f"))  # Get subdirectory name
-        file_name=\$(basename "\$f")            # Get original file name
+        dir_name=\$(basename \$(dirname "\$f"))  
+        file_name=\$(basename "\$f")            
         mv "\$f" "scattered_intervals/\${dir_name}_\${file_name}.interval_list"
     done
 

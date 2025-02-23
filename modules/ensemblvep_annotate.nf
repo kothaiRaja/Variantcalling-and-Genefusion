@@ -5,10 +5,10 @@ process ANNOTATE_INDIVIDUAL_VARIANTS_VEP {
     publishDir "${params.resultsdir}/annotations", mode: 'copy'
 
     input:
-    tuple val(sample_id), path(filtered_vcf), path(filtered_index), val(strandedness) // Input VCF and its index
-    path vep_cache                                                  // VEP cache directory
-    path clinvar_vcf                                                // ClinVar VCF file
-    path clinvar_index                                              // ClinVar Tabix index file
+    tuple val(sample_id), path(filtered_vcf), path(filtered_index), val(strandedness) 
+    path vep_cache                                                  
+    path clinvar_vcf                                                
+    path clinvar_index                                              
 
     output:
     tuple val(sample_id), path("${sample_id}.vep.annotated.vcf"),val(strandedness), path("${sample_id}.vep.summary.html")
@@ -42,16 +42,16 @@ process ANNOTATEVARIANTS_VEP {
     publishDir "${params.outdir}/annotations", mode: 'copy'
 
     input:
-    path input_vcf          // Input VCF file
-	path input_vcf_tbi         // Tabix index file for the VCF
+    path input_vcf          
+	path input_vcf_tbi         
 	path tsv_file   
-    path vep_cache          // VEP cache directory
-    path clinvar_vcf        // ClinVar VCF file
-    path clinvar_vcf_tbi    // Tabix index file for ClinVar
+    path vep_cache          
+    path clinvar_vcf        
+    path clinvar_vcf_tbi    
 	
 
     output:
-    path "annotated_variants.vcf", emit: annotated_vcf  // ✅ Ensures correct emission!
+    path "annotated_variants.vcf", emit: annotated_vcf  
     path "annotated_variants.html", emit: summary_html
 
     script:

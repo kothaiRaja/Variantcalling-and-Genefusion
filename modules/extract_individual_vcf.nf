@@ -41,7 +41,7 @@ for record in reader:
     ref = record.REF
     alt = ",".join(str(a) for a in record.ALT)
     filt = ",".join(record.FILTER)
-    dp = record.INFO.get('DP', 'NA')  # Extract Depth of Coverage
+    dp = record.INFO.get('DP', 'NA')  
     ann_field = record.INFO.get('ANN', ['NA'])
 
     if ann_field != 'NA':

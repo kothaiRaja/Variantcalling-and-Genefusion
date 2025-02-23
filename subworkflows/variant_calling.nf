@@ -1,6 +1,6 @@
 nextflow.enable.dsl = 2
 
-// ✅ Include required modules
+//  Include required modules
 include { STAR_ALIGNMENT } from '../modules/star_alignment.nf'
 include { SAMTOOLS_SORT_INDEX } from '../modules/samtools_sort_index.nf'
 include { SAMTOOLS_FILTER_ORPHANS } from '../modules/samtools_filter_orphans.nf'
@@ -17,7 +17,7 @@ include { BCFTOOLS_STATS } from '../modules/bcftools_stats.nf'
 include { BCFTOOLS_MERGE } from '../modules/bcftools_merge.nf'
 include { BCFTOOLS_QUERY } from '../modules/bcftools_query.nf'
 
-// ✅ Include required annotation processes
+//  Include required annotation processes
 include { ANNOTATE_INDIVIDUAL_VARIANTS } from '../modules/snpeff_annotate.nf'
 include { ANNOTATE_INDIVIDUAL_VARIANTS_VEP } from '../modules/ensemblvep_annotate.nf'
 include { ANNOTATE_VARIANTS } from '../modules/snpeff_annotate.nf'
@@ -45,7 +45,7 @@ workflow VARIANT_CALLING {
         
 
     main:
-        log.info "🧬 Starting Variant Calling Workflow..."
+        log.info " Starting Variant Calling Workflow..."
 
         // **Step 1: STAR Alignment**
         star_aligned_ch = STAR_ALIGNMENT(trimmed_reads_ch, star_index)
@@ -93,12 +93,12 @@ workflow VARIANT_CALLING {
         filtered_vcf_stats = BCFTOOLS_QUERY(filtered_individual_vcfs)
 
         if (params.merge_vcf) {
-            log.info "🔄 Merging VCF files..."
+            log.info " Merging VCF files..."
 
-            // ✅ Collect filtered VCF paths into a channel
+            //  Collect filtered VCF paths into a channel
             filtered_vcf_list_ch = filtered_individual_vcfs.map { it[1] }.collect()
 
-            // ✅ Merge VCFs
+            //  Merge VCFs
             merged_filtered_vcfs = BCFTOOLS_MERGE(filtered_vcf_list_ch)
 
             println "Merging and annotating VCF files completed."
@@ -109,20 +109,20 @@ workflow VARIANT_CALLING {
             // **Step 16: Annotate merged VCF with Ensembl VEP**
             annotated_merged_vcf_vep = ANNOTATEVARIANTS_VEP(merged_filtered_vcfs, vep_cache, clinvar_vcf, clinvar_index)
 			
-			// Step 22: Create a table from the annotated merged VCF
+			// Step 17: Create a table from the annotated merged VCF
 			extracted_csv = EXTRACT_VCF(annotated_merged_vcf)
 
             final_vcf_output = annotated_merged_vcf
         } else {
-            log.info "📄 Keeping individual VCFs..."
+            log.info " Keeping individual VCFs..."
 
-            // **Step 17: Annotate individual VCFs with SnpEff**
+            // **Step 18: Annotate individual VCFs with SnpEff**
             annotated_individual_vcfs = ANNOTATE_INDIVIDUAL_VARIANTS(filtered_individual_vcfs, snpeff_jar, snpeff_config, snpeff_db, genomedb)
 
-            // **Step 18: Annotate individual VCFs with Ensembl VEP**
+            // **Step 19: Annotate individual VCFs with Ensembl VEP**
             annotated_individual_vcf_vep = ANNOTATE_INDIVIDUAL_VARIANTS_VEP(filtered_individual_vcfs, vep_cache, clinvar_vcf, clinvar_index)
 
-            // **Step 19: Convert Individual VCF to CSV**
+            // **Step 20: Convert Individual VCF to CSV**
             extracted_csv = EXTRACT_individual_VCF(annotated_individual_vcfs)
 
 
@@ -132,7 +132,7 @@ workflow VARIANT_CALLING {
 
         }
 
-        log.info "✅ Variant Annotation Completed."
+        log.info " Variant Annotation Completed."
 
     emit:
 	

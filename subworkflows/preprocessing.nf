@@ -12,7 +12,7 @@ workflow PREPROCESSING {
 
     main:
 
-    log.info "🛠 Starting Preprocessing Steps..."
+    log.info "Starting Preprocessing Steps..."
 
     // Step 1: Read samplesheet
     samples_ch = Channel.fromPath(samplesheet)
@@ -36,11 +36,11 @@ workflow PREPROCESSING {
     combined_channel = qc_files_ch.concat(fastp_files_ch).collect()
     multiqc_quality = MultiQC_quality(combined_channel)
 
-    log.info "✅ Preprocessing Completed."
+    log.info " Preprocessing Completed."
 
     emit:
         trimmed_reads    = trimmed_reads_ch.trimmed_reads  
         fastp_reports    = trimmed_reads_ch.fastp_reports.map { [it[1], it[2]] }.flatten().collect()  
         qc_reports       = qc_results_ch.map { [it[1], it[2]] }.flatten().collect()                   
-		multiqc        = multiqc_quality
+		multiqc        	 = multiqc_quality
 }

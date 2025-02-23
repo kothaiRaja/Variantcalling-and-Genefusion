@@ -12,7 +12,7 @@ process CREATE_GENOME_DICT {
 
     script:
     """
-    echo "⚠️ Creating genome dictionary using Picard..."
+    echo "Creating genome dictionary using Picard..."
     picard CreateSequenceDictionary R=$genome_fa O=genome.dict
     """
 }

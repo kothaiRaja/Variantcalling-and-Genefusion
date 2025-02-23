@@ -65,7 +65,7 @@ workflow {
         // If it’s already in the publish or server directory, keep it
         referenceGenomePath = genome_path.toString()
     }
-    println "📂 Reference genome path set to: ${referenceGenomePath}"
+    println " Reference genome path set to: ${referenceGenomePath}"
 }
 
 
@@ -88,7 +88,7 @@ workflow {
         // If it's already in the publish or server directory, keep the original path
         genomeIndexPath = genome_index_path.toString()
     }
-    println "📂 Genome index path set to: ${genomeIndexPath}"
+    println " Genome index path set to: ${genomeIndexPath}"
 }
 
 	
@@ -109,7 +109,7 @@ workflow {
         // If it's already in the publish or server directory, keep the original path
         genomeDictPath = genome_dict_path.toString()
     }
-    println "📂 Genome dictionary path set to: ${genomeDictPath}"
+    println " Genome dictionary path set to: ${genomeDictPath}"
 }
 
 	
@@ -130,7 +130,7 @@ gtf_ch.view { gtf_path ->
         // If it's already in the publish or server directory, keep the original path
         gtfPath = gtf_path.toString()
     }
-    println "📂 GTF annotation path set to: ${gtfPath}"
+    println " GTF annotation path set to: ${gtfPath}"
 }
 
 	
@@ -151,7 +151,7 @@ star_index_ch.view { star_index_path ->
         // If it's already in the publish or server directory, keep the original path
         starIndexPath = star_index_path.toString()
     }
-    println "📂 STAR genome index path set to: ${starIndexPath}"
+    println " STAR genome index path set to: ${starIndexPath}"
 }
 
 	
@@ -172,7 +172,7 @@ denylist_ch.view { denylist_path ->
         // If it's already in the publish or server directory, keep the original path
         denylistPath = denylist_path.toString()
     }
-    println "📂 Denylist BED file path set to: ${denylistPath}"
+    println " Denylist BED file path set to: ${denylistPath}"
 }
 
 	
@@ -194,7 +194,7 @@ denylist_ch.view { denylist_path ->
         // If it's already in the publish or server directory, keep the original path
         snpVcfPath = snp_vcf_path.toString()
     }
-    println "📂 SNP VCF path set to: ${snpVcfPath}"
+    println " SNP VCF path set to: ${snpVcfPath}"
 }
 
 
@@ -216,7 +216,7 @@ denylist_ch.view { denylist_path ->
         // If it's already in the publish or server directory, keep the original path
         snpIndexPath = snp_index_path.toString()
     }
-    println "📂 SNP Index path set to: ${snpIndexPath}"
+    println " SNP Index path set to: ${snpIndexPath}"
 }
 
 
@@ -237,7 +237,7 @@ denylist_ch.view { denylist_path ->
         // If it's already in the publish or server directory, keep the original path
         indelsVcfPath = indels_vcf_path.toString()
     }
-    println "📂 Indels VCF path set to: ${indelsVcfPath}"
+    println " Indels VCF path set to: ${indelsVcfPath}"
 }
 
 	// ========================== Indels Index Handling ========================== //
@@ -259,7 +259,7 @@ denylist_ch.view { denylist_path ->
         // Keep the original path if it's from the server or already published
         indelsIndexPath = indels_index_path.toString()
     }
-    println "📂 Indels Index path set to: ${indelsIndexPath}"
+    println " Indels Index path set to: ${indelsIndexPath}"
 }
 
 
@@ -277,7 +277,7 @@ denylist_ch.view { denylist_path ->
         merged_vcf_ch = Channel.of(file("${params.actual_data_dir}/reference/merged.filtered.recode.vcf.gz"))
         merged_vcf_index_ch = Channel.of(file("${params.actual_data_dir}/reference/merged.filtered.recode.vcf.gz.tbi"))
 
-        println "✅ Merged VCF and index already exist in the publish directory. Skipping merge."
+        println " Merged VCF and index already exist in the publish directory. Skipping merge."
 
     } else {
         // Run the FILTER_AND_MERGE_VCF process if files don't exist
@@ -299,7 +299,7 @@ merged_vcf_ch.view { merged_vcf_path ->
         // Keep the original path if it's from the server or already published
         mergedVcfPath = merged_vcf_path.toString()
     }
-    println "📂 Merged VCF path set to: ${mergedVcfPath}"
+    println " Merged VCF path set to: ${mergedVcfPath}"
 }
 
 // Capture merged VCF index path
@@ -311,7 +311,7 @@ merged_vcf_index_ch.view { merged_vcf_index_path ->
         // Keep the original path if it's from the server or already published
         mergedVcfIndexPath = merged_vcf_index_path.toString()
     }
-    println "📂 Merged VCF Index path set to: ${mergedVcfIndexPath}"
+    println "Merged VCF Index path set to: ${mergedVcfIndexPath}"
 }
 
 	
@@ -320,7 +320,7 @@ merged_vcf_index_ch.view { merged_vcf_index_path ->
     def java_check_ch
 
     if (file("${params.actual_data_dir}/reference/java_check.log").exists()) {
-        println "✅ Java check log already exists in the publish directory. Skipping Java check."
+        println " Java check log already exists in the publish directory. Skipping Java check."
 
         // If the log exists, create a channel from the existing log file
         java_check_ch = Channel.of(file("${params.actual_data_dir}/reference/java_check.log"))
@@ -334,7 +334,7 @@ merged_vcf_index_ch.view { merged_vcf_index_path ->
 
     java_check_ch.view { java_log_path ->
         javaLogPath = file("${params.actual_data_dir}/reference/java_check.log").toString()
-        println "📂 Java check log path set to: ${javaLogPath}"
+        println " Java check log path set to: ${javaLogPath}"
     }
 	
 	// ========================== SnpEff Tool Handling ========================== //
@@ -398,19 +398,19 @@ merged_vcf_index_ch.view { merged_vcf_index_path ->
 	def snpeff_db_ch  // Channel to handle the database path dynamically
 
 if (params.snpeff_db_dir && file("${params.snpeff_db_dir_path}/${params.genomedb}").exists()) {
-    println "✅ SnpEff database for ${params.genomedb} found in the server directory. Skipping download."
+    println " SnpEff database for ${params.genomedb} found in the server directory. Skipping download."
 
     snpeff_db_ch = Channel.of(file("${params.snpeff_db_dir_path}/${params.genomedb}"))
     snpEffDbPath = "${params.snpeff_db_dir_path}/${params.genomedb}"
 
 } else if (file("${params.actual_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}").exists()) {
-    println "✅ SnpEff database found in the publish directory. Skipping download."
+    println " SnpEff database found in the publish directory. Skipping download."
 
     snpeff_db_ch = Channel.of(file("${params.actual_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"))
     snpEffDbPath = "${params.actual_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"
 
 } else {
-    println "⚠️ SnpEff database not found. Downloading..."
+    println " SnpEff database not found. Downloading..."
     def result = DOWNLOAD_SNPEFF_DB(params.genomedb, snpeff_jar_ch)
 
     snpeff_db_ch = result
@@ -428,7 +428,7 @@ snpeff_db_ch.view { snpeff_db_path ->
         // Keep the original path if it's from the server or already published
         snpEffDbPath = snpeff_db_path.toString()
     }
-    println "📂 SnpEff Database path set to: ${snpEffDbPath}"
+    println " SnpEff Database path set to: ${snpEffDbPath}"
 }
 
 
@@ -439,15 +439,15 @@ snpeff_db_ch.view { snpeff_db_path ->
 def arriba_dir_ch
 
 if (params.arriba_tool_dir_path && file("${params.arriba_tool_dir_path}/arriba_v2.4.0").exists()) {
-    println "✅ Arriba tool found in the server directory."
+    println " Arriba tool found in the server directory."
     arriba_dir_ch = Channel.of(file("${params.arriba_tool_dir_path}/arriba_v2.4.0"))
 
 } else if (file("${params.actual_data_dir}/Tools/ARRIBA/arriba_v2.4.0").exists()) {
-    println "✅ Arriba tool found in the publish directory."
+    println " Arriba tool found in the publish directory."
     arriba_dir_ch = Channel.of(file("${params.actual_data_dir}/Tools/ARRIBA/arriba_v2.4.0"))
 
 } else {
-    println "⚠️ Arriba tool not found. Downloading..."
+    println " Arriba tool not found. Downloading..."
     def result = DOWNLOAD_ARRIBA()
     arriba_dir_ch = result.arriba_dir
 }
@@ -464,14 +464,14 @@ arriba_dir_ch.view { arriba_dir_path ->
         arribaPath = arriba_dir_path.toString()
     }
 
-    println "📂 Arriba tool path set to: ${arribaPath}"
+    println " Arriba tool path set to: ${arribaPath}"
 
     // Define known fusions and blacklist paths directly without immediate file check
     knownFusionsPath = "${arribaPath}/database/known_fusions_hg38_GRCh38_v2.4.0.tsv.gz"
     blacklistPath = "${arribaPath}/database/blacklist_hg38_GRCh38_v2.4.0.tsv.gz"
 
-    println "📂 Known fusions path set to: ${knownFusionsPath}"
-    println "📂 Blacklist path set to: ${blacklistPath}"
+    println " Known fusions path set to: ${knownFusionsPath}"
+    println " Blacklist path set to: ${blacklistPath}"
 }
 
 
@@ -481,15 +481,15 @@ arriba_dir_ch.view { arriba_dir_path ->
     def vep_cache_ch
 
     if (params.vep_cache_dir_path && file("${params.vep_cache_dir_path}").exists()) {
-        println "✅ VEP cache found in the server directory."
+        println " VEP cache found in the server directory."
         vep_cache_ch = Channel.of(file("${params.vep_cache_dir_path}"))
 
     } else if (file("${params.actual_data_dir}/Tools/VEP").exists()) {
-        println "✅ VEP cache found in the publish directory."
+        println " VEP cache found in the publish directory."
         vep_cache_ch = Channel.of(file("${params.actual_data_dir}/Tools/VEP"))
 
     } else {
-        println "⚠️ VEP cache not found. Downloading..."
+        println " VEP cache not found. Downloading..."
         def result = DOWNLOAD_VEP_CACHE()
         vep_cache_ch = result.vep_cache
     }
@@ -503,7 +503,7 @@ vep_cache_ch.view { vep_cache_path ->
         // Keep the original path if it's from the server or already published
         vepCachePath = vep_cache_path.toString()
     }
-    println "📂 VEP Cache path set to: ${vepCachePath}"
+    println " VEP Cache path set to: ${vepCachePath}"
 }
 
 
@@ -515,19 +515,19 @@ vep_cache_ch.view { vep_cache_path ->
 if (params.clinvar_path && params.clinvartbi_path && 
     file(params.clinvar_path).exists() && file(params.clinvartbi_path).exists()) {
 
-    println "✅ ClinVar VCF and index found in the server directory."
+    println " ClinVar VCF and index found in the server directory."
     clinvar_vcf_ch = Channel.of(file(params.clinvar_path))
     clinvar_tbi_ch = Channel.of(file(params.clinvartbi_path))
 
 } else if (file("${params.actual_data_dir}/Tools/VEP/clinvar.vcf.gz").exists() && 
            file("${params.actual_data_dir}/Tools/VEP/clinvar.vcf.gz.tbi").exists()) {
 
-    println "✅ ClinVar VCF and index found in the publish directory."
+    println " ClinVar VCF and index found in the publish directory."
     clinvar_vcf_ch = Channel.of(file("${params.actual_data_dir}/Tools/VEP/clinvar.vcf.gz"))
     clinvar_tbi_ch = Channel.of(file("${params.actual_data_dir}/Tools/VEP/clinvar.vcf.gz.tbi"))
 
 } else {
-    println "⚠️ ClinVar VCF and index not found. Downloading..."
+    println " ClinVar VCF and index not found. Downloading..."
     def clinvar_results = DOWNLOAD_CLINVAR()
 	clinvar_vcf_ch = clinvar_results.clinvar_vcf
 	clinvar_tbi_ch = clinvar_results.clinvar_tbi
@@ -541,7 +541,7 @@ clinvar_vcf_ch.view { clinvar_vcf_path ->
     } else {
         clinvarVcfPath = clinvar_vcf_path.toString()
     }
-    println "📂 ClinVar VCF path set to: ${clinvarVcfPath}"
+    println " ClinVar VCF path set to: ${clinvarVcfPath}"
 }
 
 clinvar_tbi_ch.view { clinvar_tbi_path ->  
@@ -550,7 +550,7 @@ clinvar_tbi_ch.view { clinvar_tbi_path ->
     } else {
         clinvarTbiPath = clinvar_tbi_path.toString()
     }
-    println "📂 ClinVar VCF Index path set to: ${clinvarTbiPath}"
+    println " ClinVar VCF Index path set to: ${clinvarTbiPath}"
 }
 
 
@@ -566,7 +566,7 @@ clinvar_tbi_ch.view { clinvar_tbi_path ->
             def outputDir = new File("${baseDir}/reference_paths.config").getParentFile()
 
             if (!outputDir.exists()) {
-                println "📁 Output directory does not exist. Creating: ${outputDir}"
+                println "Output directory does not exist. Creating: ${outputDir}"
                 outputDir.mkdirs()
             }
 
@@ -596,10 +596,10 @@ clinvar_tbi_ch.view { clinvar_tbi_path ->
             params.clinvartbi = '${clinvarTbiPath ?: 'NOT_FOUND'}'
             """
 
-            println "✅ Reference paths successfully written to ${configFile}"
+            println " Reference paths successfully written to ${configFile}"
 
         } catch (Exception e) {
-            println "❌ Error writing reference paths: ${e.message}"
+            println " Error writing reference paths: ${e.message}"
         }
     }
 }
