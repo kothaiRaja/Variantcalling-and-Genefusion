@@ -1,203 +1,174 @@
-# RNA-Seq Variant Calling and RNA Fusion Detection Pipeline
+# **RNA-Seq Variant Calling and RNA Fusion Detection Pipeline**  
 
-## Overview
+## **Overview**  
 
-This pipeline is designed for RNA-seq variant calling and RNA fusion detection. It is modularized to ensure scalability, reproducibility, and ease of maintenance. Key functionalities include:
+This pipeline is designed for **RNA-seq variant calling** and **RNA fusion detection**, providing a comprehensive and automated solution for transcriptomic analysis. By leveraging **Nextflow DSL 2**, the pipeline is modular, scalable, and reproducible, making it easy to maintain and adapt to different datasets.  
 
-- Quality control
-- Alignment
-- Variant identification and annotation
-- RNA fusion detection
+### **Key Features**  
+**Quality Control**: Ensures high-quality sequencing data through FastQC and Fastp.  
+**Alignment & Processing**: Uses STAR for alignment and GATK for variant processing.  
+**Variant Calling & Annotation**: Detects genetic variants and annotates them with SnpEff and VEP.  
+**RNA Fusion Detection**: Identifies gene fusions using Arriba, crucial for cancer genomics.  
+**Comprehensive Reporting**: Generates MultiQC reports and structured variant/fusion outputs.  
 
-Integrated tools include **FastQC**, **STAR**, **GATK**, **SnpEff**, and **Arriba**, ensuring high accuracy and robustness.
+## **Pipeline Objectives**  
 
-## Objectives
-
-- **Genetic Variant Identification**: Detect genetic variants from RNA-seq data.
-- **RNA Fusion Detection**: Identify RNA fusion events in transcriptomic data.
-- **Comprehensive Reporting**: Provide automated results with clear reporting.
-
-## Usage
-
-This pipeline leverages **Nextflow DSL 2** for modular design, enabling flexibility and maintainability. Below are the key modules, Subworkflows and their functionalities:
-
-##Subworkflows
-
--** Preprocessing
-
-The Preprocessing workflow is the first step in the pipeline. It ensures that raw sequencing reads are properly processed before variant calling and annotation.
-
-The Preprocessing step performs the following operations:
-
-Read the samplesheet
-
-The workflow reads the user-provided samplesheet.csv, which contains metadata about sequencing samples.
-It extracts sample IDs, FASTQ file paths, and strandedness information.
-Concatenate FASTQ files (if required)
-
-If params.concatenate = true, multiple FASTQ files for the same sample are concatenated.
-If params.concatenate = false, the original FASTQ files are used as they are.
-Perform Quality Control (QC) on Raw Reads
-
-FastQC is run on raw FASTQ files to generate quality reports.
-Trim Low-Quality Reads
-
-Fastp is used to remove adapters and low-quality bases from reads.
-Produces trimmed FASTQ files and Fastp reports.
-Generate a MultiQC Report
-
-MultiQC aggregates results from FastQC and Fastp into a single report for visualization.
-
-### References Download
-
-- `DOWNLOAD_REF_GENOME`: Downloads the reference genome.
-- `DOWNLOAD_VARIANTS_SNP` & `DOWNLOAD_VARIANTS_INDELS`: Downloads SNP and indel variant files.
-- `DOWNLOAD_DENYLIST`: Downloads blacklist regions.
-- `DOWNLOAD_GTF`: Fetches genome annotation files.
-
-### Reference Preparation
-
-- `CREATE_FASTA_INDEX`: Generates an index file for the reference genome.
-- `CREATE_GENOME_DICT`: Creates a dictionary for the genome.
-- `CREATE_STAR_INDEX`: Builds STAR indices for alignment.
-- `PREPARE_VCF_FILE`: Merges and filters VCF files for known variants.
-
-### Tools and Databases
-
-- `CHECK_JAVA`: Verifies the Java environment.
-- `DOWNLOAD_SNPEFF_TOOL`: Downloads the SnpEff tool.
-- `DOWNLOAD_SNPEFF_DB`: Fetches SnpEff database.
-- `DOWNLOAD_ARRIBA`: Downloads the Arriba tool for RNA fusion detection.
-- `DOWNLOAD_VEP_CACHE`: Prepares the VEP cache for annotation.
-- `DOWNLOAD_CLINVAR`: Fetches ClinVar files for variant annotation.
-
-### Quality Control
-
-- `FASTQC_RAW`: Performs quality checks on raw FASTQ files.
-- `TRIM_READS`: Trims low-quality reads using Fastp.
-
-## Workflow Steps
-
-### 1. Pipeline Initialization
-
-- Parses sample metadata and loads file paths for required references.
-- Conditional execution based on user-defined parameters (e.g., `params.only_fastqc_fastp`).
-
-### 2. Reference and Tool Setup
-
-- **Initial Checks**: The processes check for the existence of required reference files, tools, databases, and prepared files. If a file is unavailable, the process downloads it from the respective URL; otherwise, the process is skipped.
-
-- **Renaming Reference Files**: If already available, reference files are renamed as follows:
-
-  1. Whole genome GRCh38: `genome.fa`
-  2. GTF files: `annotations.gtf`
-  3. Blacklist: `denylist.bed`
-  4. Variants indels: `variants_indels.vcf`
-  5. Variants SNP: `variants_snp.vcf`
-
-- Downloads and prepares reference genome, annotation, and variant files.
-
-- Builds necessary indices and checks tool availability (e.g., SnpEff, Arriba).
-
-### 3. Data Preprocessing
-
-- Executes quality control using FastQC and Fastp.
-- Optionally runs only FastQC and Fastp if `params.only_fastqc_fastp` is set.
-
-### 4. Integration with Tools
-
-- Annotates variants using SnpEff.
-- Detects RNA fusion events using Arriba.
-- Utilizes VEP for additional annotations (e.g., ClinVar data).
-
-### 5. Conditional Logic
-
-- Steps are executed only if required files are unavailable, ensuring efficiency and avoiding redundancy.
-
-### 6. Output
-
-- Results include:
-  - Trimmed reads
-  - Quality reports
-  - Alignment files
-  - Variant calls
-  - Fusion detections
-  - Final summary reports
-  - **Final Output**: All intermediate files and final annotated files are located in the `output` folder.
-
-## Sample Sheet Format
-
-The pipeline is designed for **paired-end RNA-seq data**. Below is an example of how the sample sheet should look:
-
-| sample\_id | fastq\_1                        | fastq\_2                        |
-| ---------- | ------------------------------- | ------------------------------- |
-| Sample\_01 | /path/to/sample\_1\_R1.fastq.gz | /path/to/sample\_1\_R2.fastq.gz |
-| Sample\_02 | /path/to/sample\_2\_R1.fastq.gz | /path/to/sample\_2\_R2.fastq.gz |
-
-- **sample\_id**: Unique identifier for each sample.
-- **fastq\_1**: Path to the forward reads file.
-- **fastq\_2**: Path to the reverse reads file.
-
-## Command to Run
-
-To test the pipeline with default test datasets:
-
-```bash
-nextflow run build_reference_test.nf -c nextflow_ref.config --mode test --only_fastqc_fastp false --mode test -profile singularity
-```
-
-To run only FastQC and Fastp with all available reference files:
-
-```bash
-nextflow run build_reference_test.nf -c nextflow_ref.config --mode test --only_fastqc_fastp true --mode test -profile singularity
-```
-
-Once the reference files and input files are ready, run:
-
-```bash
-nextflow run main.nf -c nextflow_main.config --mode test --merge_vcf true -profile singularity
-```
-
-### Running the Pipeline on Actual Data
-
-To test the pipeline with actual datasets:
-
-```bash
-nextflow run build_reference_actual.nf -c nextflow_ref.config --mode actual --only_fastqc_fastp false --mode test -profile singularity
-```
-
-To execute FastQC and Fastp separately in actual mode:
-
-```bash
-nextflow run build_reference_actual.nf -c nextflow_ref.config --mode actual --only_fastqc_fastp true --mode test -profile singularity
-```
-
-To run the main pipeline on actual data:
-
-```bash
-nextflow run main.nf -c nextflow_main.config --mode actual --merge_vcf true -profile singularity
-```
-
-To annotate individual VCF files without merging:
-
-```bash
-nextflow run main.nf -c nextflow_main.config --mode actual --merge_vcf false -profile singularity
-```
-
-### Adjusting Parameters
-
-Users can adjust the default filtration parameters by editing the `params.config` file. Additionally, users can select the desired SnpEff database for annotation.
-
-### Data Handling
-
-- The files are fetched from the respective folders (`data<test/actual>`).
-
-## Notes
-
-- The pipeline dynamically checks for necessary files and tools, downloading or preparing them only when missing.
-- Modular design ensures flexibility and ease of adding new steps or tools.
+- **Genetic Variant Identification**: Detect and annotate genetic variants from RNA-seq data.  
+- **RNA Fusion Detection**: Identify gene fusion events critical in cancer and other diseases.  
+- **Automated & Structured Reporting**: Generate quality control metrics, structured variant reports, and fusion visualizations.  
 
 ---
 
-Feel free to reach out for support or contributions!
+# **Pipeline Components**  
 
+This pipeline is divided into key **subworkflows**, each responsible for a specific aspect of data processing.  
+
+## **Preprocessing**  
+
+The **Preprocessing subworkflow** ensures that raw sequencing reads are cleaned, quality-checked, and prepared for downstream analysis.  
+
+### **Steps:**  
+1**Read Sample Metadata**: Extracts sample IDs, FASTQ paths, and strandedness from the user-provided `samplesheet.csv`.  
+2️**FASTQ File Concatenation**: If enabled (`params.concatenate = true`), multiple FASTQ files per sample are merged.  
+3️**Quality Control**:  
+   - **FastQC** generates quality reports on raw sequencing reads.  
+   - **Fastp** trims low-quality bases and removes adapter sequences.  
+4️**MultiQC Aggregation**: Compiles FastQC and Fastp reports into a single quality summary.  
+
+---
+
+## **Variant Calling**  
+
+The **VARIANT_CALLING** subworkflow is responsible for detecting genetic variants (SNPs & Indels) from aligned RNA-seq data.  
+
+### **Steps:**  
+1️**Alignment & BAM Processing**:  
+   - Reads are aligned using **STAR**.  
+   - BAM files are sorted and orphan reads are removed.  
+   - Duplicate reads are marked using **GATK MarkDuplicates**.  
+   - Base Quality Score Recalibration (BQSR) enhances accuracy.  
+
+2️**Variant Calling & Filtering**:  
+   - Variants are detected using **GATK HaplotypeCaller**.  
+   - Filters are applied using **GATK Variant Filter**.  
+   - Variant statistics are generated with **BCFtools**.  
+
+3️**Variant Annotation**:  
+   - Variants are annotated using **SnpEff** and **VEP**.  
+   - Structured **CSV reports** are created for downstream analysis.  
+
+### **Outputs:**  
+ Annotated **VCF files**  
+ **CSV summary reports** with filtered variant data  
+ MultiQC metrics for alignment and variant calling  
+
+---
+
+## **3️Gene Fusion Detection**  
+
+The **GENE_FUSION** subworkflow identifies **gene fusion events** from RNA-seq data using **Arriba**, a leading fusion detection tool.  
+
+### **Steps:**  
+1️**STAR Fusion Alignment**: Aligns RNA-seq reads in fusion detection mode.  
+2️**Fusion Detection with Arriba**: Identifies fusion events using known databases and blacklist filtering.  
+3️**Fusion Visualization**: Generates fusion diagrams for result interpretation.  
+
+### **Outputs:**  
+**Fusion results** (list of detected gene fusions).  
+**Discarded fusions** (filtered potential false positives).  
+**Graphical fusion visualizations** for easier interpretation.  
+
+---
+
+## **4️Reference Preparation (`build_references` Subworkflow)**  
+
+This pipeline supports **automated reference preparation**, ensuring all required genome and annotation files are correctly downloaded or processed.  
+
+### **Reference Downloads:**  
+**Reference Genome** (FASTA)  
+**SNP & Indel Variants** (VCF)  
+**Blacklist Regions** (BED)  
+**Genome Annotation** (GTF)  
+
+### **Reference Indexing:**  
+**FASTA Indexing** (`samtools faidx`)  
+**Genome Dictionary** (`picard CreateSequenceDictionary`)  
+**STAR Indexing** (for alignment)  
+**VCF Merging & Filtering** (for known variants)  
+
+### **Tools & Databases Setup:**  
+**SnpEff & Database Download** (for variant annotation)  
+**Arriba Tool & Known Fusions DB**  
+**VEP Cache Preparation**  
+**ClinVar Database Download**  
+
+---
+
+# **Workflow Execution**  
+
+## **1️Sample Sheet Format**  
+
+The pipeline requires a **sample sheet** to specify RNA-seq input files.  
+
+### **Example Format:**  
+
+| sample_id  | fastq_1                          | fastq_2                          | strandedness  |  
+|------------|----------------------------------|----------------------------------|--------------|  
+| Sample_01  | /path/to/sample_1_R1.fastq.gz   | /path/to/sample_1_R2.fastq.gz   | forward      |  
+| Sample_02  | /path/to/sample_2_R1.fastq.gz   | /path/to/sample_2_R2.fastq.gz   | reverse      |  
+
+- **`sample_id`**: Unique identifier for each sample.  
+- **`fastq_1` / `fastq_2`**: Paths to the paired-end sequencing reads.  
+- **`strandedness`**: Specifies strand orientation (`forward`, `reverse`, or `unstranded`).  
+
+---
+
+## **2️Running the Pipeline**  
+
+### **A. Reference Preparation (If Required)**  
+
+Run the reference setup process **before** executing the main pipeline:  
+
+```bash
+nextflow run build_reference_main.nf -c nextflow_ref_main.config -profile singularity
+```  
+
+---
+
+### **B. Execute the Main Pipeline**  
+
+Once references are ready, launch the full RNA-seq analysis pipeline:  
+
+```bash
+nextflow run main.nf -c nextflow_main.config -profile singularity
+```  
+
+**Adjustable Parameters:**  
+- **`merge_vcf: true`** → Merge all VCFs into a single file for annotation.  
+- **`only_variant_calling: true`** → Runs only variant calling workflow.  
+- **`only_fusion_detection: true`** → Runs only fusion detection workflow.  
+
+Example command to **run only variant calling**:  
+
+```bash
+nextflow run main.nf -c nextflow_main.config -profile singularity --only_variant_calling true
+```  
+
+---
+
+# **Final Outputs**  
+
+**MultiQC Reports** (Quality control overview)  
+**Variant Annotation CSV Reports** (Structured variant data)  
+**Fusion Detection Results** (List & visualizations)  
+**Final Processed VCF Files** (for downstream analysis)  
+
+---
+
+# **Conclusion**  
+
+This **Nextflow-based RNA-Seq pipeline** provides a **scalable, reproducible, and modular** approach to variant calling and gene fusion detection. By integrating state-of-the-art tools like **GATK, SnpEff, and Arriba**, it ensures high accuracy and efficiency for transcriptomic studies.  
+
+ 
+
+---
