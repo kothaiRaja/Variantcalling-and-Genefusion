@@ -5,26 +5,31 @@ process GATK_MARK_DUPLICATES {
     publishDir "${params.outdir}/multiqc_input", mode: "copy", pattern: "*_dup_metrics.txt"
 
     input:
-    tuple val(sample_id), path(sorted_bam), path(sorted_bam_index),val(strandedness)
+    tuple val(sample_id), path(sorted_bam), path(sorted_bam_index), val(strandedness)
 
     output:
     tuple val(sample_id), 
           path("${sample_id}_marked_duplicates.bam"), 
           path("${sample_id}_marked_duplicates.bai"),
-		  val(strandedness),
+          val(strandedness),
           path("${sample_id}_dup_metrics.txt")
 
     script:
     """
-    gatk MarkDuplicates \
+    THREADS=${task.cpus}
+
+    
+
+    gatk MarkDuplicatesSpark \
         -I ${sorted_bam} \
         -O ${sample_id}_marked_duplicates.bam \
         -M ${sample_id}_dup_metrics.txt \
+        --conf "spark.executor.cores=$THREADS" \
         --CREATE_INDEX true \
-		--REMOVE_DUPLICATES ${params.remove_duplicates ? 'true' : 'false'} \
+        --REMOVE_DUPLICATES ${params.remove_duplicates ? 'true' : 'false'} \
         --VALIDATION_STRINGENCY ${params.validation_stringency ?: 'LENIENT'}
-		
-	# Check if output BAM is generated
+
+    # Check if output BAM is generated
     if [ ! -s ${sample_id}_marked_duplicates.bam ]; then
         echo "Error: Marked duplicates BAM file not generated for ${sample_id}" >&2
         exit 1
@@ -36,5 +41,6 @@ process GATK_MARK_DUPLICATES {
         exit 1
     fi
 
+    echo "✅ GATK MarkDuplicatesSpark completed successfully for ${sample_id}"
     """
 }

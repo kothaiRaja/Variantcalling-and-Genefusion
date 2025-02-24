@@ -16,9 +16,10 @@ process STAR_ALIGNMENT {
 
     script:
     """
+	THREADS=${task.cpus}
     STAR --genomeDir $star_index_dir \
      --readFilesIn ${trimmed_r1} ${trimmed_r2} \
-     --runThreadN $task.cpus \
+     --runThreadN $THREADS \
      --readFilesCommand zcat \
      --outFilterType BySJout \
      --alignSJoverhangMin 5 \
@@ -32,7 +33,7 @@ process STAR_ALIGNMENT {
 
     STAR --genomeDir $star_index_dir \
      --readFilesIn ${trimmed_r1} ${trimmed_r2} \
-     --runThreadN $task.cpus \
+     --runThreadN $THREADS \
      --readFilesCommand zcat \
      --sjdbFileChrStartEnd ${sample_id}_pass1_SJ.out.tab \
      --outFilterType BySJout \

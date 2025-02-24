@@ -22,9 +22,11 @@ process STAR_ALIGN_FUSION {
     
     script:
     """
+	THREADS=${task.cpus}
+	
     STAR --genomeDir $star_index_dir \
      --readFilesIn ${trimmed_r1} ${trimmed_r2} \
-     --runThreadN 8 \
+     --runThreadN \$THREADS \
      --readFilesCommand zcat \
      --outFilterType BySJout \
      --alignSJoverhangMin 8 \

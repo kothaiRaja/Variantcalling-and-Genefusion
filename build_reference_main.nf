@@ -422,10 +422,10 @@ if (params.snpeff_db_dir && file("${params.snpeff_db_dir_path}/${params.genomedb
 // Capture SnpEff Database path
 snpeff_db_ch.view { snpeff_db_path ->  
     if (snpeff_db_path.toString().contains('/work/')) {
-        // Redirect to the published directory
+        
         snpEffDbPath = "${params.actual_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"
     } else {
-        // Keep the original path if it's from the server or already published
+        
         snpEffDbPath = snpeff_db_path.toString()
     }
     println " SnpEff Database path set to: ${snpEffDbPath}"
@@ -457,10 +457,10 @@ if (params.arriba_tool_dir_path && file("${params.arriba_tool_dir_path}/arriba_v
 arriba_dir_ch.view { arriba_dir_path ->  
     // Set Arriba path after checking if it exists in the server or publish directory
     if (arriba_dir_path.toString().contains('/work/')) {
-        // If downloaded (i.e., in workdir), set to publish directory
+        
         arribaPath = "${params.actual_data_dir}/Tools/ARRIBA/arriba_v2.4.0"
     } else {
-        // If from server or already published, use the existing path
+        
         arribaPath = arriba_dir_path.toString()
     }
 

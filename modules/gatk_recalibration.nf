@@ -22,12 +22,16 @@ process GATK_RECALIBRATION {
 
     script:
     """
+	
+	THREADS=${task.cpus}
+
     # Step 1: BaseRecalibrator
     gatk BaseRecalibrator \
         -R ${genome_fasta} \
         -I ${bam} \
         --known-sites ${known_variants} \
-        -O ${sample_id}_recal_data.table 
+        -O ${sample_id}_recal_data.table \
+		--num-threads \$THREADS
 		
 	# Check if recalibration table is generated
     if [ ! -s ${sample_id}_recal_data.table ]; then
@@ -41,7 +45,8 @@ process GATK_RECALIBRATION {
         -R ${genome_fasta} \
         -I ${bam} \
         --bqsr-recal-file ${sample_id}_recal_data.table \
-        -O ${sample_id}_recalibrated.bam
+        -O ${sample_id}_recalibrated.bam \
+		--num-threads \$THREADS
 		
 	# Check if recalibrated BAM is generated
     if [ ! -s ${sample_id}_recalibrated.bam ]; then

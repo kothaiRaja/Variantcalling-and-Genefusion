@@ -20,10 +20,13 @@ process ANNOTATE_INDIVIDUAL_VARIANTS {
 
     script:
     """
+	THREADS=${task.cpus}
+	
     java -Xmx16G -jar ${snpEffJar} \
         -c ${snpEffConfig} \
         -v ${genomedb} \
         -dataDir ${snpEffDbDir} \
+		-t \$THREADS \
         ${filtered_vcf} > ${sample_id}.annotated.vcf
 		
 
@@ -34,6 +37,7 @@ process ANNOTATE_INDIVIDUAL_VARIANTS {
         -v ${genomedb} \
         -dataDir ${snpEffDbDir} \
         -stats ${sample_id}.annotated.summary.html \
+		-t \$THREADS \
         ${filtered_vcf} > /dev/null
     """
 }
@@ -62,10 +66,13 @@ process ANNOTATE_VARIANTS {
 	
     
     """
+	THREADS=${task.cpus}
+	
     java -Xmx16G -jar ${snpEffJar} \
         -c ${snpEffConfig} \
         -v ${genomedb} \
         -dataDir ${snpEffDbDir} \
+		-t \$THREADS \
         ${vcf} > annotated.vcf
 
     java -Xmx16G -jar ${snpEffJar} \
@@ -73,6 +80,7 @@ process ANNOTATE_VARIANTS {
         -v ${genomedb} \
         -dataDir ${snpEffDbDir} \
         -stats annotated.summary.html \
+		-t \$THREADS \
         ${vcf} > /dev/null
     """
 }

@@ -15,11 +15,16 @@ process GATK_VARIANT_FILTER {
 
 
     script:
+	
     """
+	
+	THREADS=${task.cpus}
+	
     # Run GATK VariantFiltration with configurable thresholds
     gatk VariantFiltration \
         -R ${genome} \
         -V ${vcf_file} \
+		--num-threads \$THREADS \
         --cluster-window-size ${params.gatk_vf_window_size} \
         --cluster-size ${params.gatk_vf_cluster_size} \
         --filter-name "LowQual" --filter-expression "QUAL < ${params.gatk_vf_qual_filter}" \

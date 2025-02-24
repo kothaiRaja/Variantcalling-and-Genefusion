@@ -18,6 +18,9 @@ process GATK_HAPLOTYPE_CALLER {
 	def intervals_args = interval_list.collect { "--intervals ${it}" }.join(' ')
 	
     """
+	
+	THREADS=${task.cpus}
+	
     # Validate Inputs
     if [ ! -s ${bam} ]; then
         echo "Error: BAM file not found or empty." >&2
@@ -30,7 +33,7 @@ process GATK_HAPLOTYPE_CALLER {
 
     # Run HaplotypeCaller
     gatk HaplotypeCaller \
-        --native-pair-hmm-threads ${task.cpus} \
+        --native-pair-hmm-threads \$THREADS \
         --reference ${genome} \
         --output output_${sample_id}.vcf.gz \
         -I ${bam} \

@@ -24,6 +24,8 @@ process ARRIBA {
 
     script:
     """
+	THREADS=${task.cpus}
+	
     arriba \
          -x $bam \
          -c ${sample_id}_Chimeric.out.sam \
@@ -32,6 +34,8 @@ process ARRIBA {
          -b $blacklist \
          -k $known_fusions \
          -o ${sample_id}.fusions.tsv \
-         -O ${sample_id}.fusions.discarded.tsv
+         -O ${sample_id}.fusions.discarded.tsv \
+		 --threads \$THREADS
+
     """
 }
