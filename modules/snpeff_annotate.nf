@@ -26,7 +26,6 @@ process ANNOTATE_INDIVIDUAL_VARIANTS {
         -c ${snpEffConfig} \
         -v ${genomedb} \
         -dataDir ${snpEffDbDir} \
-		-t \$THREADS \
         ${filtered_vcf} > ${sample_id}.annotated.vcf
 		
 
@@ -37,7 +36,6 @@ process ANNOTATE_INDIVIDUAL_VARIANTS {
         -v ${genomedb} \
         -dataDir ${snpEffDbDir} \
         -stats ${sample_id}.annotated.summary.html \
-		-t \$THREADS \
         ${filtered_vcf} > /dev/null
     """
 }
@@ -72,7 +70,6 @@ process ANNOTATE_VARIANTS {
         -c ${snpEffConfig} \
         -v ${genomedb} \
         -dataDir ${snpEffDbDir} \
-		-t \$THREADS \
         ${vcf} > annotated.vcf
 
     java -Xmx16G -jar ${snpEffJar} \
@@ -80,7 +77,6 @@ process ANNOTATE_VARIANTS {
         -v ${genomedb} \
         -dataDir ${snpEffDbDir} \
         -stats annotated.summary.html \
-		-t \$THREADS \
         ${vcf} > /dev/null
     """
 }

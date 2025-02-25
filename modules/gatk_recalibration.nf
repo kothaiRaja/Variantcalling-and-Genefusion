@@ -30,8 +30,8 @@ process GATK_RECALIBRATION {
         -R ${genome_fasta} \
         -I ${bam} \
         --known-sites ${known_variants} \
-        -O ${sample_id}_recal_data.table \
-		--num-threads \$THREADS
+        -O ${sample_id}_recal_data.table 
+		
 		
 	# Check if recalibration table is generated
     if [ ! -s ${sample_id}_recal_data.table ]; then
@@ -45,8 +45,8 @@ process GATK_RECALIBRATION {
         -R ${genome_fasta} \
         -I ${bam} \
         --bqsr-recal-file ${sample_id}_recal_data.table \
-        -O ${sample_id}_recalibrated.bam \
-		--num-threads \$THREADS
+        -O ${sample_id}_recalibrated.bam 
+		
 		
 	# Check if recalibrated BAM is generated
     if [ ! -s ${sample_id}_recalibrated.bam ]; then

@@ -2,34 +2,32 @@ process GATK_MARK_DUPLICATES {
     tag { sample_id }
 
     container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
-    publishDir "${params.outdir}/multiqc_input", mode: "copy", pattern: "*_dup_metrics.txt"
+    publishDir "${params.outdir}/dedup_bam", mode: "copy"
 
     input:
-    tuple val(sample_id), path(sorted_bam), path(sorted_bam_index), val(strandedness)
+    tuple val(sample_id), path(sorted_bam), path(sorted_bam_index),val(strandedness)
 
     output:
+     output:
     tuple val(sample_id), 
           path("${sample_id}_marked_duplicates.bam"), 
           path("${sample_id}_marked_duplicates.bai"),
-          val(strandedness),
+		  val(strandedness),
           path("${sample_id}_dup_metrics.txt")
 
     script:
     """
     THREADS=${task.cpus}
 
-    
-
-    gatk MarkDuplicatesSpark \
+    gatk MarkDuplicates \
         -I ${sorted_bam} \
         -O ${sample_id}_marked_duplicates.bam \
         -M ${sample_id}_dup_metrics.txt \
-        --conf "spark.executor.cores=$THREADS" \
         --CREATE_INDEX true \
-        --REMOVE_DUPLICATES ${params.remove_duplicates ? 'true' : 'false'} \
+		--REMOVE_DUPLICATES ${params.remove_duplicates ? 'true' : 'false'} \
         --VALIDATION_STRINGENCY ${params.validation_stringency ?: 'LENIENT'}
-
-    # Check if output BAM is generated
+		
+	# Check if output BAM is generated
     if [ ! -s ${sample_id}_marked_duplicates.bam ]; then
         echo "Error: Marked duplicates BAM file not generated for ${sample_id}" >&2
         exit 1
@@ -40,7 +38,5 @@ process GATK_MARK_DUPLICATES {
         echo "Error: Duplicate metrics file not generated for ${sample_id}" >&2
         exit 1
     fi
-
-    echo "✅ GATK MarkDuplicatesSpark completed successfully for ${sample_id}"
     """
 }
