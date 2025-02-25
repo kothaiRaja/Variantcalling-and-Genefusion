@@ -1,5 +1,11 @@
 process FASTQC_RAW {
     tag { sample_id }
+	
+	cpus params.fastqc_raw_cpus
+    memory params.fastqc_raw_memory
+    time params.fastqc_raw_time
+	
+	
     publishDir "${params.outdir}/multiqc_input", mode: "copy", pattern: "*_fastqc.*"
     container "https://depot.galaxyproject.org/singularity/fastqc%3A0.12.1--hdfd78af_0"
 

@@ -1,5 +1,9 @@
 process STAR_ALIGNMENT {
     tag { sample_id }
+	
+	cpus params.star_alignment_cpus
+    memory params.star_alignment_memory
+    time params.star_alignment_time
 
     container "https://depot.galaxyproject.org/singularity/star%3A2.7.11a--h0033a41_0"
     publishDir "${params.outdir}/multiqc_input", mode: "copy"

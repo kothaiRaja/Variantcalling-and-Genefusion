@@ -1,7 +1,12 @@
 process TRIM_READS {
     tag { sample_id }
+	
+	cpus params.trim_reads_cpus
+    memory params.trim_reads_memory
+    time params.trim_reads_time
+	
     container "https://depot.galaxyproject.org/singularity/fastp%3A0.23.4--h125f33a_5"
-    publishDir "${params.resultsdir}/multiqc_input", mode: "copy", pattern: "*_fastp.*"
+    publishDir "${params.outdir}/multiqc_input", mode: "copy", pattern: "*_fastp.*"
 
     input:
     tuple val(sample_id), path(r1), path(r2), val(strandedness)

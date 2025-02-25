@@ -15,7 +15,7 @@ This pipeline processes RNA-seq data to:
 
 **Built With:**  
 - **Nextflow DSL2** for modularity & scalability.  
-- **Singularity/Docker** for containerized execution.  
+- **Singularity** for containerized execution.  
 - **FastQC, STAR, GATK, SnpEff, VEP, Arriba** for high-accuracy analysis.  
 
 **Key Features:**  
@@ -44,7 +44,12 @@ Outputs **annotated VCF files and structured CSV reports**.
 **Arriba** identifies gene fusions and generates **visualization reports**.  
 
 ### **4️⃣ Automated Reference Setup**  
-Downloads and processes **reference genomes, annotation files, and known variant databases**.  
+Downloads and processes **reference genomes, annotation files, and known variant databases, respected Tools**. 
+
+### ** Easy User defined Parameters**
+Users are able to easily define the path to the reference files(if available). 
+Even if the reference files are unavailable, the pipeline fetched all the reference files by executing the processes. 
+Running the build_reference_main.nl pipeline, the paths to all the required reference files are written to config file which is used for main.nl pipeline execution.  
 
 ---
 
@@ -56,7 +61,7 @@ curl -s https://get.nextflow.io | bash
 chmod +x nextflow
 mv nextflow /usr/local/bin/
 ```
-Ensure **Singularity/Docker** is installed for containerized execution.  
+Ensure **Singularity** is installed for containerized execution.  
 
 ## **2️⃣ Clone the Repository**  
 ```bash
@@ -91,12 +96,12 @@ Once validated, run the pipeline on actual datasets.
 
 ### **A. Prepare References (for Actual Data)**  
 ```bash
-nextflow run build_reference_main.nf -c nextflow_ref_main.config -profile singularity
+nextflow run build_reference_main.nf -c nextflow_ref_main.config,user_params.config -profile singularity
 ```
 
 ### **B. Run the Full Pipeline on Actual Data**  
 ```bash
-nextflow run main.nf -c nextflow_main.config -profile singularity
+nextflow run main.nf -c nextflow_main.config,user_params.config -profile singularity
 ```
 
 ---
@@ -105,12 +110,12 @@ nextflow run main.nf -c nextflow_main.config -profile singularity
 
 ### ** Run Only Variant Calling**  
 ```bash
-nextflow run main.nf -c nextflow_main.config -profile singularity --only_variant_calling true
+nextflow run main.nf -c nextflow_main.config,user_params.config -profile singularity --only_variant_calling true
 ```
 
 ### **  Run Only RNA Fusion Detection**  
 ```bash
-nextflow run main.nf -c nextflow_main.config -profile singularity --only_fusion_detection true
+nextflow run main.nf -c nextflow_main.config,user_params.config -profile singularity --only_fusion_detection true
 ```
 
 ---
@@ -140,7 +145,8 @@ The pipeline requires a **CSV file** (`samplesheet.csv`) with sample metadata.
 Modify `params.config` to customize:  
 - `merge_vcf: true` → Merge VCF files for annotation.  
 - `only_variant_calling: true` → Run only variant calling.  
-- `only_fusion_detection: true` → Run only fusion detection.  
+- `only_fusion_detection: true` → Run only fusion detection. 
+- `only_qc: true` → Runs only Quality control
 
 ---
 
