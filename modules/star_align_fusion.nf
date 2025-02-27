@@ -1,6 +1,10 @@
 //===========================================STAR Fusion=============================================//
 process STAR_ALIGN_FUSION {
     tag { sample_id }
+	
+	cpus params.get('star_align_fusion_cpus', 12)
+    memory params.get('star_align_fusion_memory', '24 GB')
+    time params.get('star_align_fusion_time', '5h')
 
     container "https://depot.galaxyproject.org/singularity/star%3A2.7.11a--h0033a41_0"
 	publishDir "${params.outdir}/Star_fusion", mode: 'copy'

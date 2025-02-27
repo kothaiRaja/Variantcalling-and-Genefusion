@@ -1,5 +1,9 @@
 process SPLIT_NCIGAR_READS {
     tag { sample_id }
+	
+	cpus params.get('split_ncigar_reads_cpus', 8)
+    memory params.get('split_ncigar_reads_memory', '16 GB')
+    time params.get('split_ncigar_reads_time', '3h')
 
     container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
     publishDir "${params.outdir}/split_ncigar", mode: "copy"

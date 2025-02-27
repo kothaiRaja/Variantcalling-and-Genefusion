@@ -1,5 +1,9 @@
 process GATK_VARIANT_FILTER {
     tag "${sample_id}_variant_filter"
+	
+	cpus params.get('gatk_variant_filter_cpus', 8)
+    memory params.get('gatk_variant_filter_memory', '24 GB')
+    time params.get('gatk_variant_filter_time', '3h')
 
     container "https://depot.galaxyproject.org/singularity/gatk4%3A4.2.6.0--hdfd78af_0"
     publishDir "${params.outdir}/variant_filter/${sample_id}", mode: "copy"

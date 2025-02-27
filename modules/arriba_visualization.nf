@@ -1,5 +1,10 @@
 process ARRIBA_VISUALIZATION {
     tag { sample_id }
+	
+	cpus params.get('arriba_visualization_cpus', 4)
+    memory params.get('arriba_visualization_memory', '16 GB')
+    time params.get('arriba_visualization_time', '2h')
+
 
     container "https://depot.galaxyproject.org/singularity/r-base%3A4.4.1"  
     publishDir "${params.resultsdir}/ARRIBA_VISUALIZATION", mode: 'copy'

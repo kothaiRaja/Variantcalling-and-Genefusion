@@ -1,7 +1,11 @@
 process GATK_HAPLOTYPE_CALLER {
     tag { sample_id }
+	
+	cpus params.get('gatk_haplotype_caller_cpus', 12)
+    memory params.get('gatk_haplotype_caller_memory', '24 GB')
+    time params.get('gatk_haplotype_caller_time', '8h')
 
-     container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
+    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
     publishDir "${params.outdir}/haplotype_caller", mode: "copy"
 
     input:

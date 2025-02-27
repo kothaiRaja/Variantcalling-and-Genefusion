@@ -1,9 +1,10 @@
 process TRIM_READS {
     tag { sample_id }
 	
-	cpus params.trim_reads_cpus
-    memory params.trim_reads_memory
-    time params.trim_reads_time
+	cpus params.get('trim_reads_cpus', 4)
+	memory params.get('trim_reads_memory', '8 GB')
+	time params.get('trim_reads_time', '2h')
+
 	
     container "https://depot.galaxyproject.org/singularity/fastp%3A0.23.4--h125f33a_5"
     publishDir "${params.outdir}/multiqc_input", mode: "copy", pattern: "*_fastp.*"

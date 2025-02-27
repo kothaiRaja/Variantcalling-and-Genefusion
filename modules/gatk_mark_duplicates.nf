@@ -1,5 +1,9 @@
 process GATK_MARK_DUPLICATES {
     tag { sample_id }
+	
+	cpus params.get('gatk_mark_duplicates_cpus', 8)
+    memory params.get('gatk_mark_duplicates_memory', '16 GB')
+    time params.get('gatk_mark_duplicates_time', '2h')
 
     container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
     publishDir "${params.outdir}/dedup_bam", mode: "copy"

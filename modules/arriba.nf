@@ -1,5 +1,9 @@
 process ARRIBA {
     tag { sample_id }
+	
+	cpus params.get('star_align_fusion_cpus', 12)
+    memory params.get('star_align_fusion_memory', '24 GB')
+    time params.get('star_align_fusion_time', '5h')
     
     container "https://depot.galaxyproject.org/singularity/arriba%3A2.4.0--hdbdd923_3"
     publishDir "${params.outdir}/ARRIBA", mode: 'copy'
@@ -24,7 +28,6 @@ process ARRIBA {
 
     script:
     """
-	THREADS=${task.cpus}
 	
     arriba \
          -x $bam \
@@ -34,8 +37,8 @@ process ARRIBA {
          -b $blacklist \
          -k $known_fusions \
          -o ${sample_id}.fusions.tsv \
-         -O ${sample_id}.fusions.discarded.tsv \
-		 --threads \$THREADS
+         -O ${sample_id}.fusions.discarded.tsv 
+		
 
     """
 }

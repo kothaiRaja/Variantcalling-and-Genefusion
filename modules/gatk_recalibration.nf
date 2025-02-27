@@ -1,5 +1,9 @@
 process GATK_RECALIBRATION {
     tag { sample_id }
+	
+	cpus params.get('gatk_recalibration_cpus', 8)
+    memory params.get('gatk_recalibration_memory', '32 GB')
+    time params.get('gatk_recalibration_time', '5h')
 
     container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
     publishDir "${params.outdir}/recalibrated_bams", mode: "copy"
