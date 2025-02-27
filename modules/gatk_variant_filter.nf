@@ -23,7 +23,7 @@ process GATK_VARIANT_FILTER {
     """
 	
 	THREADS=${task.cpus}
-	
+
     # Run GATK VariantFiltration with configurable thresholds
     gatk VariantFiltration \
         -R ${genome} \
@@ -42,9 +42,9 @@ process GATK_VARIANT_FILTER {
     # Index the filtered VCF file for downstream compatibility
     gatk IndexFeatureFile -I ${sample_id}_filtered.vcf.gz
 
-    # Redirect logs
-    if [ ! -s ${sample_id}_filtered.vcf.gz ]; then
-        echo "Error: Filtered VCF is empty for ${sample_id}" >&2
+    # Validate output
+    if [ ! -s ${sample_id}_filtered.vcf.gz ] || [ ! -s ${sample_id}_filtered.vcf.gz.tbi ]; then
+        echo "Error: Filtered VCF or index is empty for ${sample_id}" >&2
         exit 1
     fi
     """

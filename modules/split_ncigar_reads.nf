@@ -22,11 +22,15 @@ process SPLIT_NCIGAR_READS {
 
     script:
     """
-    gatk SplitNCigarReads \
-        -R ${genome_fasta} \
-        -I ${bam} \
-        -O ${sample_id}_split.bam \
-        --create-output-bam-index true  
+   gatk SplitNCigarReads \
+    -R ${genome_fasta} \
+    -I ${bam} \
+    -O ${sample_id}_split.bam \
+    --create-output-bam-index true \
+    --skip-mapping-quality-transform false \
+    --max-mismatches-in-overhang 1 \
+    --max-bases-in-overhang 50 \
+	--process-secondary-alignments true
 		
 	"""
 }

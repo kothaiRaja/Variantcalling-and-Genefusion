@@ -49,28 +49,47 @@ workflow VARIANT_CALLING {
 
         // **Step 1: STAR Alignment**
         star_aligned_ch = STAR_ALIGNMENT(trimmed_reads_ch, star_index)
+		
+		star_aligned_ch.view { "STAR Alignment Output: $it" }
+
 
         // **Step 2: Sort BAM files**
         sorted_bams = SAMTOOLS_SORT_INDEX(star_aligned_ch.map { tuple(it[0], it[1], it[5]) })
+		
+		sorted_bams.view { "Sorted BAMs Output: $it" }
+
 
         // **Step 3: Filter orphan reads**
         filtered_bams = SAMTOOLS_FILTER_ORPHANS(sorted_bams)
+		
+		filtered_bams.view { "Filtered BAMs Output: $it" }
+
 
         // **Step 4: Generate alignment statistics**
         alignment_stats = SAMTOOLS_FLAGSTAT(filtered_bams)
+		
+		alignment_stats.view { "Alignment stats Output: $it" }
+
 
         // **Step 5: Mark duplicates using GATK**
         marked_bams = GATK_MARK_DUPLICATES(filtered_bams)
+		
         marked_bams.view { "Mark Duplicates Output: $it" }
 
         // **Step 6: Split N CIGAR Reads**
         split_bams = SPLIT_NCIGAR_READS(marked_bams.map { tuple(it[0], it[1], it[2], it[3]) }, reference_genome, genome_index, genome_dict)
+		
+		split_bams.view {"SplitNcigar Output : $it"  }
+
 
         // **Step 7: SAMTOOLS CALMD**
         calmd_bams = SAMTOOLS_CALMD(split_bams.map { tuple(it[0], it[1], it[2], it[3]) }, reference_genome, genome_index)
 
         // **Step 8: Base Quality Score Recalibration (BQSR)**
         recalibrated_bams = GATK_RECALIBRATION(calmd_bams.map { tuple(it[0], it[1], it[2], it[3]) }, reference_genome, genome_index, genome_dict, merged_vcf, merged_vcf_index)
+		
+		recalibrated_bams.view{"Recalibrated Bams Output: $it" }
+
 
         // **Step 9: Convert BED to Interval List**
         interval_list_ch = BED_TO_INTERVAL_LIST(denylist_bed, reference_genome, genome_dict)
@@ -79,15 +98,18 @@ workflow VARIANT_CALLING {
         scattered_intervals_ch = SCATTER_INTERVAL_LIST(interval_list_ch, genome_dict)
 
         // **Step 11: Perform Variant Calling using GATK HaplotypeCaller**
-        gvcf_output = GATK_HAPLOTYPE_CALLER(recalibrated_bams.map { tuple(it[0], it[1], it[2], it[3]) }, reference_genome, genome_index, genome_dict, scattered_intervals_ch)
+        vcf_output = GATK_HAPLOTYPE_CALLER(recalibrated_bams.map { tuple(it[0], it[1], it[2], it[3]) }, reference_genome, genome_index, genome_dict, scattered_intervals_ch)
 
-        gvcf_output.view { "Raw GVCF output: $it" }
+        vcf_output.view { "Raw VCF output: $it" }
 
         // **Step 12: Generate variant statistics**
-        bcftools_stats_ch = BCFTOOLS_STATS(gvcf_output)
+        bcftools_stats_ch = BCFTOOLS_STATS(vcf_output)
 
         // **Step 13: Apply GATK Variant Filtering**
-        filtered_individual_vcfs = GATK_VARIANT_FILTER(gvcf_output, reference_genome, genome_index, genome_dict)
+        filtered_individual_vcfs = GATK_VARIANT_FILTER(vcf_output, reference_genome, genome_index, genome_dict)
+		
+		filtered_individual_vcfs.view{" Filtered_vcf_output: $it"  }
+
 
         // **Step 14: Provide Stats**
         filtered_vcf_stats = BCFTOOLS_QUERY(filtered_individual_vcfs)

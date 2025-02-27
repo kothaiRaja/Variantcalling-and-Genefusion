@@ -15,17 +15,20 @@ process BCFTOOLS_MERGE {
 
     script:
     """
-    vcfs_absolute=\$(for vcf in ${vcfs.join(' ')}; do realpath "\$vcf"; done)
+    # Ensure absolute paths for all VCFs
+    vcfs_absolute=\$(realpath ${vcfs} | tr '\\n' ' ')
+    
+    echo "Merging VCFs: \$vcfs_absolute"
 
-    echo "Using absolute paths:" > debug_absolute_paths.log
-    echo \$vcfs_absolute >> debug_absolute_paths.log
-
+    # Run BCFtools merge
     bcftools merge \\
         \$vcfs_absolute \\
         -O z -o merged_output.vcf.gz
+
+    # Index the merged VCF
     tabix -p vcf merged_output.vcf.gz
-	
-	# Query merged VCF to generate a tabular summary
+
+    # Generate tabular summary of variants per sample
     bcftools query -f '%CHROM\\t%POS\\t%REF\\t%ALT\\t[%GT\\t]\\n' merged_output.vcf.gz > variants_per_sample.tsv
     """
 }

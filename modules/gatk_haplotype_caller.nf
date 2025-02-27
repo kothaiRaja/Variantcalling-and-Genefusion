@@ -41,11 +41,9 @@ process GATK_HAPLOTYPE_CALLER {
         --reference ${genome} \
         --output output_${sample_id}.vcf.gz \
         -I ${bam} \
-        --standard-min-confidence-threshold-for-calling 30.0 \
-        --dont-use-soft-clipped-bases true \
+        --standard-min-confidence-threshold-for-calling 10.0 \
         --min-base-quality-score 10 \
-        --output-mode EMIT_VARIANTS_ONLY \
-        --read-filter OverclippedReadFilter \
+        --output-mode EMIT_ALL_CONFIDENT_SITES \
         ${intervals_args} \
         --verbosity INFO
     """
