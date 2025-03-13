@@ -8,9 +8,9 @@ process CHECK_OR_DOWNLOAD_REF_GENOME {
     path "genome.fa", emit: genome
 
     when:
-	!file("${params.actual_data_dir}/reference/genome.fa").exists()
-   
-	script:
+    !file("${params.actual_data_dir}/reference/genome.fa").exists()
+
+    script:
     """
     wget -q -O genome.fa.gz ${params.genome_download_url}
 
@@ -18,6 +18,20 @@ process CHECK_OR_DOWNLOAD_REF_GENOME {
         gunzip genome.fa.gz
     else
         mv genome.fa.gz genome.fa
+    fi
+
+    echo "Checking Chromosome Naming Format in genome.fa..."
+
+    # Extract first chromosome name
+    FIRST_CHR=\$(grep '^>' genome.fa | head -1 | sed 's/>//')
+
+    if [[ "\$FIRST_CHR" == chr* ]]; then
+        echo "Detected 'chr' prefix. Converting to numeric format..."
+        sed -i 's/>chr/>/g' genome.fa   
+        sed -i 's/\\bchr//g' genome.fa  
+        echo "Genome chromosome names converted to numeric format."
+    else
+        echo "Genome chromosome names are already in numeric format. No changes needed."
     fi
     """
 }
