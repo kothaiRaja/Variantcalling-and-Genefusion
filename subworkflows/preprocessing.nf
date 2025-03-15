@@ -1,10 +1,10 @@
 nextflow.enable.dsl = 2
 
 // Include required processes
-include { CONCAT_FASTQ } from '../modules/concat_fastq.nf'
-include { FASTQC_RAW } from '../modules/fastqc_raw.nf'
-include { TRIM_READS } from '../modules/trim_reads.nf'
-include { MultiQC_quality } from '../modules/multiqc_quality.nf'
+include { CONCAT_FASTQ } from '../modules/cat_fastq/main.nf'
+include { FASTQC_RAW } from '../modules/fastqc/main.nf'
+include { TRIM_READS } from '../modules/fastp/main.nf'
+include { MultiQC_quality } from '../modules/multiqc_quality/main.nf'
 
 workflow PREPROCESSING {
     take:

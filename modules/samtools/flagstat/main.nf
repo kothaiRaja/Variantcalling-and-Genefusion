@@ -5,10 +5,10 @@ process SAMTOOLS_FLAGSTAT {
     publishDir "${params.outdir}/multiqc_input", mode: "copy", pattern: "*_flagstat.*"
 
     input:
-    tuple val(sample_id), path(sorted_bam), path(bai), val(strandedness)
+    tuple val(sample_id), val(strandedness), path(sorted_bam), path(bai)
 
     output:
-    tuple val(sample_id), path("${sample_id}_flagstat.txt"), path("${sample_id}_stats_report.txt"), val(strandedness)
+    tuple val(sample_id), val(strandedness), path("${sample_id}_flagstat.txt"), path("${sample_id}_stats_report.txt")
 
     script:
     """
@@ -33,3 +33,4 @@ process SAMTOOLS_FLAGSTAT {
     samtools stats ${sorted_bam} > ${sample_id}_stats_report.txt
     """
 }
+

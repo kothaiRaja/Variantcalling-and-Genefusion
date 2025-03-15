@@ -2,179 +2,48 @@ nextflow.enable.dsl = 2
 
 // Import subworkflows
 include { PREPROCESSING } from './subworkflows/preprocessing.nf'
-include { VARIANT_CALLING } from './subworkflows/variant_calling.nf'
-include { GENE_FUSION } from './subworkflows/gene_fusion.nf'
-include { MULTIQC_REPORT } from './subworkflows/multiqc.nf'
-
-
+include { STAR_ALIGN } from './subworkflows/star_align.nf'
 
 workflow {
 
-    if (params.only_variant_calling && params.only_fusion_detection) {
-        error "You cannot enable both only_variant_calling and only_fusion_detection at the same time. Set one to false."
+    // Ensure only one of the specialized workflows is selected
+    if (params.only_qc && params.skip_star) { 
+        error "You cannot enable both only_qc and skip_star at the same time. Set one to false."
     }
 
-    //==================================== Preprocessing ====================================//
-    
-    //==============================Step 1: Quality Control ===================================//
-	
-    PREPROCESSING(params.samplesheet)
+    //============================== PREPROCESSING / TRIMMING ===============================//
 
-    // Outputs from Preprocessing Subworkflow
-	
-    trimmed_reads_ch  = PREPROCESSING.out.trimmed_reads
-    fastp_reports_ch  = PREPROCESSING.out.fastp_reports
-    qc_results_ch     = PREPROCESSING.out.qc_reports
-    multiqc_quality   = PREPROCESSING.out.multiqc
-	
+    trimmed_reads_ch = Channel.empty() // Initialize empty channel
 
-	
+    if (params.input_reads) {
+        log.info "Using provided input reads for STAR Alignment..."
+        trimmed_reads_ch = Channel.fromPath(params.input_reads)
+    } else {
+        log.info "No input reads provided. Running Preprocessing..."
+        PREPROCESSING(params.samplesheet)
+        
+        trimmed_reads_ch  = PREPROCESSING.out.trimmed_reads
+        fastp_reports_ch  = PREPROCESSING.out.fastp_reports
+        qc_results_ch     = PREPROCESSING.out.qc_reports
+        multiqc_quality   = PREPROCESSING.out.multiqc
+    }
+
+    // If user wants QC-only mode, exit after preprocessing
     if (params.only_qc) {
-        log.info("Running only QC pipeline...")
+        log.info("QC completed. Exiting pipeline...")
         return
     }
 
-    //==================================== Run Specific Pipelines ====================================//
+    //==================================== STAR ALIGNMENT ====================================//
 
-
-        //===============================Step 2: Variant Calling=====================================//
-		
-    if (params.only_variant_calling) {
-        log.info("Running only Variant Calling pipeline... ")
-
-        VARIANT_CALLING(
-            trimmed_reads_ch,
-            params.star_genome_index,
-            params.reference_genome,
-            params.reference_genome_index,
-            params.reference_genome_dict,
-            params.merged_vcf,
-            params.merged_vcf_index,
-            params.denylist_bed,
-            params.snpeff_jar,
-            params.snpeff_config,
-            params.snpeff_db,
-            params.genomedb,
-            params.vep_cache_dir,
-            params.clinvar,
-            params.clinvartbi
-        )
-		//=======================Outputs from Variant calling Subworkflow===========================//
-
-        final_vcf_output = VARIANT_CALLING.out.final_vcf
-        star_logs = VARIANT_CALLING.out.star_logs
-        samtools_flagstat = VARIANT_CALLING.out.samtools_flagstat
-        gatk_metrics = VARIANT_CALLING.out.gatk_metrics
-        bcftools_stats = VARIANT_CALLING.out.bcftools_stats
-		filtered_vcf_stats = VARIANT_CALLING.out.filtered_vcf_stats
-		
-        log.info " Variant Calling Pipeline Completed."
-		
-		
-	
-	//===========================================Step 3: MultiQC===================================//
-	
-	// Run MultiQC ONLY for Variant Calling
-        
-		log.info(" Running MultiQC for Variant Calling...")
-        
-		MULTIQC_REPORT(
-            fastqc_results = qc_results_ch ,
-            fastp_reports = fastp_reports_ch,
-            star_logs = star_logs,
-            samtools_flagstat = samtools_flagstat,
-            gatk_metrics = gatk_metrics,
-            bcftools_stats = bcftools_stats,
-			filtered_vcf_stats = filtered_vcf_stats
-        )
-        log.info "MultiQC Report Generated for Variant Calling."
-		
+    if (!params.skip_star) {
+        log.info "Running STAR Alignment..."
+        STAR_ALIGN(trimmed_reads_ch, params.star_genome_index, params.gtf_annotation)
+    } else {
+        log.info "Skipping STAR Alignment as per user request."
     }
-	
-	//======================================== Step 4: Gene Fusion Detection===========================//
-    
-	else if (params.only_fusion_detection) {
-        log.info(" Running only Gene Fusion Detection pipeline...")
-
-        GENE_FUSION(
-            trimmed_reads_ch,
-            params.star_genome_index,
-            params.reference_genome,
-            params.gtf_annotation,
-            params.arriba_blacklist,
-            params.arriba_known_fusions,
-            params.scripts_dir
-        )
-
-        log.info " Gene Fusion Pipeline Completed."
-    }
-	
-	//=====================================  Step 5: Run Both (Full Workflow)=============================//
-    else {
-        log.info(" Running both Variant Calling & Gene Fusion pipelines...")
-
-        // Run Variant Calling
-        VARIANT_CALLING(
-            trimmed_reads_ch,
-            params.star_genome_index,
-            params.reference_genome,
-            params.reference_genome_index,
-            params.reference_genome_dict,
-            params.merged_vcf,
-            params.merged_vcf_index,
-            params.denylist_bed,
-            params.snpeff_jar,
-            params.snpeff_config,
-            params.snpeff_db,
-            params.genomedb,
-            params.vep_cache_dir,
-            params.clinvar,
-            params.clinvartbi
-        )
-		
-		//=======================Outputs from Variant calling Subworkflow===========================//
-
-        final_vcf_output = VARIANT_CALLING.out.final_vcf
-        star_logs = VARIANT_CALLING.out.star_logs
-        samtools_flagstat = VARIANT_CALLING.out.samtools_flagstat
-        gatk_metrics = VARIANT_CALLING.out.gatk_metrics
-        bcftools_stats = VARIANT_CALLING.out.bcftools_stats
-		filtered_vcf_stats = VARIANT_CALLING.out.filtered_vcf_stats
-		
-		
-		//  Run MultiQC ONLY for Variant Calling
-        log.info(" Running MultiQC for Variant Calling...")
-        
-        MULTIQC_REPORT(
-            fastqc_results = qc_results_ch ,
-            fastp_reports = fastp_reports_ch,
-            star_logs = star_logs,
-            samtools_flagstat = samtools_flagstat,
-            gatk_metrics = gatk_metrics,
-            bcftools_stats = bcftools_stats,
-			filtered_vcf_stats = filtered_vcf_stats
-        )
-
-        log.info " MultiQC Report Generated for Variant Calling."
-
-        // Run Gene Fusion Detection
-        GENE_FUSION(
-            trimmed_reads_ch,
-            params.star_genome_index,
-            params.reference_genome,
-            params.gtf_annotation,
-            params.arriba_blacklist,
-            params.arriba_known_fusions,
-            params.scripts_dir
-        )
-
-        log.info " Complete Pipeline Execution Completed."
-		
-	
-    }
-
 }
-
+   
 	
 	
     

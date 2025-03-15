@@ -50,11 +50,10 @@ workflow VARIANT_CALLING {
         // **Step 1: STAR Alignment**
         star_aligned_ch = STAR_ALIGNMENT(trimmed_reads_ch, star_index)
 		
-		star_aligned_ch.view { "STAR Alignment Output: $it" }
 
 
         // **Step 2: Sort BAM files**
-        sorted_bams = SAMTOOLS_SORT_INDEX(star_aligned_ch.map { tuple(it[0], it[1], it[5]) })
+        sorted_bams = SAMTOOLS_SORT_INDEX(star_aligned_ch)
 		
 		sorted_bams.view { "Sorted BAMs Output: $it" }
 
