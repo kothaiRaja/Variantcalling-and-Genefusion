@@ -43,4 +43,5 @@ workflow STAR_ALIGN {
 	align_stats  = alignment_stats_ch
     star_logs       = star_aligned_ch.log_final
 	star_log_out = star_aligned_ch.log_out
+	filtered_bams = filtered_bams_ch.filtered_sorted_bams
 }

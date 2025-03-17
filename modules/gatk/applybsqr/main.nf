@@ -9,16 +9,16 @@ process GATK_APPLYBQSR {
     publishDir "${params.outdir}/recalibrated_bams", mode: "copy"
 
     input:
-    tuple val(sample_id), path(bam), path(bai), path(recal_table), val(strandedness), path(interval)
+    tuple val(sample_id), val(strandedness), path(bam), path(bai), path(recal_table), path(interval)
     path(genome_fasta)
     path(index)
     path(dict)
 
     output:
-    tuple val(sample_id), 
+    tuple val(sample_id),val(strandedness),	
           path("${sample_id}_${interval.baseName}_recalibrated.bam"),
-          path("${sample_id}_${interval.baseName}_recalibrated.bai"),
-          val(strandedness)
+          path("${sample_id}_${interval.baseName}_recalibrated.bai")
+          
 
     script:
     

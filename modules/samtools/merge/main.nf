@@ -8,13 +8,13 @@ process MERGE_BAMS {
     container "https://depot.galaxyproject.org/singularity/samtools%3A1.15.1--h1170115_0"
 
     input:
-    tuple val(sample_id), path(bam_list), path(bai_list), val(strandedness)
+    tuple val(sample_id), val(strandedness), path(bam_list), path(bai_list)
 
     output:
-    tuple val(sample_id), 
+    tuple val(sample_id),val(strandedness), 
           path("${sample_id}_merged.bam"), 
-          path("${sample_id}_merged.bam.bai"), 
-          val(strandedness)
+          path("${sample_id}_merged.bam.bai")
+          
 
     script:
     """

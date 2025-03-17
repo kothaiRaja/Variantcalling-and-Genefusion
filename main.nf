@@ -3,6 +3,13 @@ nextflow.enable.dsl = 2
 // Import subworkflows
 include { PREPROCESSING } from './subworkflows/preprocessing.nf'
 include { STAR_ALIGN } from './subworkflows/star_align.nf'
+include { INTERVAL_PROCESSING } from './subworkflows/interval_processing.nf'
+include { MARK_DUPLICATES } from './subworkflows/markduplicates.nf'
+include { SPLIT_MERGE_BAMS } from './subworkflows/split_merge_bams.nf'
+include { BASE_RECALIBRATION } from './subworkflows/base_recalibration.nf'
+
+
+
 
 workflow {
 
@@ -39,9 +46,79 @@ workflow {
     if (!params.skip_star) {
         log.info "Running STAR Alignment..."
         STAR_ALIGN(trimmed_reads_ch, params.star_genome_index, params.gtf_annotation)
+		// Capture Outputs from STAR Alignment
+        star_bam_ch         = STAR_ALIGN.out.bam_sorted
+        chimeric_reads_ch   = STAR_ALIGN.out.chimeric_reads
+        flagstats_ch        = STAR_ALIGN.out.flagstats
+        align_stats_ch      = STAR_ALIGN.out.align_stats
+        star_logs_ch        = STAR_ALIGN.out.star_logs
+		filtered_bams_ch 	= STAR_ALIGN.out.filtered_bams
     } else {
         log.info "Skipping STAR Alignment as per user request."
     }
+	
+	//=====================================Intervals processing============================//
+	
+	// **Step 1: Convert BED file to Channel**
+    ch_exon_bed = Channel
+        .fromPath(params.exons_BED)
+        .map { file_path -> tuple(file_path.baseName, file_path) }
+        .view { meta, file -> println "  Exons BED Tuple: ${meta}, File: ${file}" }
+		
+	log.info "Starting Interval Processing..."
+    INTERVAL_PROCESSING(ch_exon_bed, params.reference_genome, params.reference_genome_dict)
+
+    // Capture Outputs from Interval Processing
+    intervals_ch = INTERVAL_PROCESSING.out.intervals
+
+    // **View the intervals to confirm output**
+    intervals_ch.view { file -> "Generated Interval: ${file}" }
+	
+	//===================================Markduplicates==============================//
+	
+	log.info "Starting MarkDuplicates Processing..."
+
+    MARK_DUPLICATES(filtered_bams_ch)
+
+    // Capture Outputs
+    dedup_bam_ch = MARK_DUPLICATES.out.marked_bams_bai
+	
+	// ==================== SPLIT & MERGE BAMs ==================== //
+
+	log.info "Running Split & Merge BAMs..."
+
+	SPLIT_MERGE_BAMS(
+		dedup_bam_ch,        // BAMs after MarkDuplicates
+		intervals_ch,		// Scattered intervals from Interval Processing
+		params.reference_genome,
+		params.reference_genome_index,
+		params.reference_genome_dict
+		
+	)
+
+	// Set the final BAMs channel
+	final_bams_ch = SPLIT_MERGE_BAMS.out.merged_calmd_bams
+	
+	//======================BASE_RECALIBRATION=========================//
+	
+	if (!params.skip_base_recalibration) {
+    log.info "Running Base Recalibration..."
+
+    BASE_RECALIBRATION(
+        final_bams_ch,    // BAMs after merging & CALMD
+        intervals_ch,		// Scattered intervals from Interval Processing
+    	params.reference_genome,
+		params.reference_genome_index,
+		params.reference_genome_dict,
+		params.merged_vcf,
+		params.merged_vcf_index)
+
+    recalibrated_bams_ch = BASE_RECALIBRATION.out.recalibrated_bams
+} else {
+    log.info "Skipping Base Recalibration. Using previous step's BAMs..."
+    recalibrated_bams_ch = final_bams_ch
+}
+	
 }
    
 	

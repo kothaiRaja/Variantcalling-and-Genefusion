@@ -1,20 +1,20 @@
 process SAMTOOLS_CALMD {
-    tag { "${sample_id}_${bam.baseName}" }  // Ensure unique tags for each split BAM
+    tag { "${sample_id}_${bam.baseName}" }  
 
     container "https://depot.galaxyproject.org/singularity/samtools%3A1.18--h50ea8bc_1"
 
     publishDir "${params.outdir}/calmd", mode: "copy"
 
     input:
-    tuple val(sample_id), path(bam), path(bai), val(strandedness) 
+    tuple val(sample_id), val(strandedness), path(bam), path(bai) 
     path genome_fasta
     path index
 
     output:
-    tuple val(sample_id), 
+    tuple val(sample_id),val(strandedness), 
           path("${bam.baseName}_calmd.bam"),
-          path("${bam.baseName}_calmd.bam.bai"),
-          val(strandedness)
+          path("${bam.baseName}_calmd.bam.bai")
+          
 
     script:
     """

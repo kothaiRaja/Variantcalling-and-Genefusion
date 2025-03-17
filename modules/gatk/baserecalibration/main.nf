@@ -9,7 +9,7 @@ process GATK_BASERECALIBRATOR {
     publishDir "${params.outdir}/recal_tables", mode: "copy"
 
     input:
-    tuple val(sample_id), path(bam), path(bai), val(strandedness), path(interval)
+    tuple val(sample_id), val(strandedness), path(bam), path(bai), path(interval)
     path(genome_fasta)
     path(index)
     path(dict)
@@ -17,7 +17,7 @@ process GATK_BASERECALIBRATOR {
     path(known_variants_index)
 
     output:
-    tuple val(sample_id), path("${sample_id}_recal_data.table"), val(strandedness)
+    tuple val(sample_id), val(strandedness), path("${sample_id}_recal_data.table")
 
     script:
 

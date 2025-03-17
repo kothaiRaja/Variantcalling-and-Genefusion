@@ -1,0 +1,329 @@
+STAR version=2.7.11a
+STAR compilation time,server,dir=2023-09-15T02:58:53+0000 :/opt/conda/conda-bld/star_1694746407721/work/source
+##### Command Line:
+/usr/local/bin/STAR-avx2 --genomeDir STAR_index --readFilesIn trimmed_sample_1_R1.fastq.gz trimmed_sample_1_R2.fastq.gz --runThreadN 12 --readFilesCommand zcat --sjdbFileChrStartEnd sample_1_pass1_SJ.out.tab --sjdbGTFfile annotations.gtf --twopassMode None --outFilterType BySJout --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterMismatchNmax 999 --outFilterMatchNmin 16 --outFilterMatchNminOverLread 0.3 --outFilterScoreMinOverLread 0.3 --chimSegmentMin 10 --chimJunctionOverhangMin 10 --chimScoreJunctionNonGTAG -4 --chimScoreMin 1 --chimOutType WithinBAM SeparateSAMold --chimScoreDropMax 50 --chimScoreSeparation 10 --outSAMtype BAM SortedByCoordinate --limitBAMsortRAM 24576000000 --outSAMunmapped Within --quantMode TranscriptomeSAM GeneCounts --outFileNamePrefix sample_1_ --outSAMattrRGline ID:sample_1 LB:library PL:ILLUMINA PU:machine SM:sample_1 CN:MySeqCenter --outSAMstrandField intronMotif
+##### Initial USER parameters from Command Line:
+outFileNamePrefix                 sample_1_
+###### All USER parameters from Command Line:
+genomeDir                     STAR_index     ~RE-DEFINED
+readFilesIn                   trimmed_sample_1_R1.fastq.gz   trimmed_sample_1_R2.fastq.gz        ~RE-DEFINED
+runThreadN                    12     ~RE-DEFINED
+readFilesCommand              zcat        ~RE-DEFINED
+sjdbFileChrStartEnd           sample_1_pass1_SJ.out.tab        ~RE-DEFINED
+sjdbGTFfile                   annotations.gtf     ~RE-DEFINED
+twopassMode                   None     ~RE-DEFINED
+outFilterType                 BySJout     ~RE-DEFINED
+alignSJoverhangMin            8     ~RE-DEFINED
+alignSJDBoverhangMin          1     ~RE-DEFINED
+outFilterMismatchNmax         999     ~RE-DEFINED
+outFilterMatchNmin            16     ~RE-DEFINED
+outFilterMatchNminOverLread   0.3     ~RE-DEFINED
+outFilterScoreMinOverLread    0.3     ~RE-DEFINED
+chimSegmentMin                10     ~RE-DEFINED
+chimJunctionOverhangMin       10     ~RE-DEFINED
+chimScoreJunctionNonGTAG      -4     ~RE-DEFINED
+chimScoreMin                  1     ~RE-DEFINED
+chimOutType                   WithinBAM   SeparateSAMold        ~RE-DEFINED
+chimScoreDropMax              50     ~RE-DEFINED
+chimScoreSeparation           10     ~RE-DEFINED
+outSAMtype                    BAM   SortedByCoordinate        ~RE-DEFINED
+limitBAMsortRAM               24576000000     ~RE-DEFINED
+outSAMunmapped                Within        ~RE-DEFINED
+quantMode                     TranscriptomeSAM   GeneCounts        ~RE-DEFINED
+outFileNamePrefix             sample_1_     ~RE-DEFINED
+outSAMattrRGline              ID:sample_1   LB:library   PL:ILLUMINA   PU:machine   SM:sample_1   CN:MySeqCenter        ~RE-DEFINED
+outSAMstrandField             intronMotif     ~RE-DEFINED
+##### Finished reading parameters from all sources
+
+##### Final user re-defined parameters-----------------:
+runThreadN                        12
+genomeDir                         STAR_index
+readFilesIn                       trimmed_sample_1_R1.fastq.gz   trimmed_sample_1_R2.fastq.gz   
+readFilesCommand                  zcat   
+limitBAMsortRAM                   24576000000
+outFileNamePrefix                 sample_1_
+outSAMtype                        BAM   SortedByCoordinate   
+outSAMstrandField                 intronMotif
+outSAMunmapped                    Within   
+outSAMattrRGline                  ID:sample_1   LB:library   PL:ILLUMINA   PU:machine   SM:sample_1   CN:MySeqCenter   
+outFilterType                     BySJout
+outFilterScoreMinOverLread        0.3
+outFilterMatchNmin                16
+outFilterMatchNminOverLread       0.3
+outFilterMismatchNmax             999
+alignSJoverhangMin                8
+alignSJDBoverhangMin              1
+chimSegmentMin                    10
+chimScoreMin                      1
+chimScoreDropMax                  50
+chimScoreSeparation               10
+chimScoreJunctionNonGTAG          -4
+chimJunctionOverhangMin           10
+chimOutType                       WithinBAM   SeparateSAMold   
+sjdbFileChrStartEnd               sample_1_pass1_SJ.out.tab   
+sjdbGTFfile                       annotations.gtf
+quantMode                         TranscriptomeSAM   GeneCounts   
+twopassMode                       None
+
+-------------------------------
+##### Final effective command line:
+/usr/local/bin/STAR-avx2   --runThreadN 12   --genomeDir STAR_index   --readFilesIn trimmed_sample_1_R1.fastq.gz   trimmed_sample_1_R2.fastq.gz      --readFilesCommand zcat      --limitBAMsortRAM 24576000000   --outFileNamePrefix sample_1_   --outSAMtype BAM   SortedByCoordinate      --outSAMstrandField intronMotif   --outSAMunmapped Within      --outSAMattrRGline ID:sample_1   LB:library   PL:ILLUMINA   PU:machine   SM:sample_1   CN:MySeqCenter      --outFilterType BySJout   --outFilterScoreMinOverLread 0.3   --outFilterMatchNmin 16   --outFilterMatchNminOverLread 0.3   --outFilterMismatchNmax 999   --alignSJoverhangMin 8   --alignSJDBoverhangMin 1   --chimSegmentMin 10   --chimScoreMin 1   --chimScoreDropMax 50   --chimScoreSeparation 10   --chimScoreJunctionNonGTAG -4   --chimJunctionOverhangMin 10   --chimOutType WithinBAM   SeparateSAMold      --sjdbFileChrStartEnd sample_1_pass1_SJ.out.tab      --sjdbGTFfile annotations.gtf   --quantMode TranscriptomeSAM   GeneCounts      --twopassMode None
+----------------------------------------
+
+Number of fastq files for each mate = 1
+
+   Input read files for mate 1 :
+-rw-r--r--    1 kothai   kothai     6899783 Mar 17 11:48 trimmed_sample_1_R1.fastq.gz
+
+   readsCommandsFile:
+exec > "sample_1__STARtmp/tmp.fifo.read1"
+echo FILE 0
+zcat      "trimmed_sample_1_R1.fastq.gz"
+
+
+   Input read files for mate 2 :
+-rw-r--r--    1 kothai   kothai     7338951 Mar 17 11:48 trimmed_sample_1_R2.fastq.gz
+
+   readsCommandsFile:
+exec > "sample_1__STARtmp/tmp.fifo.read2"
+echo FILE 0
+zcat      "trimmed_sample_1_R2.fastq.gz"
+
+WARNING --outSAMattrRG defines a read group, therefore STAR will output RG attribute
+WARNING --outSAMstrandField=intronMotif, therefore STAR will output XS attribute
+ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
+Finished loading and checking parameters
+Reading genome generation parameters:
+### /usr/local/bin/STAR-avx2   --runMode genomeGenerate      --runThreadN 8   --genomeDir STAR_index   --genomeFastaFiles genome.fa      --sjdbGTFfile annotations.gtf
+### GstrandBit=32
+versionGenome                 2.7.4a     ~RE-DEFINED
+genomeType                    Full     ~RE-DEFINED
+genomeFastaFiles              genome.fa        ~RE-DEFINED
+genomeSAindexNbases           14     ~RE-DEFINED
+genomeChrBinNbits             18     ~RE-DEFINED
+genomeSAsparseD               1     ~RE-DEFINED
+genomeTransformType           None     ~RE-DEFINED
+genomeTransformVCF            -     ~RE-DEFINED
+sjdbOverhang                  100     ~RE-DEFINED
+sjdbFileChrStartEnd           -        ~RE-DEFINED
+sjdbGTFfile                   annotations.gtf     ~RE-DEFINED
+sjdbGTFchrPrefix              -     ~RE-DEFINED
+sjdbGTFfeatureExon            exon     ~RE-DEFINED
+sjdbGTFtagExonParentTranscripttranscript_id     ~RE-DEFINED
+sjdbGTFtagExonParentGene      gene_id     ~RE-DEFINED
+sjdbInsertSave                Basic     ~RE-DEFINED
+genomeFileSizes               52558607   337045314        ~RE-DEFINED
+Genome version is compatible with current STAR
+Number of real (reference) chromosomes= 1
+1	22	50818468	0
+--sjdbOverhang = 100 taken from the generated genome
+Started loading the genome: Mon Mar 17 11:57:40 2025
+
+Genome: size given as a parameter = 52558607
+SA: size given as a parameter = 337045314
+SAindex: size given as a parameter = 1
+Read from SAindex: pGe.gSAindexNbases=14  nSAi=357913940
+nGenome=52558607;  nSAbyte=337045314
+GstrandBit=32   SA number of indices=81707954
+Shared memory is not used for genomes. Allocated a private copy of the genome.
+Genome file size: 52558607 bytes; state: good=1 eof=0 fail=0 bad=0
+Loading Genome ... done! state: good=1 eof=0 fail=0 bad=0; loaded 52558607 bytes
+SA file size: 337045314 bytes; state: good=1 eof=0 fail=0 bad=0
+Loading SA ... done! state: good=1 eof=0 fail=0 bad=0; loaded 337045314 bytes
+Loading SAindex ... done: 1565873619 bytes
+Finished loading the genome: Mon Mar 17 11:57:41 2025
+
+Processing splice junctions database sjdbN=8471,   pGe.sjdbOverhang=100 
+alignIntronMax=alignMatesGapMax=0, the max intron size will be approximately determined by (2^winBinNbits)*winAnchorDistNbins=589824
+Mar 17 11:57:41   Loaded database junctions from the generated genome STAR_index//sjdbList.out.tab: 8471 total junctions
+
+Mar 17 11:57:41   Loaded database junctions from the pGe.sjdbFileChrStartEnd file(s), total number of junctions:11705
+
+Mar 17 11:57:41 ..... processing annotations GTF
+Processing pGe.sjdbGTFfile=annotations.gtf, found:
+		5353 transcripts
+		34462 exons (non-collapsed)
+		8471 collapsed junctions
+Total junctions: 20176
+Mar 17 11:57:41 ..... finished GTF processing
+
+Mar 17 11:57:41   Finished preparing junctions
+Mar 17 11:57:41 ..... inserting junctions into the genome indices
+Mar 17 11:57:41   Finished SA search: number of new junctions=153, old junctions=8471
+Mar 17 11:57:41   Finished sorting SA indicesL nInd=61200
+Genome size with junctions=52589360  50855936   1733424
+GstrandBit1=32   GstrandBit=32
+Mar 17 11:57:42   Finished inserting junction indices
+Mar 17 11:57:46   Finished SAi
+Mar 17 11:57:46 ..... finished inserting junctions into genome
+Loaded transcript database, nTr=5353
+Loaded exon database, nEx=34462
+WARNING --chimOutType=WithinBAM, therefore STAR will output NM attribute
+Opening the file: sample_1__STARtmp//Chimeric.out.sam.thread0 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate1.thread0 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate2.thread0 ... ok
+Opening the file: sample_1__STARtmp//Chimeric.out.sam.thread1 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate1.thread1 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate2.thread1 ... ok
+Opening the file: sample_1__STARtmp//Chimeric.out.sam.thread2 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate1.thread2 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate2.thread2 ... ok
+Opening the file: sample_1__STARtmp//Chimeric.out.sam.thread3 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate1.thread3 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate2.thread3 ... ok
+Opening the file: sample_1__STARtmp//Chimeric.out.sam.thread4 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate1.thread4 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate2.thread4 ... ok
+Opening the file: sample_1__STARtmp//Chimeric.out.sam.thread5 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate1.thread5 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate2.thread5 ... ok
+Opening the file: sample_1__STARtmp//Chimeric.out.sam.thread6 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate1.thread6 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate2.thread6 ... ok
+Opening the file: sample_1__STARtmp//Chimeric.out.sam.thread7 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate1.thread7 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate2.thread7 ... ok
+Opening the file: sample_1__STARtmp//Chimeric.out.sam.thread8 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate1.thread8 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate2.thread8 ... ok
+Opening the file: sample_1__STARtmp//Chimeric.out.sam.thread9 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate1.thread9 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate2.thread9 ... ok
+Opening the file: sample_1__STARtmp//Chimeric.out.sam.thread10 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate1.thread10 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate2.thread10 ... ok
+Opening the file: sample_1__STARtmp//Chimeric.out.sam.thread11 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate1.thread11 ... ok
+Opening the file: sample_1__STARtmp//FilterBySJoutFiles.mate2.thread11 ... ok
+Created thread # 1
+Created thread # 2
+Created thread # 3
+Starting to map file # 0
+mate 1:   trimmed_sample_1_R1.fastq.gz
+mate 2:   trimmed_sample_1_R2.fastq.gz
+Created thread # 4
+Created thread # 5
+Created thread # 6
+Created thread # 7
+Created thread # 8
+Created thread # 9
+Created thread # 10
+Created thread # 11
+Thread #3 end of input stream, nextChar=-1
+Completed: thread #4
+Completed: thread #5
+Completed: thread #6
+Completed: thread #10
+Completed: thread #8
+Completed: thread #7
+Completed: thread #0
+Completed: thread #9
+Completed: thread #11
+Completed: thread #3
+Completed: thread #1
+Joined thread # 1
+Completed: thread #2
+Joined thread # 2
+Joined thread # 3
+Joined thread # 4
+Joined thread # 5
+Joined thread # 6
+Joined thread # 7
+Joined thread # 8
+Joined thread # 9
+Joined thread # 10
+Joined thread # 11
+Completed stage 1 mapping of outFilterBySJout mapping
+Detected 0 novel junctions that passed filtering, will proceed to filter reads that contained unannotated junctions
+Created thread # 1
+Created thread # 2
+Created thread # 3
+Created thread # 4
+Created thread # 5
+BAM sorting: 0 mapped reads
+BAM sorting bins genomic start loci:
+1	32567	2147486896
+2	32567	2147486896
+3	32567	2147486896
+4	32567	2147486896
+5	32567	2147486896
+6	32567	2147486896
+7	32567	2147486896
+8	32567	2147486896
+9	32567	2147486896
+10	32567C2147486896
+11	32567	2147486896
+6
+11	32567	2147486896
+12	32567	2147486896
+13	32567	2147486896
+14	32567	2147486896
+15	32567	2147486896
+16	32567	2147486896
+17	32567	2147486896
+18	32567	2147486896
+19	32567	2147486896
+20	32567	2147486896
+21	32567	2147486896
+22	32567	2147486896
+23	32567	2147486896
+24	32567	2147486896
+25	32567	2147486896
+26	32567	2147486896
+27	32567	2147486896
+28	32567	2147486896
+29	32567	2147486896
+30	32567	2147486896
+31	32567	2147486896
+32	32567	2147486896
+33	32567	2147486896
+34	32567	2147486896
+35	32567	2147486896
+3336	32567	2147486896
+37	32567	2147486896
+38	32567	2147486896
+39	32567	2147486896
+40	32567	2147486896
+41	32567	2147486896
+42	32567	2147486896
+43	32567	2147486896
+44	32567	2147486896
+45	32567	2147486896
+46	32567	2147486896
+47	32567	2147486896
+48	32567	2147486896
+Created thread # 8
+Completed: thread #4
+Completed: thread #7
+Completed: thread #6
+Completed: thread #8
+Completed: thread #5
+Created thread # 9
+Completed: thread #9
+Created thread # 10
+Completed: thread #3
+Created thread # 11
+Completed: thread #0
+Completed: thread #10
+Completed: thread #11
+Completed: thread #2
+Completed: thread #1
+Joined thread # 1
+Joined thread # 2
+Joined thread # 3
+Joined thread # 4
+Joined thread # 5
+Joined thread # 6
+Joined thread # 7
+Joined thread # 8
+Joined thread # 9
+Joined thread # 10
+Joined thread # 11
+Mar 17 12:10:58 ..... finished mapping
+RAM after mapping:
+VmPeak:	 7879424 kB; VmSize:	 7774244 kB; VmHWM:	 4198924 kB; VmRSS:	 4146728 kB; 
+RAM after freeing genome index memory:
+VmPeak:	 7879424 kB; VmSize:	 4048916 kB; VmHWM:	 4198924 kB; VmRSS:	 1905180 kB; 
+Mar 17 12:10:58 ..... started sorting BAM
+Max memory needed for sorting = 37228739
+ALL DONE!

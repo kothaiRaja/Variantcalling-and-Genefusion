@@ -9,15 +9,11 @@ process GATK_MARK_DUPLICATES {
     publishDir "${params.outdir}/dedup_bam", mode: "copy"
 
     input:
-    tuple val(sample_id), path(sorted_bam), path(sorted_bam_index),val(strandedness)
+    tuple val(sample_id),val(strandedness), path(sorted_bam), path(sorted_bam_index)
 
     output:
-     output:
-    tuple val(sample_id), 
-          path("${sample_id}_marked_duplicates.bam"), 
-          path("${sample_id}_marked_duplicates.bai"),
-		  val(strandedness),
-          path("${sample_id}_dup_metrics.txt")
+    tuple val(sample_id), val(strandedness), path("${sample_id}_marked_duplicates.bam"), path("${sample_id}_marked_duplicates.bai"), emit: marked_bams_bai
+	tuple val(sample_id), val(strandedness), path("${sample_id}_dup_metrics.txt"), emit: marked_bams_bai_metrics
 
     script:
     """

@@ -10,16 +10,16 @@ process SPLIT_NCIGAR_READS {
     publishDir "${params.outdir}/split_ncigar", mode: "copy"
 
     input:
-    tuple val(sample_id), path(bam), path(bai), val(strandedness), path(interval)
+    tuple val(sample_id), val(strandedness), path(bam), path(bai), path(interval)
     path genome_fasta
     path index
     path genome_dict
 
     output:
-    tuple val(sample_id), 
+    tuple val(sample_id),val(strandedness), 
           path("${sample_id}_split_${interval.baseName}.bam"), 
-          path("${sample_id}_split_${interval.baseName}.bai"), 
-          val(strandedness)
+          path("${sample_id}_split_${interval.baseName}.bai")
+          
 
     script:
     def avail_mem = task.memory ? task.memory.giga : 3  
