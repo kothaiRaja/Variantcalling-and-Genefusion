@@ -7,6 +7,12 @@ include { INTERVAL_PROCESSING } from './subworkflows/interval_processing.nf'
 include { MARK_DUPLICATES } from './subworkflows/markduplicates.nf'
 include { SPLIT_MERGE_BAMS } from './subworkflows/split_merge_bams.nf'
 include { BASE_RECALIBRATION } from './subworkflows/base_recalibration.nf'
+include { VARIANT_CALLING } from './subworkflows/variant_calling.nf'
+include { ANNOTATE } from './subworkflows/variant_annotations.nf'
+
+
+
+
 
 
 
@@ -118,6 +124,48 @@ workflow {
     log.info "Skipping Base Recalibration. Using previous step's BAMs..."
     recalibrated_bams_ch = final_bams_ch
 }
+	
+	// =========== Step 6: Variant Calling =========== //
+    log.info "🔹 Running Variant Calling..."
+    VARIANT_CALLING(
+        recalibrated_bams_ch,            // BAMs after splitting & merging
+        params.reference_genome,
+        params.reference_genome_index,
+        params.reference_genome_dict,
+        params.merged_vcf,
+        params.merged_vcf_index
+    )
+
+    // Capture Variant Calling Outputs
+    filtered_vcf_ch = VARIANT_CALLING.out.final_variants
+    selected_snps_ch = VARIANT_CALLING.out.selected_snps
+    selected_indels_ch = VARIANT_CALLING.out.selected_indels
+	selected_variants_ch = VARIANT_CALLING.out.selected_variants
+
+    log.info "✅ Variant Calling Completed!"
+	
+	// ===================== Step 7: Variant Annotation ===================== //
+	log.info "🔹 Running Variant Annotation..."
+
+	annotation_results = ANNOTATE(
+        filtered_vcf_ch,
+        params.annotation_tools,
+		params.snpeff_jar,
+        params.snpeff_db,
+		params.snpeff_config,
+        params.genomedb,
+        params.genome_assembly,
+        params.species,
+        params.cache_version,
+        params.vep_cache_dir,
+		params.clinvar,
+		params.clinvartbi
+    )
+
+    log.info "Variant annotation complete!"
+
+	final_annotated_vcf = ANNOTATE.out.final_vcf_annotated
+	html_report 		= ANNOTATE.out.reports_html
 	
 }
    

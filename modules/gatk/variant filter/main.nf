@@ -5,7 +5,7 @@ process GATK_VARIANT_FILTER {
     memory params.get('gatk_variant_filter_memory', '24 GB')
     time params.get('gatk_variant_filter_time', '3h')
 
-    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.2.6.0--hdfd78af_0"
+    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.6.1.0--py310hdfd78af_0"
     publishDir "${params.outdir}/variant_filter/${sample_id}", mode: "copy"
 
     input:

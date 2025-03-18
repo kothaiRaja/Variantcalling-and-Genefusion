@@ -9,7 +9,7 @@ process GATK_HAPLOTYPE_CALLER {
     publishDir "${params.outdir}/haplotype_caller", mode: "copy"
 
     input:
-    tuple val(sample_id), path(bam), path(bai), val(strandedness)
+    tuple val(sample_id), val(strandedness), path(bam), path(bai)
     path(genome)
     path(genome_index)
     path(genome_dict)
@@ -17,8 +17,8 @@ process GATK_HAPLOTYPE_CALLER {
     path(known_sites_vcf_index)
 
     output:
-    tuple val(sample_id), path("output_${bam.baseName}.vcf.gz"), 
-          path("output_${bam.baseName}.vcf.gz.tbi"), val(strandedness)
+    tuple val(sample_id), val(strandedness), path("output_${bam.baseName}.vcf.gz"), 
+          path("output_${bam.baseName}.vcf.gz.tbi")
 
     script:
     """
@@ -37,7 +37,7 @@ process GATK_HAPLOTYPE_CALLER {
     # Extract a unique identifier from BAM filename
     BAM_BASENAME=\$(basename ${bam} .bam)
 
-    # Run HaplotypeCaller with unique output filenames
+    # Run HaplotypeCaller with RNA-seq optimizations
     gatk HaplotypeCaller \
         --native-pair-hmm-threads \$THREADS \
         --reference ${genome} \
@@ -45,8 +45,11 @@ process GATK_HAPLOTYPE_CALLER {
         -I ${bam} \
         --standard-min-confidence-threshold-for-calling 10.0 \
         --min-base-quality-score 10 \
-        --output-mode EMIT_ALL_CONFIDENT_SITES \
+        --output-mode EMIT_VARIANTS_ONLY \
+        --dont-use-soft-clipped-bases true \
+        --disable-read-filter NotDuplicateReadFilter \
         --dbsnp ${known_sites_vcf} \
         --verbosity INFO
     """
 }
+
