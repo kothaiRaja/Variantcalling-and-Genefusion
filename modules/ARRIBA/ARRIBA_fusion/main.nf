@@ -9,7 +9,8 @@ process ARRIBA {
     publishDir "${params.outdir}/ARRIBA", mode: 'copy'
 
     input:
-    tuple val(sample_id), path(log_final), path(log_out), path(bam), path(chimeric_sam), path(log_progress), path(splice_junctions), val(strandedness)
+	tuple val(sample_id), val(strandedness),path(bam), path(bai)
+    tuple val(sample_id), val(strandedness),path(chimeric_sam)
     path fasta                                     
     path gtf                                       
     path blacklist                                 

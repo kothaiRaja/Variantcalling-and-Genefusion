@@ -2,7 +2,13 @@
 
 **A scalable, reproducible, and modular Nextflow pipeline for RNA-seq variant calling and fusion detection.**  
 
-**GitHub Repository:** [Variantcalling-and-Genefusion](https://github.com/kothaiRaja/Variantcalling-and-Genefusion.git)  
+**GitHub Repository:** [Variantcalling-and-Genefusion](https://github.com/kothaiRaja/Variantcalling-and-Genefusion.git) 
+ 
+## RNA-seq Variant Calling and Gene Fusion Workflow
+
+This flowchart represents the RNA-seq analysis workflow, including variant calling and gene fusion detection.
+
+![RNA-seq Workflow](rna_seq_workflow_fusion_headings.png)
 
 ---
 

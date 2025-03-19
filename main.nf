@@ -9,6 +9,8 @@ include { SPLIT_MERGE_BAMS } from './subworkflows/split_merge_bams.nf'
 include { BASE_RECALIBRATION } from './subworkflows/base_recalibration.nf'
 include { VARIANT_CALLING } from './subworkflows/variant_calling.nf'
 include { ANNOTATE } from './subworkflows/variant_annotations.nf'
+include { GENE_FUSION } from './subworkflows/gene_fusion.nf'
+
 
 
 
@@ -157,15 +159,29 @@ workflow {
         params.genome_assembly,
         params.species,
         params.cache_version,
-        params.vep_cache_dir,
-		params.clinvar,
-		params.clinvartbi
+        params.vep_cache_dir
+		
     )
 
     log.info "Variant annotation complete!"
 
 	final_annotated_vcf = ANNOTATE.out.final_vcf_annotated
 	html_report 		= ANNOTATE.out.reports_html
+	
+	//================== Step 8: Run Gene Fusion Analysis on STAR Chimeric Reads================//
+    fusions = GENE_FUSION(
+		star_bam_ch,
+        chimeric_reads_ch,   
+        params.reference_genome,
+        params.gtf_annotation,
+        params.arriba_blacklist,
+        params.arriba_known_fusions,
+        params.scripts_dir
+	)
+    
+	//Capturing the output from ARRIBA
+	ARRIBA_fusion_ch = GENE_FUSION.out.fusion_results
+	ARRIBA_visualisation_ch = GENE_FUSION.out.fusion_visualizations
 	
 }
    

@@ -16,7 +16,7 @@ workflow VARIANT_ANNOTATION {
     genomedb
 
     main:
-    log.info "🔹 Starting Variant Annotation Workflow..."
+    log.info " Starting Variant Annotation Workflow..."
 
    annotated_variants_ch = ANNOTATE_VARIANTS(filtered_variants_ch, snpEffJar, snpEffConfig, snpEffDbDir, genomedb)
    
