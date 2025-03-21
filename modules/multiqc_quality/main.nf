@@ -1,11 +1,28 @@
 process MultiQC_quality {
-  publishDir "${params.resultsdir}/multiqc_quality", mode: "copy"
-  container "https://depot.galaxyproject.org/singularity/multiqc%3A1.24.1--pyhdfd78af_0"
+  tag "MultiQC_quality"
+  label 'process_low'
+
+  publishDir params.multiqc_qualtiy_outdir, mode: "copy"
+  container params.multiqc_quality_container
+
   input:
     path report_files
+
   output:
     path "multiqc_report.html", emit: report
+    path "versions.yml", emit: versions
+
+  script:
   """
+  echo "Running MultiQC on quality control reports..."
+
   multiqc ${report_files.join(' ')} -o .
+
+  # Capture MultiQC version
+  multiqc_version=\$(multiqc --version 2>&1 | grep -oP '[0-9]+\\.[0-9]+(\\.[0-9]+)?')
+  cat <<EOF > versions.yml
+  "${task.process}":
+    multiqc: "\${multiqc_version}"
+  EOF
   """
 }

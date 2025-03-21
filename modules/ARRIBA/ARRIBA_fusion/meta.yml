@@ -1,0 +1,110 @@
+name: arriba
+description: |
+  Uses Arriba to detect gene fusions from RNA-seq data.
+  This process takes STAR-aligned BAM files along with chimeric alignments and annotates
+  potential gene fusions. It outputs a list of predicted fusions and discarded candidates.
+
+  It is suitable for cancer transcriptome analysis where fusion discovery is critical.
+
+keywords:
+  - arriba
+  - fusion detection
+  - RNA-seq
+  - chimeric
+  - cancer genomics
+
+tools:
+  - arriba:
+      description: |
+        Arriba is a fast and accurate fusion detection tool for RNA-seq data.
+        It analyzes chimeric alignments and detects potential fusion transcripts.
+      documentation: https://github.com/suhrig/arriba
+      licence: ["GPL-3.0-or-later"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique identifier for the sample
+  - strandedness:
+      type: string
+      description: Strand information
+  - bam:
+      type: file
+      description: Aligned and sorted BAM file
+      pattern: "*.bam"
+  - bai:
+      type: file
+      description: BAM index file
+      pattern: "*.bam.bai"
+  - chimeric_sam:
+      type: file
+      description: STAR chimeric output file (.Chimeric.out.sam)
+      pattern: "*.sam"
+  - fasta:
+      type: file
+      description: Reference genome FASTA
+      pattern: "*.fa"
+  - gtf:
+      type: file
+      description: Gene annotation file in GTF format
+      pattern: "*.gtf"
+  - blacklist:
+      type: file
+      description: Arriba-provided blacklist to reduce false positives
+      pattern: "*.tsv"
+  - known_fusions:
+      type: file
+      description: Arriba-provided known fusion list for annotation
+      pattern: "*.tsv"
+
+output:
+  - fusions:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - fusion output TSV from Arriba
+          - strandedness
+      pattern: "*.fusions.tsv"
+  - fusions_discarded:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - discarded fusion candidates
+          - strandedness
+      pattern: "*.fusions.discarded.tsv"
+  - versions:
+      type: file
+      description: YAML file with Arriba version info
+      pattern: "versions.yml"
+
+parameters:
+  - arriba_container:
+      type: string
+      description: Singularity container path containing Arriba
+  - arriba_outdir:
+      type: string
+      description: Directory to publish Arriba results
+
+parameters_used:
+  - -x:
+      description: Input BAM file
+  - -c:
+      description: Chimeric SAM file from STAR
+  - -a:
+      description: Reference genome FASTA
+  - -g:
+      description: Gene annotation file (GTF)
+  - -b:
+      description: Blacklist file to filter out false positives
+  - -k:
+      description: Known fusion file to annotate known fusion events
+  - -o:
+      description: Output file for predicted gene fusions
+  - -O:
+      description: Output file for discarded gene fusion candidates
+
+authors:
+  
+  - "Adapted from official Arriba usage & nf-core style"

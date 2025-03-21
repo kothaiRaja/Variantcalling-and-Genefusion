@@ -1,0 +1,64 @@
+name: scatter_interval_list
+description: |
+  Splits a GATK interval list file into multiple chunks using GATK's `IntervalListTools`.
+  This is useful for scattering genomic intervals across multiple parallel jobs, improving pipeline efficiency
+  in variant calling or coverage analysis.
+
+  The process supports a configurable scatter count (number of chunks) and ensures that all output
+  interval files are uniquely named. It also captures the version of GATK used in a `versions.yml` file.
+
+keywords:
+  - gatk
+  - interval list
+  - scatter
+  - parallelization
+  - target regions
+
+tools:
+  - gatk:
+      description: |
+        GATK's `IntervalListTools` allows for manipulation and scattering of interval lists to support parallel workflows.
+        It is commonly used to split large sets of genomic intervals into balanced chunks for parallel variant calling.
+      documentation: https://gatk.broadinstitute.org/hc/en-us/articles/360037226012-IntervalListTools
+      licence: ["BSD-3-Clause"]
+
+input:
+  - meta:
+      type: string
+      description: Metadata or sample ID associated with the interval list (can be generic like 'target_regions')
+  - interval_list:
+      type: file
+      description: GATK-compatible interval list file (e.g. output of `BedToIntervalList`)
+      pattern: "*.interval_list"
+  - genome_dict:
+      type: file
+      description: Reference genome sequence dictionary (.dict) required by GATK
+      pattern: "*.dict"
+
+output:
+  - scattered_intervals:
+      type: tuple
+      description: |
+        Tuple containing:
+          - meta
+          - one or more uniquely named scattered interval list files
+      pattern: ["*.interval_list"]
+  - versions:
+      type: file
+      description: YAML file with GATK version used in the process
+      pattern: "versions.yml"
+
+parameters:
+  - gatk_container:
+      type: string
+      description: Singularity container path for GATK
+  - scatter_count:
+      type: integer
+      description: Number of chunks to split the interval list into
+  - scatter_intervals_outdir:
+      type: string
+      description: Directory to publish the scattered interval list files
+
+authors:
+  
+  - "Adapted from nf-core module style"

@@ -1,0 +1,82 @@
+name: split_ncigar_reads
+description: |
+  Performs read splitting and transformation on RNA-seq BAM files using GATK's `SplitNCigarReads`.
+  This is a required preprocessing step before variant calling with GATK on RNA-seq data.
+  The process splits reads into exon segments and hard-clips overhanging sequences for proper variant analysis.
+
+  It supports scatter-gather execution by allowing interval-based processing of BAM files.
+  Each output is a per-interval BAM and index file, with version tracking.
+
+keywords:
+  - gatk
+  - RNA-seq
+  - preprocessing
+  - splitncigar
+  - scatter
+  - variant calling
+
+tools:
+  - gatk:
+      description: |
+        The GATK `SplitNCigarReads` tool processes RNA-seq alignments by splitting reads at N CIGAR operations,
+        hard-clipping any overhanging sequences, and adjusting MAPQ values if needed.
+      documentation: https://gatk.broadinstitute.org/hc/en-us/articles/360037593851-SplitNCigarReads
+      licence: ["BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Sample identifier
+  - strandedness:
+      type: string
+      description: Strand information
+  - bam:
+      type: file
+      description: Input coordinate-sorted BAM file
+      pattern: "*.bam"
+  - bai:
+      type: file
+      description: Index file corresponding to BAM
+      pattern: "*.bai"
+  - interval:
+      type: file
+      description: Interval list file defining the genomic region to process
+      pattern: "*.interval_list"
+  - genome_fasta:
+      type: file
+      description: Reference genome FASTA file
+      pattern: "*.fa"
+  - index:
+      type: file
+      description: BWA or GATK index file(s) used internally
+  - genome_dict:
+      type: file
+      description: Reference genome dictionary (.dict)
+      pattern: "*.dict"
+
+output:
+  - split_interval_bams:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - strandedness
+          - split and clipped BAM file per interval
+          - BAM index file
+      pattern: ["*_split_*.bam", "*_split_*.bai"]
+  - versions:
+      type: file
+      description: YAML file capturing the version of GATK used
+      pattern: "versions.yml"
+
+parameters:
+  - gatk_container:
+      type: string
+      description: Singularity container for GATK
+  - split_ncigar_outdir:
+      type: string
+      description: Directory where output split BAMs will be saved
+
+authors:
+  
+  - "Adapted from nf-core module conventions"

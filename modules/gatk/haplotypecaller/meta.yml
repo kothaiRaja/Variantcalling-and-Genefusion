@@ -1,0 +1,119 @@
+name: gatk_haplotype_caller
+description: |
+  Runs GATK's `HaplotypeCaller` to perform variant calling from RNA-seq aligned BAM files.
+  This module uses RNA-seq specific optimizations such as disabling soft-clipped bases and
+  excluding duplicate-read filtering to retain relevant reads in transcriptome data.
+
+  The process takes a recalibrated BAM file, a reference genome, and a known sites VCF (e.g., dbSNP).
+  The result is a gzipped VCF file and a tabix index, ready for downstream variant filtration or annotation.
+
+  Version tracking is included for full reproducibility.
+
+keywords:
+  - gatk
+  - haplotypecaller
+  - variant calling
+  - RNA-seq
+  - vcf
+
+tools:
+  - gatk:
+      description: |
+        GATK's `HaplotypeCaller` is a variant calling tool that performs local de novo assembly of haplotypes
+        in an active region to accurately identify SNPs and indels.
+      documentation: https://gatk.broadinstitute.org/hc/en-us/articles/360037225632-HaplotypeCaller
+      licence: ["BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique sample identifier
+  - strandedness:
+      type: string
+      description: Strand information metadata
+  - bam:
+      type: file
+      description: Coordinate-sorted and recalibrated BAM file
+      pattern: "*.bam"
+  - bai:
+      type: file
+      description: BAM index file
+      pattern: "*.bam.bai"
+  - genome:
+      type: file
+      description: Reference genome FASTA
+      pattern: "*.fa"
+  - genome_index:
+      type: file
+      description: FASTA index (.fai)
+      pattern: "*.fa.fai"
+  - genome_dict:
+      type: file
+      description: Reference genome sequence dictionary (.dict)
+      pattern: "*.dict"
+  - known_sites_vcf:
+      type: file
+      description: Known variants VCF (e.g., dbSNP)
+      pattern: "*.vcf.gz"
+  - known_sites_vcf_index:
+      type: file
+      description: Tabix index of the known variants VCF
+      pattern: "*.vcf.gz.tbi"
+
+output:
+  - vcf_output:
+      type: tuple
+      description: |
+        Tuple with:
+          - sample_id
+          - strandedness
+          - VCF file with variants
+          - VCF index file (.tbi)
+      pattern: ["output_*.vcf.gz", "output_*.vcf.gz.tbi"]
+  - versions:
+      type: file
+      description: YAML file capturing GATK version used
+      pattern: "versions.yml"
+
+parameters:
+  - gatk_container:
+      type: string
+      description: Singularity container path for GATK
+  - haplotype_caller_outdir:
+      type: string
+      description: Output directory for final VCF and index files
+
+parameters_used:
+  - --native-pair-hmm-threads:
+      default: "${task.cpus}"
+      description: Number of threads to use for local de novo haplotype assembly and likelihood calculation. Speeds up performance.
+  - --reference:
+      description: Path to the reference genome FASTA file.
+  - --output:
+      description: Name of the output gzipped VCF file.
+  - -I:
+      description: Input BAM file for variant calling.
+  - --standard-min-confidence-threshold-for-calling:
+      default: 10.0
+      description: Minimum phred-scaled confidence threshold to emit variant calls. Ensures high-confidence calls are reported.
+  - --min-base-quality-score:
+      default: 10
+      description: Minimum base quality required to consider a base for variant calling.
+  - --output-mode:
+      default: EMIT_VARIANTS_ONLY
+      description: Limits output to variant records only, skipping reference blocks (used to reduce file size).
+  - --dont-use-soft-clipped-bases:
+      default: true
+      description: Excludes soft-clipped bases from calling. Useful in RNA-seq because soft-clipping often indicates spliced alignment.
+  - --disable-read-filter:
+      value: NotDuplicateReadFilter
+      description: Disables duplicate read filtering. This is commonly done in RNA-seq to retain multi-mapped reads in repetitive regions.
+  - --dbsnp:
+      description: Path to the known variant sites (VCF), used to annotate known variants and improve calling accuracy.
+  - --verbosity:
+      default: INFO
+      description: Controls logging level. `INFO` provides useful runtime messages without excessive detail.
+
+authors:
+
+  - "Adapted from nf-core module documentation"

@@ -1,0 +1,72 @@
+name: bcftools_stats
+description: |
+  Generates summary statistics from a compressed VCF file using `bcftools stats`.
+  This is useful for quality control and exploratory analysis of variant callsets.
+
+  The output includes key metrics such as total variants, transitions/transversions,
+  heterozygosity, depth, and other site- and genotype-level statistics.
+
+  Version tracking is included to ensure reproducibility.
+
+keywords:
+  - bcftools
+  - vcf
+  - statistics
+  - summary
+  - QC
+
+tools:
+  - bcftools:
+      description: |
+        BCFtools is a set of utilities for manipulating and analyzing variant call format (VCF) and binary call format (BCF) files.
+        The `stats` command generates summary statistics from a VCF.
+      documentation: https://samtools.github.io/bcftools/bcftools.html#stats
+      licence: ["MIT", "GPL-3.0-or-later"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique identifier for the sample
+  - vcf:
+      type: file
+      description: Compressed VCF file (.vcf.gz)
+      pattern: "*.vcf.gz"
+  - tbi:
+      type: file
+      description: Tabix index file for the VCF
+      pattern: "*.vcf.gz.tbi"
+
+output:
+  - stats_output:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - text file with variant statistics
+      pattern: "*_bcftools_stats.txt"
+  - versions:
+      type: file
+      description: YAML file recording BCFtools version used
+      pattern: "versions.yml"
+
+parameters:
+  - bcftools_container:
+      type: string
+      description: Singularity container for BCFtools
+  - bcftools_stats_outdir:
+      type: string
+      description: Output directory for stats files
+
+parameters_used:
+  - bcftools stats:
+      description: |
+        Generates a wide range of statistics from a compressed and indexed VCF file, including:
+        - Total number of variants
+        - SNPs, indels, transitions/transversions
+        - Depth and quality distributions
+        - Hardy-Weinberg equilibrium
+        - Site-level and genotype-level metrics
+
+authors:
+  
+  - "Adapted from nf-core module documentation"

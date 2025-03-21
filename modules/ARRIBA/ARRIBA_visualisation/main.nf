@@ -1,57 +1,56 @@
 process ARRIBA_VISUALIZATION {
     tag { sample_id }
-	
-	cpus params.get('arriba_visualization_cpus', 4)
+
+    cpus params.get('arriba_visualization_cpus', 4)
     memory params.get('arriba_visualization_memory', '16 GB')
     time params.get('arriba_visualization_time', '2h')
 
-
-    container "https://depot.galaxyproject.org/singularity/r-base%3A4.4.1"  
-    publishDir "${params.resultsdir}/ARRIBA_VISUALIZATION", mode: 'copy'
+    container params.r_base_container
+    publishDir params.visualisation_outdir, mode: 'copy'
 
     input:
     tuple val(sample_id), path(fusions_tsv), val(strandedness)
-    path r_script  
-    path fasta  
+    path r_script
+    path fasta
     path gtf
-  
 
     output:
-    path "*.fusion_plot.pdf"
+    path "*.fusion_plot.pdf", emit: fusion_plot
+    path "versions.yml", emit: versions
 
     script:
     """
-    # Extract prefix (filename without extension)
     PREFIX=\$(basename ${fusions_tsv} .fusions.tsv)
 
-    # Debug: Log resolved paths
-    echo "Resolved fusions file path: \$(realpath ${fusions_tsv})"
-    echo "Resolved annotation file path: \$(realpath ${gtf})"
-    
+    echo "Running fusion visualization for sample: ${sample_id}"
+    echo "Resolved fusions file: \$(realpath ${fusions_tsv})"
+    echo "Resolved GTF file: \$(realpath ${gtf})"
 
-    # Verify the resolved paths exist
     if [ ! -f "\$(realpath ${fusions_tsv})" ]; then
-        echo "Error: Fusions file not found at: \$(realpath ${fusions_tsv})"
+        echo "Error: Fusions file not found." >&2
         exit 1
     fi
     if [ ! -f "\$(realpath ${gtf})" ]; then
-        echo "Error: Annotation file not found at: \$(realpath ${gtf})"
+        echo "Error: GTF file not found." >&2
         exit 1
     fi
-	
-	# Check if the TSV file has more than just headers
-    DATA_LINES=\$(awk 'NR > 1 {print; exit}' ${fusions_tsv})
-    if [ -z "\$DATA_LINES" ]; then
-        echo "No fusions detected for ${sample_id}. Skipping visualization." >&2
+
+    # Skip if no fusions
+    if [ -z "\$(awk 'NR > 1 {print; exit}' ${fusions_tsv})" ]; then
+        echo "No fusions found for ${sample_id}. Creating empty plot file."
         touch \${PREFIX}.fusion_plot.pdf
-        exit 0
+    else
+        Rscript ${r_script} \\
+            --fusions "\$(realpath ${fusions_tsv})" \\
+            --annotation "\$(realpath ${gtf})" \\
+            --output "\${PREFIX}.fusion_plot.pdf"
     fi
 
-    # Run the R script
-    Rscript draw_fusions.R \
-        --fusions "\$(realpath ${fusions_tsv})" \
-        --annotation "\$(realpath ${gtf})" \
-        --output "\${PREFIX}.fusion_plot.pdf"
-    
+    # Version tracking
+    r_version=\$(Rscript --version 2>&1 | grep -o '[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+' | head -n 1)
+    cat <<EOF > versions.yml
+    "${task.process}":
+      R: "\${r_version}"
+    EOF
     """
 }

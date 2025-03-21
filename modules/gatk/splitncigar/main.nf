@@ -1,13 +1,9 @@
 process SPLIT_NCIGAR_READS {
-    tag { "${sample_id}_${interval.baseName}" }  
+    tag { "${sample_id}_${interval.baseName}" } 
+    label 'process_high'
 
-    cpus params.get('split_ncigar_reads_cpus', 8)
-    memory params.get('split_ncigar_reads_memory', '16 GB')
-    time params.get('split_ncigar_reads_time', '3h')
-
-    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
-
-    publishDir "${params.outdir}/split_ncigar", mode: "copy"
+    container params.gatk_container
+    publishDir params.split_ncigar_outdir, mode: "copy"
 
     input:
     tuple val(sample_id), val(strandedness), path(bam), path(bai), path(interval)
@@ -16,32 +12,36 @@ process SPLIT_NCIGAR_READS {
     path genome_dict
 
     output:
-    tuple val(sample_id),val(strandedness), 
+    tuple val(sample_id), val(strandedness), 
           path("${sample_id}_split_${interval.baseName}.bam"), 
-          path("${sample_id}_split_${interval.baseName}.bai")
-          
+          path("${sample_id}_split_${interval.baseName}.bai"), emit: split_interval_bams
+    path("versions.yml"), emit: versions
 
     script:
-    def avail_mem = task.memory ? task.memory.giga : 3  
+    def avail_mem = task.memory ? task.memory.giga : 3
     def interval_command = interval ? "--intervals ${interval}" : ""
-    
 
     """
     echo "Running SplitNCigarReads for sample: ${sample_id} on interval: ${interval.baseName}"
 
     gatk --java-options "-Xmx${avail_mem}g" SplitNCigarReads \\
-        -R ${genome_fasta} \\
-        -I ${bam} \\
-        -O ${sample_id}_split_${interval.baseName}.bam \\
+        -R "${genome_fasta}" \\
+        -I "${bam}" \\
+        -O "${sample_id}_split_${interval.baseName}.bam" \\
         --skip-mapping-quality-transform false \\
         --max-mismatches-in-overhang 1 \\
         --max-bases-in-overhang 50 \\
         --create-output-bam-index true \\
         --process-secondary-alignments true \\
-        ${interval_command} 
+        ${interval_command}
+
+    # Capture version
+    gatk_version=\$(gatk --version | grep -Eo '[0-9.]+' | head -n 1)
+    cat <<EOF > versions.yml
+    "${task.process}":
+      gatk: "\${gatk_version}"
+    EOF
 
     echo "SplitNCigarReads completed for sample: ${sample_id} on interval: ${interval.baseName}"
-
-    
     """
 }

@@ -1,0 +1,47 @@
+name: multiqc_quality
+description: |
+  Aggregates QC reports (e.g., FastQC, samtools stats, etc.) into a single HTML report using MultiQC.
+  This module is useful for quickly assessing the quality and status of multiple samples in one view.
+
+keywords:
+  - multiqc
+  - quality control
+  - fastqc
+  - report
+  - visualization
+
+tools:
+  - multiqc:
+      description: |
+        MultiQC scans analysis output directories and creates a single report
+        visualizing results from many common bioinformatics tools.
+      documentation: https://multiqc.info/
+      licence: ["GPL-3.0-or-later"]
+
+input:
+  - report_files:
+      type: file
+      description: One or more quality control files from supported tools (e.g., FastQC, samtools, STAR)
+      pattern: "*"
+
+output:
+  - report:
+      type: file
+      description: Single HTML report aggregating the quality metrics across samples
+      pattern: "multiqc_report.html"
+  - versions:
+      type: file
+      description: YAML file capturing the MultiQC version used
+      pattern: "versions.yml"
+
+parameters:
+  - multiqc_quality_container:
+      type: string
+      description: Container that includes MultiQC and all dependencies
+  - multiqc_qualtiy_outdir:
+      type: string
+      description: Output directory for the MultiQC HTML report
+
+authors:
+  
+  - "Adapted from nf-core standard reporting modules"

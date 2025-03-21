@@ -1,0 +1,65 @@
+name: samtools_idxstats
+description: |
+  Generates per-reference statistics from a BAM file using `samtools idxstats`.
+  The output contains reference sequence names, lengths, mapped and unmapped read counts.
+  This information is helpful for quality control and to detect unexpected mapping.
+
+  The BAM file must be indexed prior to this process. Version tracking is included for reproducibility.
+
+keywords:
+  - samtools
+  - idxstats
+  - QC
+  - BAM
+  - statistics
+  - alignment
+
+tools:
+  - samtools:
+      description: |
+        Samtools is a suite of programs for interacting with high-throughput sequencing data.
+        The `idxstats` command quickly summarizes per-reference alignment statistics.
+      documentation: https://www.htslib.org/doc/samtools.html
+      licence: ["MIT", "BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Sample identifier
+  - bam:
+      type: file
+      description: Indexed BAM file
+      pattern: "*.bam"
+  - bai:
+      type: file
+      description: BAM index file
+      pattern: "*.bam.bai"
+  - strandedness:
+      type: string
+      description: Strand information (passed through from upstream processes)
+
+output:
+  - idxstats:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - idxstats output file (per-chromosome stats)
+          - strandedness
+      pattern: "*_idxstats.txt"
+  - versions:
+      type: file
+      description: YAML file capturing the samtools version used
+      pattern: "versions.yml"
+
+parameters:
+  - samtools_container:
+      type: string
+      description: Singularity container path for Samtools
+  - samtools_idx_outdir:
+      type: string
+      description: Output directory for idxstats results
+
+authors:
+  
+  - "Adapted from nf-core module style"

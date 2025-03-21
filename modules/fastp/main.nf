@@ -1,13 +1,10 @@
 process TRIM_READS {
     tag { sample_id }
+	label 'process_medium'
 	
-	cpus params.get('trim_reads_cpus', 4)
-	memory params.get('trim_reads_memory', '8 GB')
-	time params.get('trim_reads_time', '2h')
+    container params.trim_reads_container 
+    publishDir params.trim_reads_outdir
 
-	
-    container "https://depot.galaxyproject.org/singularity/fastp%3A0.23.4--h125f33a_5"
-    publishDir "${params.outdir}/multiqc_input", mode: "copy", pattern: "*_fastp.*"
 
     input:
     tuple val(sample_id), path(r1), path(r2), val(strandedness)
@@ -15,6 +12,7 @@ process TRIM_READS {
     output:
     tuple val(sample_id), path("trimmed_${sample_id}_R1.fastq.gz"), path("trimmed_${sample_id}_R2.fastq.gz"), val(strandedness), emit: trimmed_reads
     tuple val(sample_id), path("${sample_id}_fastp.html"), path("${sample_id}_fastp.json"), emit: fastp_reports
+	path("versions.yml"), emit: versions
 
     script:
     """
@@ -30,5 +28,14 @@ process TRIM_READS {
       --cut_mean_quality 20 \
       --html ${sample_id}_fastp.html \
       --json ${sample_id}_fastp.json
+	  
+	#Capture the version
+	fastp_version=\$(fastp --version | grep -oP '[0-9.]+')
+	cat <<EOF > versions.yml
+	fastp:
+	  version: "${fastp_version}"
+	EOF
+
+
     """
 }

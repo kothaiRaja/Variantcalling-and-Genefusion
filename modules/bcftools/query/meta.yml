@@ -1,0 +1,68 @@
+name: bcftools_query
+description: |
+  Extracts key variant information from a filtered VCF using `bcftools query`.
+  The output summary includes chromosome, position, reference and alternate alleles, depth (DP),
+  and allele frequency (AF), which are useful for manual review, downstream annotation,
+  or visualization.
+
+  Outputs are written in a simple tab-separated format and version tracking is included.
+
+keywords:
+  - bcftools
+  - vcf
+  - query
+  - variant summary
+  - extract fields
+
+tools:
+  - bcftools:
+      description: |
+        BCFtools is a powerful toolkit for manipulating and querying VCF and BCF files.
+        The `query` subcommand is used to extract specific fields into a human-readable table.
+      documentation: https://samtools.github.io/bcftools/bcftools.html#query
+      licence: ["MIT", "GPL-3.0-or-later"]
+
+input:
+  - sample_id:
+      type: string
+      description: Sample identifier
+  - filtered_vcf:
+      type: file
+      description: Filtered VCF file (gzipped)
+      pattern: "*.vcf.gz"
+  - tbi:
+      type: file
+      description: Tabix index file for the VCF
+      pattern: "*.vcf.gz.tbi"
+
+output:
+  - query_output:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - Tab-separated summary of variants (CHROM, POS, REF, ALT, DP, AF)
+      pattern: "*_variant_summary.txt"
+  - versions:
+      type: file
+      description: YAML file with BCFtools version
+      pattern: "versions.yml"
+
+parameters:
+  - bcftools_container:
+      type: string
+      description: Singularity container for BCFtools
+  - bcftools_query_outdir:
+      type: string
+      description: Output directory for queried variant summaries
+
+parameters_used:
+  - -f '%CHROM\t%POS\t%REF\t%ALT\t%INFO/DP\t%INFO/AF\n':
+      description: |
+        Specifies the format of the output table.
+        This format outputs: chromosome, position, reference allele, alternate allele,
+        read depth (DP), and allele frequency (AF) from the INFO field of the VCF.
+
+authors:
+  
+  - "Adapted from nf-core module documentation"

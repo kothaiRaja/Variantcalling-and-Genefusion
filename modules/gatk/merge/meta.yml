@@ -1,0 +1,71 @@
+name: gatk_mergevcfs
+description: |
+  Merges multiple VCF files into a single multi-sample VCF using GATK's `MergeVcfs`.
+  This is useful in scatter-gather workflows, where variants are called per-interval and
+  need to be reassembled into a genome-wide VCF. It also builds a tabix index of the final file.
+
+  Version tracking is included for full reproducibility.
+
+keywords:
+  - gatk
+  - vcf
+  - variant calling
+  - merge
+  - tabix
+
+tools:
+  - gatk:
+      description: |
+        GATK's `MergeVcfs` combines multiple VCF files into a single output.
+        This is typically done after parallelized variant calling or filtering.
+      documentation: https://gatk.broadinstitute.org/hc/en-us/articles/360036883911-MergeVcfs
+      licence: ["BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Identifier for the sample or dataset
+  - vcf_list:
+      type: file
+      description: List of gzipped VCF files to be merged
+      pattern: "*.vcf.gz"
+  - tbi_list:
+      type: file
+      description: Corresponding VCF index files (.tbi)
+      pattern: "*.vcf.gz.tbi"
+
+output:
+  - merged_vcf:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - merged gzipped VCF file
+          - VCF tabix index
+      pattern: ["merged_*.vcf.gz", "merged_*.vcf.gz.tbi"]
+  - versions:
+      type: file
+      description: YAML file recording GATK version
+      pattern: "versions.yml"
+
+parameters:
+  - gatk_container:
+      type: string
+      description: Singularity container path for GATK
+  - merged_vcf_outdir:
+      type: string
+      description: Output directory for merged VCFs and index files
+
+parameters_used:
+  - -I:
+      description: |
+        Specifies each input VCF file to merge. The `-I` flag is repeated for each file.
+        These are dynamically generated from the input `vcf_list`.
+  - -O:
+      description: Output merged VCF file.
+  - IndexFeatureFile:
+      description: A GATK utility to index the output VCF file after merging.
+
+authors:
+  
+  - "Adapted from nf-core module style"

@@ -1,0 +1,73 @@
+name: samtools_calmd
+description: |
+  Adds NM and MD tags to a BAM file using `samtools calmd`.
+  These tags are required by various downstream tools (e.g., GATK's Base Quality Score Recalibration)
+  for accurate variant calling and filtering.
+
+  After applying `calmd`, the output BAM is sorted and indexed to ensure compatibility with subsequent tools.
+
+keywords:
+  - samtools
+  - calmd
+  - BAM
+  - preprocessing
+  - tagging
+  - indexing
+
+tools:
+  - samtools:
+      description: |
+        Samtools is a suite of tools for manipulating high-throughput sequencing data.
+        The `calmd` command calculates and adds NM and MD tags to the BAM file.
+      documentation: https://www.htslib.org/doc/samtools.html
+      licence: ["MIT", "BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Sample identifier
+  - strandedness:
+      type: string
+      description: Library strandedness (forward/reverse/unstranded)
+  - bam:
+      type: file
+      description: Input coordinate-sorted BAM file
+      pattern: "*.bam"
+  - bai:
+      type: file
+      description: BAM index file
+      pattern: "*.bam.bai"
+  - genome_fasta:
+      type: file
+      description: Reference genome FASTA file
+      pattern: "*.fa"
+  - index:
+      type: file
+      description: FASTA index (.fai) or other dependencies
+
+output:
+  - calmd_bams:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - strandedness
+          - BAM file with NM/MD tags
+          - BAM index file
+      pattern: ["*_calmd.bam", "*_calmd.bam.bai"]
+  - versions:
+      type: file
+      description: YAML file with samtools version used
+      pattern: "versions.yml"
+
+parameters:
+  - samtools_container:
+      type: string
+      description: Singularity container path for samtools
+  - merged_calmd_outdir:
+      type: string
+      description: Output directory for tagged and indexed BAMs
+
+authors:
+ 
+  - "Adapted from nf-core module conventions"

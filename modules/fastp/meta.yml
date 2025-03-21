@@ -1,0 +1,51 @@
+name: trim_reads
+description: |
+  Trims paired-end FASTQ reads using Fastp.
+  The container and trimming parameters can be customized via `custom.config`,
+  allowing flexibility without modifying the pipeline code.
+
+keywords:
+  - fastq
+  - trimming
+  - fastp
+  - quality control
+
+tools:
+  - fastp:
+      description: |
+        Fastp is an ultra-fast all-in-one FASTQ preprocessor designed to provide fast quality control and trimming.
+      documentation: https://github.com/OpenGene/fastp
+      licence: ["MIT"]
+
+input:
+  - sample_id:
+      type: string
+      description: Sample identifier
+  - r1:
+      type: file
+      description: Forward reads FASTQ file
+      pattern: "*_R1*.fastq.gz"
+  - r2:
+      type: file
+      description: Reverse reads FASTQ file
+      pattern: "*_R2*.fastq.gz"
+  - strandedness:
+      type: string
+      description: Strandedness info (e.g., 'unstranded', 'forward', 'reverse')
+
+output:
+  - trimmed_reads:
+      type: tuple
+      description: |
+        Tuple with sample ID, trimmed forward and reverse FASTQ files, and strandedness.
+      pattern: ["trimmed_*_R1.fastq.gz", "trimmed_*_R2.fastq.gz"]
+  - fastp_reports:
+      type: tuple
+      description: |
+        Tuple with sample ID, Fastp HTML report, and Fastp JSON report.
+      pattern: ["*_fastp.html", "*_fastp.json"]
+  - versions:
+      type: file
+      description: File containing software version information
+      pattern: "versions.yml"
+

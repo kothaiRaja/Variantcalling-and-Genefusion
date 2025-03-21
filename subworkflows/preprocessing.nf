@@ -13,6 +13,9 @@ workflow PREPROCESSING {
     main:
 
     log.info "Starting Preprocessing Steps..."
+	
+	ch_versions = Channel.empty()
+
 
     // Step 1: Read samplesheet
     samples_ch = Channel.fromPath(samplesheet)
@@ -26,15 +29,20 @@ workflow PREPROCESSING {
 
     // Step 3: Perform FastQC on raw reads
     qc_results_ch = FASTQC_RAW(concatenated_reads_ch)
+	ch_versions = ch_versions.mix(FASTQC_RAW.out.versions.first())
+
 
     // Step 4: Trim reads using Fastp
     trimmed_reads_ch = TRIM_READS(concatenated_reads_ch)
+	ch_versions = ch_versions.mix(TRIM_READS.out.versions.first())
 
     // Step 5: Collect QC reports for MultiQC
     qc_files_ch = qc_results_ch.map { it[1] + it[2] }.flatten()
     fastp_files_ch = trimmed_reads_ch.fastp_reports.map { it[1..-1] }.flatten()
     combined_channel = qc_files_ch.concat(fastp_files_ch).collect()
     multiqc_quality = MultiQC_quality(combined_channel)
+	
+	ch_versions = ch_versions.mix(MultiQC_quality.out.versions.first())
 
     log.info " Preprocessing Completed."
 
@@ -43,4 +51,5 @@ workflow PREPROCESSING {
         fastp_reports    = trimmed_reads_ch.fastp_reports.map { [it[1], it[2]] }.flatten().collect()  
         qc_reports       = qc_results_ch.map { [it[1], it[2]] }.flatten().collect()                   
 		multiqc        	 = multiqc_quality
+		versions 		 = ch_versions
 }

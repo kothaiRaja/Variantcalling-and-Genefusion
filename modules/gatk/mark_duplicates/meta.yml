@@ -1,0 +1,83 @@
+name: gatk_mark_duplicates
+description: |
+  Uses GATK's MarkDuplicates to identify and optionally remove duplicate reads from a BAM file.
+  Duplicate marking is critical in workflows like variant calling, where PCR or optical duplicates may bias results.
+  This module outputs the marked BAM file, its index, and a duplication metrics report.
+
+  Configuration options like `--REMOVE_DUPLICATES` and `--VALIDATION_STRINGENCY` can be controlled
+  via `custom.config`, making the module flexible for different use cases (e.g., QC or production pipelines).
+
+  The process also captures GATK version information for reproducibility and reporting.
+
+keywords:
+  - gatk
+  - markduplicates
+  - duplicates
+  - bam
+  - RNA-seq
+  - variant calling
+
+tools:
+  - gatk:
+      description: |
+        The Genome Analysis Toolkit (GATK) is a widely used toolkit for variant discovery in high-throughput sequencing data.
+        MarkDuplicates is a GATK tool that locates and tags duplicate reads.
+      documentation: https://gatk.broadinstitute.org/hc/en-us/articles/360037052812-MarkDuplicates-Picard-
+      licence: ["BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique sample identifier
+  - strandedness:
+      type: string
+      description: Library strandedness passed from earlier modules
+  - sorted_bam:
+      type: file
+      description: Coordinate-sorted BAM file from alignment
+      pattern: "*_sorted.bam"
+  - sorted_bam_index:
+      type: file
+      description: BAM index file
+      pattern: "*_sorted.bam.bai"
+
+output:
+  - marked_bams_bai:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - strandedness
+          - BAM file with marked duplicates
+          - BAM index file
+      pattern: ["*_marked_duplicates.bam", "*_marked_duplicates.bai"]
+  - marked_bams_bai_metrics:
+      type: tuple
+      description: |
+        Tuple with:
+          - sample_id
+          - strandedness
+          - Duplicate metrics file with read duplication stats
+      pattern: "*_dup_metrics.txt"
+  - versions:
+      type: file
+      description: YAML file containing GATK version used
+      pattern: "versions.yml"
+
+parameters:
+  - gatk_container:
+      type: string
+      description: Singularity container path for GATK (set in params_main.config)
+  - markduplicates_outdir:
+      type: string
+      description: Output directory for marked BAMs and metrics
+  - remove_duplicates:
+      type: boolean
+      description: Whether to remove duplicate reads instead of just marking them
+  - validation_stringency:
+      type: string
+      description: Validation stringency level for GATK (default: LENIENT)
+
+authors:
+ 
+  - "Adapted from nf-core style modules"

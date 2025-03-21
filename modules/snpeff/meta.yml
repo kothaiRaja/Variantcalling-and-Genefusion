@@ -1,0 +1,103 @@
+name: annotate_variants
+description: |
+  Annotates variants using SnpEff, a tool that predicts the functional effects of genomic variants.
+  It generates:
+    - a VCF file with annotated variants,
+    - an HTML summary report of variant consequences,
+    - and a CSV statistics report.
+
+  This module is essential in RNA-seq and DNA-seq pipelines for interpreting the biological impact
+  of discovered variants. Version tracking is included for reproducibility.
+
+keywords:
+  - snpeff
+  - annotation
+  - vcf
+  - html
+  - csv
+  - variant effect prediction
+
+tools:
+  - snpeff:
+      description: |
+        SnpEff is a genetic variant annotation and effect prediction toolbox.
+        It predicts the effects of genetic variants such as SNPs and indels
+        on genes and proteins, based on genomic annotations.
+      documentation: https://pcingola.github.io/SnpEff/
+      licence: ["LGPL-3.0"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique identifier for the sample
+  - vcf:
+      type: file
+      description: Input compressed VCF file with variants to annotate
+      pattern: "*.vcf.gz"
+  - tbi:
+      type: file
+      description: Tabix index for the input VCF
+      pattern: "*.vcf.gz.tbi"
+  - snpEffJar:
+      type: file
+      description: Path to the `snpEff.jar` file
+      pattern: "snpEff.jar"
+  - snpEffConfig:
+      type: file
+      description: Path to the SnpEff configuration file
+      pattern: "snpEff.config"
+  - snpEffDbDir:
+      type: file
+      description: Directory containing the SnpEff genome databases
+  - genomedb:
+      type: string
+      description: Name of the SnpEff genome database to use (e.g., GRCh38.86, hg19)
+
+output:
+  - annotated_vcf:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - Annotated VCF file with gene-level and functional impact annotations
+      pattern: "annotated_*.vcf"
+  - summary_html:
+      type: file
+      description: HTML summary report of annotated variant types and consequences
+      pattern: "annotated_*.summary.html"
+  - annotation_csv:
+      type: file
+      description: CSV summary file containing variant annotation statistics
+      pattern: "annotated_*.csv"
+  - versions:
+      type: file
+      description: YAML file capturing the version of SnpEff used
+      pattern: "versions.yml"
+
+parameters:
+  - annotate_container_snpeff:
+      type: string
+      description: Singularity container including SnpEff
+  - annotate_outdir:
+      type: string
+      description: Output directory for annotation files
+
+parameters_used:
+  - -v:
+      description: |
+        Enables verbose mode, required for generating annotation reports in HTML and CSV.
+  - -stats:
+      description: |
+        Path to the HTML summary file of variant effects.
+  - -csvStats:
+      description: |
+        Path to the CSV file containing variant annotation statistics.
+  - -dataDir:
+      description: |
+        Specifies the path to the local SnpEff data directory containing genome databases.
+  - -c:
+      description: Path to the SnpEff configuration file.
+
+authors:
+  
+  - "Adapted from nf-core module conventions"

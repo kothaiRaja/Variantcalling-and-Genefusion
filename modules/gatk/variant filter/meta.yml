@@ -1,0 +1,91 @@
+name: gatk_variant_filter
+description: |
+  Filters variants in a VCF file using GATK's `VariantFiltration`.
+  This process allows fine-grained control of common quality metrics for both SNPs and indels,
+  including QD, FS, MQ, SOR, and RankSum annotations. It applies filters and tags filtered variants
+  instead of removing them, which is useful for downstream review.
+
+  Commonly used after RNA-seq or WGS variant calling to reduce false positives.
+
+keywords:
+  - gatk
+  - variant filtering
+  - vcf
+  - quality control
+  - post-processing
+
+tools:
+  - gatk:
+      description: |
+        The Genome Analysis Toolkit (GATK) is a software package for variant discovery in high-throughput sequencing data.
+        The `VariantFiltration` tool applies user-defined thresholds to flag low-confidence variants.
+      documentation: https://gatk.broadinstitute.org/hc/en-us/articles/360037593851-VariantFiltration
+      licence: ["BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Identifier for the sample
+  - vcf_file:
+      type: file
+      description: Gzipped VCF file to filter
+      pattern: "*.vcf.gz"
+  - vcf_index:
+      type: file
+      description: Tabix index for the VCF file
+      pattern: "*.vcf.gz.tbi"
+  - genome:
+      type: file
+      description: Reference genome FASTA file
+      pattern: "*.fa"
+  - genome_index:
+      type: file
+      description: Index file for the reference genome (e.g. .fai)
+  - genome_dict:
+      type: file
+      description: Reference genome dictionary (.dict)
+
+output:
+  - filtered_vcf:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - filtered VCF file (variants are tagged, not removed)
+          - index file (.tbi)
+      pattern: ["*_filtered.vcf.gz", "*_filtered.vcf.gz.tbi"]
+  - versions:
+      type: file
+      description: YAML file tracking the GATK version used
+      pattern: "versions.yml"
+
+parameters:
+  - gatk_container:
+      type: string
+      description: Singularity container with GATK
+  - variant_filter_outdir:
+      type: string
+      description: Output directory for filtered VCFs
+
+parameters_used:
+  - --cluster-window-size:
+      default: 35
+      description: Number of bases to look for clustered variants. Used to flag potential false positives in dense regions.
+  - --cluster-size:
+      default: 3
+      description: Number of variants in the cluster before tagging them with filters.
+  - --filter-name and --filter-expression:
+      description: |
+        Threshold filters applied to annotate variants:
+          - LowQual: QUAL < ${params.gatk_vf_qual_filter}
+          - LowQD: QD < ${params.gatk_vf_qd_filter}
+          - HighFS: FS > ${params.gatk_vf_fs_filter}
+          - LowMQ: MQ < ${params.gatk_vf_mq_filter}
+          - HighSOR: SOR > ${params.gatk_vf_sor_filter}
+          - LowReadPosRankSum: ReadPosRankSum < ${params.gatk_vf_read_pos_filter}
+          - LowBaseQRankSum: BaseQRankSum < ${params.gatk_vf_baseq_filter}
+        These filters tag (but do not remove) variants in the VCF for downstream review or filtering.
+
+authors:
+  
+  - "Adapted from nf-core module documentation"

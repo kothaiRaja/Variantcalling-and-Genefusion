@@ -1,0 +1,78 @@
+name: select_indels
+description: |
+  Uses GATK's `SelectVariants` to extract INDELs from a compressed VCF file.
+  This is useful in workflows where SNPs and INDELs are processed or filtered separately.
+  The resulting file includes only variants of type INDEL, with an associated index file.
+
+  The process is reproducible with containerized GATK and includes version logging.
+
+keywords:
+  - gatk
+  - indels
+  - vcf
+  - selectvariants
+  - variant filtering
+
+tools:
+  - gatk:
+      description: |
+        GATK's `SelectVariants` tool isolates specific types of variants such as SNPs, INDELs, and structural variants.
+        It is commonly used to prepare variant subsets for filtering or annotation.
+      documentation: https://gatk.broadinstitute.org/hc/en-us/articles/360037225632-SelectVariants
+      licence: ["BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Sample identifier
+  - vcf_file:
+      type: file
+      description: Input compressed VCF file (.vcf.gz)
+      pattern: "*.vcf.gz"
+  - vcf_index:
+      type: file
+      description: Tabix index file for the VCF
+      pattern: "*.vcf.gz.tbi"
+  - genome:
+      type: file
+      description: Reference genome FASTA file
+      pattern: "*.fa"
+  - index:
+      type: file
+      description: FASTA index (.fai) file
+      pattern: "*.fa.fai"
+  - dict:
+      type: file
+      description: Sequence dictionary file (.dict)
+      pattern: "*.dict"
+
+output:
+  - selected_indels:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - gzipped INDEL-only VCF file
+          - tabix index file
+      pattern: ["*_indels.vcf.gz", "*_indels.vcf.gz.tbi"]
+  - versions:
+      type: file
+      description: YAML file capturing the GATK version used
+      pattern: "versions.yml"
+
+parameters:
+  - gatk_container:
+      type: string
+      description: Singularity container path for GATK
+  - indels_select_outdir:
+      type: string
+      description: Output directory for filtered INDEL VCFs
+
+parameters_used:
+  - --select-type-to-include INDEL:
+      description: |
+        Tells GATK to include only INDEL-type variants from the input VCF.
+
+authors:
+  
+  - "Adapted from nf-core module conventions"

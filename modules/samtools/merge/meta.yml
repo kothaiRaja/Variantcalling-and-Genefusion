@@ -1,0 +1,66 @@
+name: merge_bams
+description: |
+  Merges multiple BAM files into a single BAM using `samtools merge`.
+  This is useful after scatter-gather steps or interval-based processing,
+  where the final output needs to be consolidated per sample.
+
+  The process reads a list of BAM files, merges them using multiple threads,
+  indexes the result, and captures the version of Samtools used.
+
+keywords:
+  - samtools
+  - merge
+  - bam
+  - indexing
+  - scatter-gather
+
+tools:
+  - samtools:
+      description: |
+        Samtools is a suite of programs for interacting with high-throughput sequencing data.
+        The `merge` command consolidates multiple BAM files into a single one.
+      documentation: https://www.htslib.org/doc/samtools-merge.html
+      licence: ["MIT", "BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique identifier for the sample
+  - strandedness:
+      type: string
+      description: Strand information from upstream
+  - bam_list:
+      type: file
+      description: File containing multiple BAMs to be merged (e.g., from scatter steps)
+      pattern: "*.bam"
+  - bai_list:
+      type: file
+      description: List of BAM index files corresponding to the BAMs (for validation if needed)
+      pattern: "*.bam.bai"
+
+output:
+  - merged_bams:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - strandedness
+          - Merged BAM file
+          - BAM index file
+      pattern: ["*_merged.bam", "*_merged.bam.bai"]
+  - versions:
+      type: file
+      description: YAML file capturing Samtools version used
+      pattern: "versions.yml"
+
+parameters:
+  - samtools_container:
+      type: string
+      description: Singularity container path for Samtools
+  - merge_bam_outdir:
+      type: string
+      description: Output directory to publish merged BAM files
+
+authors:
+  
+  - "Adapted from nf-core module documentation"

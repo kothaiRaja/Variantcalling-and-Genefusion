@@ -1,0 +1,169 @@
+name: star_alignment
+description: |
+  Performs two-pass RNA-seq alignment using STAR (Spliced Transcripts Alignment to a Reference).
+  This module maps paired-end trimmed RNA-seq reads to a reference genome using STAR with a two-pass approach:
+  
+  - In the **first pass**, splice junctions are discovered de novo from the input reads.
+  - In the **second pass**, STAR uses these junctions to improve the alignment accuracy,
+    especially across exon-exon boundaries.
+
+  The process also supports detection of chimeric reads (e.g., gene fusions), transcript quantification,
+  and produces alignment reports.
+
+  Users can adjust STAR behavior, memory limits, and container paths via `custom.config` without modifying the pipeline code.
+
+keywords:
+  - alignment
+  - RNA-seq
+  - STAR
+  - two-pass
+  - splice junction
+  - chimeric reads
+  - gene expression
+
+tools:
+  - STAR:
+      description: |
+        STAR is an ultrafast RNA-seq aligner designed to align high-throughput sequencing reads to reference genomes.
+        It is particularly powerful for detecting spliced alignments, junctions, and chimeric reads.
+      documentation: https://github.com/alexdobin/STAR
+      licence: ["GPL-3.0"]
+
+input:
+  - sample_id:
+      type: string
+      description: Sample identifier
+  - trimmed_r1:
+      type: file
+      description: Trimmed forward FASTQ file (gzipped)
+      pattern: "*_R1*.fastq.gz"
+  - trimmed_r2:
+      type: file
+      description: Trimmed reverse FASTQ file (gzipped)
+      pattern: "*_R2*.fastq.gz"
+  - strandedness:
+      type: string
+      description: |
+        Library strandedness: can be 'forward', 'reverse', or 'unstranded'.
+        If 'unstranded', STAR will add '--outSAMstrandField intronMotif' automatically.
+  - star_index_dir:
+      type: directory
+      description: Directory containing the STAR genome index
+  - gtf_file:
+      type: file
+      description: Gene annotation file in GTF format
+
+output:
+  - bam:
+      type: tuple
+      description: |
+        Aligned BAM file (coordinate-sorted). Contains spliced alignments and is suitable for downstream analysis.
+        Includes sample_id and strandedness in the tuple.
+      pattern: "*_Aligned.sortedByCoord.out.bam"
+  - log_final:
+      type: tuple
+      description: Final summary alignment metrics from STAR
+      pattern: "*_Log.final.out"
+  - log_out:
+      type: tuple
+      description: Full STAR run log output
+      pattern: "*_Log.out"
+  - log_progress:
+      type: tuple
+      description: STAR's real-time progress log
+      pattern: "*_Log.progress.out"
+  - chimeric_sam:
+      type: tuple
+      description: |
+        Optional file containing chimeric (fusion) read alignments, if chimeric options are enabled.
+      pattern: "*_Chimeric.out.sam"
+      optional: true
+  - junctions:
+      type: tuple
+      description: |
+        Optional splice junction tab-delimited output from STAR.
+        Useful for junction-based transcriptome analysis or quality control.
+      pattern: "*_SJ.out.tab"
+      optional: true
+  - versions:
+      type: file
+      description: File containing the STAR version used in this process
+      pattern: "versions.yml"
+
+resources:
+  memory: |
+    Memory is dynamically scaled based on the task allocation using:
+      --limitBAMsortRAM = task.memory.toMega() * 1,000,000
+    This ensures compatibility across different compute environments and avoids out-of-memory crashes during BAM sorting.
+
+parameters:
+  - star_container:
+      type: string
+      description: Singularity container path for STAR (default defined in params_main.config)
+  - star_outdir:
+      type: string
+      description: Output directory for STAR files
+  - star_extra_args:
+      type: string
+      description: Additional STAR command-line arguments (optional)
+  - seq_platform:
+      type: string
+      description: Sequencing platform name (used in read group) — default: "ILLUMINA"
+  - seq_center:
+      type: string
+      description: Sequencing center name — default: "Unknown"
+  - star_alignSJoverhangMin:
+      type: integer
+      default: 8
+      description: Minimum overhang for splice junctions
+  - star_alignSJDBoverhangMin:
+      type: integer
+      default: 1
+      description: Minimum overhang for known junctions from the GTF
+  - star_outFilterMismatchNmax:
+      type: integer
+      default: 999
+      description: Maximum mismatches allowed
+  - star_outFilterMatchNmin:
+      type: integer
+      default: 16
+      description: Minimum number of matched bases
+  - star_outFilterMatchNminOverLread:
+      type: float
+      default: 0.3
+      description: Minimum match length as a fraction of read length
+  - star_outFilterScoreMinOverLread:
+      type: float
+      default: 0.3
+      description: Minimum alignment score as a fraction of read length
+  - star_chimSegmentMin:
+      type: integer
+      default: 10
+      description: Minimum chimeric segment length
+  - star_chimJunctionOverhangMin:
+      type: integer
+      default: 10
+      description: Minimum overhang for a chimeric junction
+  - star_chimScoreJunctionNonGTAG:
+      type: integer
+      default: -4
+      description: Penalty score for non-GTAG junctions
+  - star_chimScoreMin:
+      type: integer
+      default: 1
+      description: Minimum total score for chimeric alignments
+  - star_chimOutType:
+      type: string
+      default: "WithinBAM SeparateSAMold"
+      description: Controls how chimeric alignments are reported
+  - star_chimScoreDropMax:
+      type: integer
+      default: 50
+      description: Max score drop for chimeric alignment filtering
+  - star_chimScoreSeparation:
+      type: integer
+      default: 10
+      description: Required score separation between best and second-best chimeric alignment
+
+authors:
+  - "Adapted from nf-core module guidelines"

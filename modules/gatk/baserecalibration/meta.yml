@@ -1,0 +1,92 @@
+name: gatk_baserecalibrator
+description: |
+  Runs GATK's `BaseRecalibrator` to create a recalibration table from known variant sites.
+  This is the first step in the Base Quality Score Recalibration (BQSR) process and should be
+  followed by `ApplyBQSR`.
+
+  The recalibration table is used to adjust base quality scores in sequencing reads and improve
+  the accuracy of variant calling.
+
+  This module supports interval-based scatter processing and captures GATK version information
+  for reproducibility.
+
+keywords:
+  - gatk
+  - bqsr
+  - recalibration
+  - base quality
+  - variant calling
+  - scatter
+
+tools:
+  - gatk:
+      description: |
+        GATK's `BaseRecalibrator` generates recalibration tables based on known variant sites
+        and observed base errors, to be applied in downstream quality score correction.
+      documentation: https://gatk.broadinstitute.org/hc/en-us/articles/360037225632-BaseRecalibrator
+      licence: ["BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Sample identifier
+  - strandedness:
+      type: string
+      description: Strand information (passed through)
+  - bam:
+      type: file
+      description: Input coordinate-sorted BAM file
+      pattern: "*.bam"
+  - bai:
+      type: file
+      description: BAM index file
+      pattern: "*.bam.bai"
+  - interval:
+      type: file
+      description: Optional interval list to process a genomic region
+      pattern: "*.interval_list"
+  - genome_fasta:
+      type: file
+      description: Reference genome FASTA
+      pattern: "*.fa"
+  - index:
+      type: file
+      description: FASTA index file (e.g., .fai)
+  - dict:
+      type: file
+      description: Sequence dictionary for reference genome
+      pattern: "*.dict"
+  - known_variants:
+      type: file
+      description: VCF file of known variants (e.g., dbSNP or Mills)
+      pattern: "*.vcf.gz"
+  - known_variants_index:
+      type: file
+      description: Index file for known variants VCF
+      pattern: "*.vcf.gz.tbi"
+
+output:
+  - recal_table:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - strandedness
+          - recalibration table used for BQSR
+      pattern: "*_recal_data.table"
+  - versions:
+      type: file
+      description: YAML file with GATK version used
+      pattern: "versions.yml"
+
+parameters:
+  - gatk_container:
+      type: string
+      description: Singularity container for GATK
+  - recalibration_table_outdir:
+      type: string
+      description: Output directory for the recalibration table
+
+authors:
+  
+  - "Adapted from nf-core style module documentation"

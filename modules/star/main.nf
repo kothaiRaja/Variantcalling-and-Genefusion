@@ -1,12 +1,10 @@
 process STAR_ALIGNMENT {
     tag { sample_id }
+	label 'process_high'
 
-    cpus params.get('star_cpus', 12)
-    memory params.get('star_memory', '24GB')
-	time params.get('star_time', '6h')
 
-    container params.get('star_container', "https://depot.galaxyproject.org/singularity/star%3A2.7.11a--h0033a41_0")
-    publishDir "${params.outdir}/star_output", mode: "copy"
+    container params.star_container
+    publishDir params.star_outdir, mode: "copy"
 
     input:
     tuple val(sample_id), path(trimmed_r1), path(trimmed_r2), val(strandedness)
@@ -20,6 +18,7 @@ process STAR_ALIGNMENT {
     tuple val(sample_id), val(strandedness), path("${sample_id}_Log.progress.out"), emit: log_progress
     tuple val(sample_id), val(strandedness), path("${sample_id}_Chimeric.out.sam"), optional: true, emit: chimeric_sam
     tuple val(sample_id), val(strandedness), path("${sample_id}_SJ.out.tab"), optional: true, emit: junctions
+	path("versions.yml"), emit: versions
 
 
     script:
@@ -90,5 +89,14 @@ process STAR_ALIGNMENT {
          ${out_sam_attr} \
 		 $strand_option \
 		$extra_args
+		
+	#capture the versions
+	star_version=\$(STAR --version)
+	cat <<EOF > versions.yml
+	STAR:
+	  version: "${star_version}"
+	EOF
+
+
     """
 }

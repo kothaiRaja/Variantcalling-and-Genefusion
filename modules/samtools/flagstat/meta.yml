@@ -1,0 +1,68 @@
+name: samtools_flagstat
+description: |
+  Generates basic alignment quality metrics using `samtools flagstat` and `samtools stats`.
+  This module performs BAM file integrity checks with `samtools quickcheck` and ensures the presence of valid BAM and BAI files.
+  It provides a summary of alignment statistics, including mapped reads, duplicates, and overall read counts.
+
+  Both `flagstat` and `stats` outputs are produced, making this module useful for downstream quality control and visualization (e.g., via MultiQC).
+  The container and output directory can be customized via `custom.config`.
+
+keywords:
+  - samtools
+  - flagstat
+  - stats
+  - QC
+  - BAM
+  - alignment
+
+tools:
+  - samtools:
+      description: |
+        Samtools is a widely used suite of tools for working with alignment files (BAM/CRAM).
+        The `flagstat` command provides a quick summary of key mapping statistics.
+        The `stats` command outputs a more comprehensive breakdown of alignment metrics.
+      documentation: https://www.htslib.org/doc/samtools.html
+      licence: ["MIT", "BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique identifier for the sample
+  - strandedness:
+      type: string
+      description: Strand information from earlier modules (e.g. 'forward', 'reverse', or 'unstranded')
+  - sorted_bam:
+      type: file
+      description: Coordinate-sorted BAM file for the sample
+      pattern: "*_sorted.bam"
+  - bai:
+      type: file
+      description: Index file for the sorted BAM
+      pattern: "*_sorted.bam.bai"
+
+output:
+  - flagstat:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - strandedness
+          - Samtools flagstat output (summary text file)
+          - Samtools stats output (detailed metrics)
+      pattern: ["*_flagstat.txt", "*_stats_report.txt"]
+  - versions:
+      type: file
+      description: YAML file containing the samtools version used in this process
+      pattern: "versions.yml"
+
+parameters:
+  - samtools_container:
+      type: string
+      description: Singularity container path for Samtools
+  - samtools_flagstat_outdir:
+      type: string
+      description: Output directory where flagstat/stats files will be published
+
+authors:
+  
+  - "Adapted from nf-core module documentation"

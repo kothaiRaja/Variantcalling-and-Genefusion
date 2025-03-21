@@ -1,0 +1,84 @@
+name: gatk_applybqsr
+description: |
+  Applies base quality score recalibration (BQSR) to a BAM file using GATK's `ApplyBQSR`.
+  This is the second step in the BQSR process, following `BaseRecalibrator`.
+
+  It corrects systematic errors in base quality scores based on a recalibration table.
+  This module also generates a BAM index and supports per-interval scatter processing.
+
+keywords:
+  - gatk
+  - applybqsr
+  - recalibration
+  - bqsr
+  - variant calling
+  - preprocessing
+
+tools:
+  - gatk:
+      description: |
+        GATK's `ApplyBQSR` adjusts the base quality scores in a BAM file based on a recalibration table.
+        It's a critical step for accurate variant calling in RNA-seq or WGS data.
+      documentation: https://gatk.broadinstitute.org/hc/en-us/articles/360037225912-ApplyBQSR
+      licence: ["BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique sample identifier
+  - strandedness:
+      type: string
+      description: Library strandedness (used as metadata)
+  - bam:
+      type: file
+      description: Coordinate-sorted BAM file
+      pattern: "*.bam"
+  - bai:
+      type: file
+      description: BAM index file
+      pattern: "*.bam.bai"
+  - recal_table:
+      type: file
+      description: Recalibration table from BaseRecalibrator
+      pattern: "*.table"
+  - interval:
+      type: file
+      description: Genomic interval list for targeted recalibration
+      pattern: "*.interval_list"
+  - genome_fasta:
+      type: file
+      description: Reference genome FASTA
+      pattern: "*.fa"
+  - index:
+      type: file
+      description: FASTA index file (.fai)
+  - dict:
+      type: file
+      description: Sequence dictionary (.dict)
+
+output:
+  - recalibrated_bam:
+      type: tuple
+      description: |
+        Tuple with:
+          - sample_id
+          - strandedness
+          - recalibrated BAM file
+          - BAM index file
+      pattern: ["*_recalibrated.bam", "*_recalibrated.bai"]
+  - versions:
+      type: file
+      description: YAML file with GATK version used
+      pattern: "versions.yml"
+
+parameters:
+  - gatk_container:
+      type: string
+      description: Singularity container path for GATK
+  - recalibrated_bams_outdir:
+      type: string
+      description: Output directory for recalibrated BAM files
+
+authors:
+  
+  - "Adapted from nf-core module conventions"

@@ -1,0 +1,39 @@
+name: fastqc_raw
+description: Runs FastQC on paired-end FASTQ files
+keywords:
+  - fastqc
+  - quality control
+  - qc
+tools:
+  - fastqc:
+      description: |
+        FastQC is a quality control tool for high throughput sequence data.
+        It provides summary statistics and visualizations to assess read quality.
+     
+      
+input:
+  - sample_id:
+      type: string
+      description: Sample identifier
+  - r1:
+      type: file
+      description: Forward reads FASTQ file
+      pattern: "*_R1*.fastq.gz"
+  - r2:
+      type: file
+      description: Reverse reads FASTQ file
+      pattern: "*_R2*.fastq.gz"
+  - strandedness:
+      type: string
+      description: Strandedness information (e.g., 'unstranded', 'forward', 'reverse')
+output:
+  - qc_results:
+      type: tuple
+      description: |
+        Tuple containing sample ID, FastQC .zip output, FastQC .html report, and strandedness.
+      pattern: ["*_fastqc.zip", "*_fastqc.html"]
+  - versions:
+      type: file
+      description: YAML file containing FastQC version information
+      pattern: "versions.yml"
+

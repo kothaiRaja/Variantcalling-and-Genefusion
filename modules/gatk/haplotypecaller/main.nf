@@ -1,12 +1,9 @@
 process GATK_HAPLOTYPE_CALLER {
     tag { sample_id }
-    
-    cpus params.get('gatk_haplotype_caller_cpus', 12)
-    memory params.get('gatk_haplotype_caller_memory', '24 GB')
-    time params.get('gatk_haplotype_caller_time', '8h')
+    label 'process_high'
 
-    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
-    publishDir "${params.outdir}/haplotype_caller", mode: "copy"
+    container params.gatk_container
+    publishDir params.haplotype_caller_outdir, mode: "copy"
 
     input:
     tuple val(sample_id), val(strandedness), path(bam), path(bai)
@@ -17,39 +14,44 @@ process GATK_HAPLOTYPE_CALLER {
     path(known_sites_vcf_index)
 
     output:
-    tuple val(sample_id), val(strandedness), path("output_${bam.baseName}.vcf.gz"), 
-          path("output_${bam.baseName}.vcf.gz.tbi")
+    tuple val(sample_id), val(strandedness), 
+          path("output_${bam.baseName}.vcf.gz"), 
+          path("output_${bam.baseName}.vcf.gz.tbi"), emit: vcf_output
+    path("versions.yml"), emit: versions
 
     script:
     """
-    THREADS=${task.cpus}
+    THREADS=\${task.cpus}
 
-    # Validate Inputs
-    if [ ! -s ${bam} ]; then
-        echo "Error: BAM file not found or empty." >&2
-        exit 1
-    fi
-    if [ ! -s ${genome} ]; then
-        echo "Error: Reference genome not found or empty." >&2
-        exit 1
-    fi
-
-    # Extract a unique identifier from BAM filename
-    BAM_BASENAME=\$(basename ${bam} .bam)
+    echo "Running GATK HaplotypeCaller for sample: ${sample_id}"
 
     # Run HaplotypeCaller with RNA-seq optimizations
-    gatk HaplotypeCaller \
-        --native-pair-hmm-threads \$THREADS \
-        --reference ${genome} \
-        --output output_\${BAM_BASENAME}.vcf.gz \
-        -I ${bam} \
-        --standard-min-confidence-threshold-for-calling 10.0 \
-        --min-base-quality-score 10 \
-        --output-mode EMIT_VARIANTS_ONLY \
-        --dont-use-soft-clipped-bases true \
-        --disable-read-filter NotDuplicateReadFilter \
-        --dbsnp ${known_sites_vcf} \
+    gatk HaplotypeCaller \\
+        --native-pair-hmm-threads \${THREADS} \\
+        --reference "${genome}" \\
+        --output "output_${bam.baseName}.vcf.gz" \\
+        -I "${bam}" \\
+        --standard-min-confidence-threshold-for-calling 10.0 \\
+        --min-base-quality-score 10 \\
+        --output-mode EMIT_VARIANTS_ONLY \\
+        --dont-use-soft-clipped-bases true \\
+        --disable-read-filter NotDuplicateReadFilter \\
+        --dbsnp "${known_sites_vcf}" \\
         --verbosity INFO
+
+    # Check output
+    if [ ! -s "output_${bam.baseName}.vcf.gz" ]; then
+        echo "Error: VCF file not generated!" >&2
+        exit 1
+    fi
+
+    # Capture GATK version
+    gatk_version=\$(gatk --version | grep -Eo '[0-9.]+' | head -n 1)
+    cat <<EOF > versions.yml
+    "${task.process}":
+      gatk: "\${gatk_version}"
+    EOF
+
+    echo "HaplotypeCaller finished for ${sample_id}"
     """
 }
-

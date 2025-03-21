@@ -1,0 +1,63 @@
+name: samtools_sort_index
+description: |
+  Sorts and indexes a BAM file using Samtools.
+  The sorted BAM output is coordinate-sorted and indexed for use in downstream processes like variant calling, visualization, or quality control.
+
+  This module accepts a BAM file produced from an RNA-seq alignment step and performs:
+    - Sorting with `samtools sort`
+    - Indexing with `samtools index`
+
+  Container paths and versions are configurable externally via `custom.config`.
+
+keywords:
+  - samtools
+  - bam
+  - sorting
+  - indexing
+  - RNA-seq
+  - preprocessing
+
+tools:
+  - samtools:
+      description: |
+        Samtools is a suite of programs for interacting with high-throughput sequencing data, particularly in the BAM format.
+      documentation: https://www.htslib.org/doc/samtools.html
+      licence: ["MIT", "BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique identifier for the sample
+  - strandedness:
+      type: string
+      description: Strandedness information passed through from upstream processes (e.g. 'unstranded', 'forward', or 'reverse')
+  - bam:
+      type: file
+      description: Coordinate- or unsorted BAM file to be sorted and indexed
+      pattern: "*.bam"
+
+output:
+  - bam_sorted:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - strandedness
+          - sorted BAM file
+          - BAM index (.bai)
+      pattern: ["*_sorted.bam", "*_sorted.bam.bai"]
+  - versions:
+      type: file
+      description: YAML file capturing the version of Samtools used in the process
+      pattern: "versions.yml"
+
+parameters:
+  - samtools_container:
+      type: string
+      description: Singularity container path for samtools (defined in params_main.config, can be overridden via custom.config)
+  - samtools_outdir:
+      type: string
+      description: Output directory path for sorted BAM and index files
+
+authors:
+  - "Adapted from nf-core module conventions"

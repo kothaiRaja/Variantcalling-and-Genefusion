@@ -1,0 +1,63 @@
+name: samtools_stats
+description: |
+  Generates basic alignment statistics from a sorted BAM file using `samtools stats`.
+  This module produces a text-based report with metrics such as read count, base composition, mapping quality,
+  and coverage, useful for post-alignment QC and summary statistics.
+
+  The container and output directory are configurable externally via `custom.config`.
+  Version of samtools is recorded per process for reproducibility and reporting.
+
+keywords:
+  - samtools
+  - stats
+  - alignment
+  - QC
+  - BAM
+  - sequencing
+
+tools:
+  - samtools:
+      description: |
+        Samtools is a powerful set of tools for interacting with high-throughput sequencing data.
+        The `stats` command provides a wide range of summary metrics on alignment data.
+      documentation: https://www.htslib.org/doc/samtools-stats.html
+      licence: ["MIT", "BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique identifier for the sample
+  - strandedness:
+      type: string
+      description: Strandedness info passed through from earlier steps (e.g., 'forward', 'reverse', 'unstranded')
+  - sorted_bam:
+      type: file
+      description: Coordinate-sorted BAM file
+      pattern: "*_sorted.bam"
+  - bai:
+      type: file
+      description: BAM index file
+      pattern: "*_sorted.bam.bai"
+
+output:
+  - stats:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - strandedness
+          - samtools stats output report (.txt)
+          - versions.yml file
+      pattern: ["*_stats_report.txt", "versions.yml"]
+
+parameters:
+  - samtools_container:
+      type: string
+      description: Singularity container path for Samtools
+  - samtools_stats_outdir:
+      type: string
+      description: Directory where the stats output will be published
+
+authors:
+ 
+  - "Adapted from nf-core style documentation"

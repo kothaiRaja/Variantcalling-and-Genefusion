@@ -1,0 +1,63 @@
+name: bed_to_interval_list
+description: |
+  Converts a BED file into an interval list format using GATK's `BedToIntervalList` tool.
+  Interval lists are required by various GATK tools such as `CollectHsMetrics`, `BaseRecalibrator`, and others that work with targeted sequencing or specific genomic regions.
+
+  The output `.interval_list` file includes sequence dictionary entries and is compatible with downstream GATK tools.
+  The reference dictionary (`.dict`) and genome FASTA are required inputs to generate valid coordinates.
+
+  This process also captures the GATK version in a `versions.yml` file for reproducibility.
+
+keywords:
+  - gatk
+  - interval list
+  - BED
+  - target regions
+  - preprocessing
+
+tools:
+  - gatk:
+      description: |
+        GATK's `BedToIntervalList` converts BED files to interval list format based on a provided reference sequence dictionary.
+        This is useful when preparing target regions for coverage analysis or variant recalibration.
+      documentation: https://gatk.broadinstitute.org/hc/en-us/articles/360037593091-BedToIntervalList
+      licence: ["BSD-3-Clause"]
+
+input:
+  - meta_id:
+      type: string
+      description: Unique sample or region set identifier
+  - bed_file:
+      type: file
+      description: BED file defining genomic regions
+      pattern: "*.bed"
+  - genome_fasta:
+      type: file
+      description: Reference genome FASTA file (not directly used by the tool but often paired with .dict)
+      pattern: "*.fa"
+  - genome_dict:
+      type: file
+      description: Reference genome sequence dictionary (.dict) required by GATK
+      pattern: "*.dict"
+
+output:
+  - interval_list:
+      type: tuple
+      description: |
+        Tuple containing:
+          - meta_id
+          - GATK-compatible interval list file
+          - versions.yml file tracking tool version
+      pattern: ["*.interval_list", "versions.yml"]
+
+parameters:
+  - gatk_container:
+      type: string
+      description: Singularity container path for GATK (set in params_main.config)
+  - bed_to_interval_outdir:
+      type: string
+      description: Output directory for the interval list file and version tracking
+
+authors:
+  
+  - "Adapted from nf-core module standards"

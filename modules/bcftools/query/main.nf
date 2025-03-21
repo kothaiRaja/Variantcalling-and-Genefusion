@@ -1,17 +1,28 @@
 process BCFTOOLS_QUERY {
     tag { sample_id }
+    label 'process_low'
 
-    container "https://depot.galaxyproject.org/singularity/bcftools%3A1.3--h577a1d6_9"
-    publishDir "${params.outdir}/multiqc_input", mode: "copy", pattern: "*_query.*"
+    container params.bcftools_container
+    publishDir params.bcftools_query_outdir, mode: "copy", pattern: "*_query.*"
 
     input:
     tuple val(sample_id), path(filtered_vcf), path(tbi)
 
     output:
-    tuple val(sample_id), path("${sample_id}_variant_summary.txt")
+    tuple val(sample_id), path("${sample_id}_variant_summary.txt"), emit: query_output
+    path("versions.yml"), emit: versions
 
     script:
     """
-    bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%INFO/DP\t%INFO/AF\n' ${filtered_vcf} > ${sample_id}_variant_summary.txt
+    echo "Querying variant fields for sample: ${sample_id}"
+
+    bcftools query -f '%CHROM\\t%POS\\t%REF\\t%ALT\\t%INFO/DP\\t%INFO/AF\\n' "${filtered_vcf}" > "${sample_id}_variant_summary.txt"
+
+    # Capture bcftools version
+    bcftools_version=\$(bcftools --version | head -n 1 | awk '{print \$2}')
+    cat <<EOF > versions.yml
+    "${task.process}":
+      bcftools: "\${bcftools_version}"
+    EOF
     """
 }

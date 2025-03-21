@@ -1,0 +1,79 @@
+name: select_snps
+description: |
+  Uses GATK's `SelectVariants` to extract SNPs from a filtered or raw VCF file.
+  This module is useful when separating variant types (e.g. SNPs and indels)
+  for individual analysis or filtering steps.
+
+  Outputs include a compressed SNP-only VCF and its index, plus version tracking for reproducibility.
+
+keywords:
+  - gatk
+  - snp
+  - vcf
+  - variant filtering
+  - selectvariants
+
+tools:
+  - gatk:
+      description: |
+        GATK's `SelectVariants` tool enables subsetting of VCFs by variant type, region, or sample.
+        It is commonly used to isolate SNPs or indels for independent processing or evaluation.
+      documentation: https://gatk.broadinstitute.org/hc/en-us/articles/360037225632-SelectVariants
+      licence: ["BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Identifier for the sample
+  - vcf_file:
+      type: file
+      description: Compressed VCF file (.vcf.gz)
+      pattern: "*.vcf.gz"
+  - vcf_index:
+      type: file
+      description: Tabix index for the VCF
+      pattern: "*.vcf.gz.tbi"
+  - genome:
+      type: file
+      description: Reference genome FASTA
+      pattern: "*.fa"
+  - index:
+      type: file
+      description: Reference genome index (.fai)
+      pattern: "*.fa.fai"
+  - dict:
+      type: file
+      description: Reference genome dictionary (.dict)
+      pattern: "*.dict"
+
+output:
+  - selected_snps:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - compressed SNP-only VCF
+          - tabix index (.tbi)
+      pattern: ["*_snps.vcf.gz", "*_snps.vcf.gz.tbi"]
+  - versions:
+      type: file
+      description: YAML file with GATK version used
+      pattern: "versions.yml"
+
+parameters:
+  - gatk_container:
+      type: string
+      description: Singularity container with GATK
+  - snp_select_outdir:
+      type: string
+      description: Output directory for SNP-only VCFs
+
+parameters_used:
+  - --select-type-to-include SNP:
+      description: |
+        Filters the input VCF to include only SNP-type variants.
+        Other types (e.g. indels, structural variants) are excluded.
+
+authors:
+  
+  - "Adapted from nf-core documentation structure"

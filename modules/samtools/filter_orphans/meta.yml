@@ -1,0 +1,74 @@
+name: samtools_filter_orphans
+description: |
+  Filters out orphan and improperly paired reads from a BAM file using `samtools view -F 3844`.
+  This process retains only properly paired reads, which is useful for downstream analyses
+  that assume valid read pairing (e.g., variant calling or transcript quantification).
+
+  After filtering, the resulting BAM file is indexed for downstream use. The process also captures
+  the Samtools version used, and the output directory and container path can be configured externally
+  via `custom.config`.
+
+keywords:
+  - samtools
+  - bam
+  - filtering
+  - paired-end
+  - QC
+  - alignment
+
+tools:
+  - samtools:
+      description: |
+        Samtools is a suite of programs for interacting with high-throughput sequencing data.
+        The `view` command with `-F 3844` filters out:
+          - Unmapped reads
+          - Mate unmapped
+          - Secondary alignments
+          - QC fail
+          - Duplicates
+          - Supplementary alignments
+      documentation: https://www.htslib.org/doc/samtools.html
+      licence: ["MIT", "BSD-3-Clause"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique identifier for the sample
+  - strandedness:
+      type: string
+      description: Strandedness info passed from earlier steps (e.g., 'forward', 'reverse', or 'unstranded')
+  - sorted_bam:
+      type: file
+      description: Coordinate-sorted BAM file containing all aligned reads
+      pattern: "*_sorted.bam"
+  - bai:
+      type: file
+      description: BAM index file corresponding to the sorted BAM
+      pattern: "*_sorted.bam.bai"
+
+output:
+  - filtered_sorted_bams:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - strandedness
+          - filtered BAM file containing only properly paired reads
+          - index for the filtered BAM file
+      pattern: ["*_filtered.bam", "*_filtered.bam.bai"]
+  - versions:
+      type: file
+      description: YAML file containing the version of Samtools used
+      pattern: "versions.yml"
+
+parameters:
+  - samtools_container:
+      type: string
+      description: Singularity container path for Samtools
+  - samtools_filter_outdir:
+      type: string
+      description: Output directory for the filtered and indexed BAM files
+
+authors:
+  - "@yourname"
+  - "Adapted from nf-core module standards"

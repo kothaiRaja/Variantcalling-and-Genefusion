@@ -1,25 +1,37 @@
 process GATK_MERGEVCFS {
     tag { sample_id }
+    label 'process_medium'
 
-    cpus params.get('gatk_merge_vcfs_cpus', 4)
-    memory params.get('gatk_merge_vcfs_memory', '8GB')
-    time params.get('gatk_merge_vcfs_time', '4h')
-
-    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
-    publishDir "${params.outdir}/merged_vcf", mode: "copy"
+    container params.gatk_container
+    publishDir params.merged_vcf_outdir, mode: "copy"
 
     input:
     tuple val(sample_id), path(vcf_list), path(tbi_list)
 
     output:
-    tuple val(sample_id), path("merged_${sample_id}.vcf.gz"), path("merged_${sample_id}.vcf.gz.tbi")
+    tuple val(sample_id), 
+          path("merged_${sample_id}.vcf.gz"), 
+          path("merged_${sample_id}.vcf.gz.tbi"), emit: merged_vcf
+    path("versions.yml"), emit: versions
 
     script:
-    """
-    gatk MergeVcfs \\
-        ${vcf_list.collect { "-I ${it}" }.join(" \\\n")} \\
-        -O merged_${sample_id}.vcf.gz
+    def vcf_inputs = vcf_list.collect { "-I \"${it}\"" }.join(" \\\n")
 
-    gatk IndexFeatureFile -I merged_${sample_id}.vcf.gz
+    """
+    echo "Merging VCFs for sample: ${sample_id}"
+
+    gatk MergeVcfs \\
+    ${vcf_inputs} \\
+    -O "merged_${sample_id}.vcf.gz"
+
+    gatk IndexFeatureFile -I "merged_${sample_id}.vcf.gz"
+
+    # Capture GATK version
+    gatk_version=\$(gatk --version | grep -Eo '[0-9.]+' | head -n 1)
+    cat <<EOF > versions.yml
+    "${task.process}":
+      gatk: "\${gatk_version}"
+    EOF
     """
 }
+

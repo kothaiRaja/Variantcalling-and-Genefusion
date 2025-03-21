@@ -1,8 +1,9 @@
 process ANNOTATEVARIANTS_VEP {
     tag "Annotate variants using VEP"
 
-    container 'https://depot.galaxyproject.org/singularity/ensembl-vep%3A113.0--pl5321h2a3209d_0'
-    publishDir "${params.outdir}/annotations", mode: 'copy'
+    label 'process_medium'
+    container params.annotate_vep_container
+    publishDir params.annotate_vep_outdir, mode: 'copy'
 
     input:
     tuple val(sample_id), path(input_vcf), path(input_vcf_tbi)
@@ -14,41 +15,46 @@ process ANNOTATEVARIANTS_VEP {
     output:
     tuple val(sample_id), path("vep_annotated_${sample_id}.vcf"), emit: annotated_vcf  
     tuple val(sample_id), path("vep_annotated_${sample_id}.html"), emit: summary_html
+    path("versions.yml"), emit: versions
 
     script:
     def args = task.ext.args ?: ''
 
     """
-    
-    # Debugging: Log resolved paths
-    echo "Input VCF: \$(realpath ${input_vcf})"
-    echo "VEP Cache Directory: \$(realpath ${vep_cache})"
+    echo "Running VEP for sample: ${sample_id}"
 
     if [ ! -d "${vep_cache}" ]; then
         echo "ERROR: VEP cache directory does not exist at: \$(realpath ${vep_cache})" >&2
         exit 1
     fi
 
-    ls -lh \$(realpath ${vep_cache})
+    vep \\
+        --input_file "${input_vcf}" \\
+        --output_file "vep_annotated_${sample_id}.vcf" \\
+        --stats_file "vep_annotated_${sample_id}.html" \\
+        --cache \\
+        --dir_cache "${vep_cache}" \\
+        --species "${species}" \\
+        --assembly "${genome_assembly}" \\
+        --cache_version ${cache_version} \\
+        --format vcf \\
+        --vcf \\
+        --symbol \\
+        --protein \\
+        --check_existing \\
+        --everything \\
+        --filter_common \\
+        --per_gene \\
+        --total_length \\
+        --force_overwrite \\
+        --offline
 
-    vep \
-    --input_file "${input_vcf}" \
-    --output_file "vep_annotated_${sample_id}.vcf" \
-    --stats_file "vep_annotated_${sample_id}.html" \
-    --cache \
-    --dir_cache "${vep_cache}" \
-    --format vcf \
-    --vcf \
-    --symbol \
-    --protein \
-    --force_overwrite \
-    --check_existing \
-    --everything \
-    --filter_common \
-    --per_gene \
-    --total_length \
-    --offline
-    """ 
+    # Capture VEP version
+    vep_version=\$(vep --help 2>&1 | grep -oP 'version\\s+\\K[0-9.]+' | head -n 1)
 
-   
+    cat <<EOF > versions.yml
+    "${task.process}":
+      ensembl-vep: "\${vep_version}"
+    EOF
+    """
 }

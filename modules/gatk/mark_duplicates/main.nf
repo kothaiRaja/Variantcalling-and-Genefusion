@@ -1,12 +1,10 @@
 process GATK_MARK_DUPLICATES {
+   
     tag { sample_id }
+	label 'process_high'
 	
-	cpus params.get('gatk_mark_duplicates_cpus', 8)
-    memory params.get('gatk_mark_duplicates_memory', '16 GB')
-    time params.get('gatk_mark_duplicates_time', '2h')
-
-    container "https://depot.galaxyproject.org/singularity/gatk4%3A4.4.0.0--py36hdfd78af_0"
-    publishDir "${params.outdir}/dedup_bam", mode: "copy"
+	container params.gatk_container
+    publishDir params.markduplicates_outdir, mode: "copy"
 
     input:
     tuple val(sample_id),val(strandedness), path(sorted_bam), path(sorted_bam_index)
@@ -14,6 +12,7 @@ process GATK_MARK_DUPLICATES {
     output:
     tuple val(sample_id), val(strandedness), path("${sample_id}_marked_duplicates.bam"), path("${sample_id}_marked_duplicates.bai"), emit: marked_bams_bai
 	tuple val(sample_id), val(strandedness), path("${sample_id}_dup_metrics.txt"), emit: marked_bams_bai_metrics
+	path("versions.yml"), emit: versions
 
     script:
     """
@@ -38,5 +37,13 @@ process GATK_MARK_DUPLICATES {
         echo "Error: Duplicate metrics file not generated for ${sample_id}" >&2
         exit 1
     fi
+	
+	#  capture version
+	gatk_version=\$(gatk --version | grep -Eo '[0-9.]+' | head -n 1)
+
+	cat <<EOF > versions.yml
+	"GATK_MARK_DUPLICATES":
+	  gatk: "\${gatk_version}"
+	EOF
     """
 }

@@ -1,0 +1,103 @@
+name: annotatevariants_vep
+description: |
+  Annotates variants using Ensembl's Variant Effect Predictor (VEP).
+  Outputs include:
+    - a VCF annotated with consequence terms and gene symbols
+    - an HTML summary report with variant impact metrics
+
+  VEP uses a local cache and runs in offline mode for reproducibility.
+  This module supports fully configurable cache paths and genome builds.
+
+keywords:
+  - vep
+  - ensembl
+  - annotation
+  - vcf
+  - html
+  - variant effect
+
+tools:
+  - vep:
+      description: |
+        VEP (Variant Effect Predictor) determines the effect of genetic variants
+        (e.g. missense, frameshift) on genes, transcripts, and protein sequence.
+        It supports both online and offline modes using local caches.
+      documentation: https://www.ensembl.org/info/docs/tools/vep/index.html
+      licence: ["Apache-2.0"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique identifier for the sample
+  - input_vcf:
+      type: file
+      description: Input VCF file to annotate
+      pattern: "*.vcf.gz"
+  - input_vcf_tbi:
+      type: file
+      description: Tabix index file for the input VCF
+      pattern: "*.vcf.gz.tbi"
+  - vep_cache:
+      type: file
+      description: Directory containing VEP cache (e.g. `~/.vep`)
+  - genome_assembly:
+      type: string
+      description: Genome build (e.g. GRCh38 or GRCh37)
+  - cache_version:
+      type: integer
+      description: Version of the Ensembl cache (e.g. 108)
+  - species:
+      type: string
+      description: Target species (e.g. homo_sapiens)
+
+output:
+  - annotated_vcf:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - VEP-annotated VCF file
+      pattern: "vep_annotated_*.vcf"
+  - summary_html:
+      type: tuple
+      description: |
+        Tuple containing:
+          - sample_id
+          - HTML summary of VEP annotation results
+      pattern: "vep_annotated_*.html"
+  - versions:
+      type: file
+      description: YAML file capturing the VEP version used
+      pattern: "versions.yml"
+
+parameters:
+  - annotate_vep_container:
+      type: string
+      description: Singularity container containing VEP
+  - annotate_vep_outdir:
+      type: string
+      description: Output directory for annotated VCF and summary
+
+parameters_used:
+  - --cache:
+      description: Use the local VEP cache directory for annotation
+  - --dir_cache:
+      description: Specifies the directory containing cache files
+  - --offline:
+      description: Runs without internet access; essential for reproducibility
+  - --species:
+      description: Name of the species (e.g. homo_sapiens)
+  - --assembly:
+      description: Genome assembly version used for annotation
+  - --everything:
+      description: Shortcut to include all VEP annotations
+  - --symbol, --protein, --filter_common, etc.:
+      description: Enable gene symbol output, protein predictions, common variant filtering, and more
+  - --stats_file:
+      description: Path to the output HTML summary file
+  - --vcf:
+      description: Output format will remain in VCF (rather than plain text)
+
+authors:
+ 
+  - "Adapted from nf-core annotation modules"

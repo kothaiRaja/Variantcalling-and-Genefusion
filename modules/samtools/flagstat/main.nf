@@ -1,14 +1,17 @@
 process SAMTOOLS_FLAGSTAT {
     tag { sample_id }
+	label 'process_medium'
 
-    container "https://depot.galaxyproject.org/singularity/samtools%3A1.18--h50ea8bc_1"
-    publishDir "${params.outdir}/multiqc_input", mode: "copy", pattern: "*_flagstat.*"
+    container params.samtools_container
+
+    publishDir params.samtools_flagstat_outdir, mode: "copy", pattern: "*_flagstat.*"
 
     input:
     tuple val(sample_id), val(strandedness), path(sorted_bam), path(bai)
 
     output:
-    tuple val(sample_id), val(strandedness), path("${sample_id}_flagstat.txt"), path("${sample_id}_stats_report.txt")
+    tuple val(sample_id), val(strandedness), path("${sample_id}_flagstat.txt"), path("${sample_id}_stats_report.txt"),emit: flagstat
+	path("versions.yml"), emit: versions
 
     script:
     """
@@ -31,6 +34,13 @@ process SAMTOOLS_FLAGSTAT {
 
     # Generate additional quality metrics with samtools stats
     samtools stats ${sorted_bam} > ${sample_id}_stats_report.txt
+	
+	# Capture samtools version
+    samtools_version=\$(samtools --version | head -n 1 | awk '{print \$2}')
+    cat <<EOF > versions.yml
+    samtools_flagstat:
+      version: "\${samtools_version}"
+    EOF
     """
 }
 

@@ -1,0 +1,78 @@
+name: arriba_visualization
+description: |
+  Generates visual plots of gene fusions identified by Arriba using an R-based script.
+  It takes the `.fusions.tsv` file as input and produces a PDF plot visualizing the fusion structure.
+  If no fusions are found, an empty placeholder PDF is created to maintain workflow consistency.
+
+keywords:
+  - arriba
+  - fusion
+  - visualization
+  - rscript
+  - gene fusions
+
+tools:
+  - R:
+      description: |
+        R is a programming language used for statistical computing and graphics.
+        This module uses R and an external script (`draw_fusions.R`) to create fusion plots.
+      documentation: https://www.r-project.org/
+      licence: ["GPL-2.0-or-later"]
+
+input:
+  - sample_id:
+      type: string
+      description: Unique identifier for the sample
+  - fusions_tsv:
+      type: file
+      description: TSV file from Arriba listing predicted gene fusions
+      pattern: "*.fusions.tsv"
+  - strandedness:
+      type: string
+      description: Strand orientation info (passed through for naming/metadata)
+  - r_script:
+      type: file
+      description: R script that generates fusion plots (e.g., `draw_fusions.R`)
+      pattern: "*.R"
+  - fasta:
+      type: file
+      description: Genome reference file (not directly used in plotting, but provided for future use)
+      pattern: "*.fa"
+  - gtf:
+      type: file
+      description: GTF gene annotation file for transcript models
+      pattern: "*.gtf"
+
+output:
+  - fusion_plot:
+      type: file
+      description: PDF file with visualization of gene fusions for the sample
+      pattern: "*.fusion_plot.pdf"
+  - versions:
+      type: file
+      description: YAML file capturing the version of R used
+      pattern: "versions.yml"
+
+parameters:
+  - r_base_container:
+      type: string
+      description: Singularity container with R installed
+  - visualisation_outdir:
+      type: string
+      description: Output directory for fusion plots
+  - arriba_visualization_cpus:
+      type: integer
+      default: 4
+      description: Number of CPUs to use for rendering
+  - arriba_visualization_memory:
+      type: string
+      default: "16 GB"
+      description: Memory allocation
+  - arriba_visualization_time:
+      type: string
+      default: "2h"
+      description: Max time allowed for this process
+
+authors:
+
+  - "Based on Arriba and custom R script plotting integration"
