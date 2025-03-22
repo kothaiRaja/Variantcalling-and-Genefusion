@@ -10,6 +10,7 @@ include { BASE_RECALIBRATION } from './subworkflows/base_recalibration.nf'
 include { VARIANT_CALLING } from './subworkflows/variant_calling.nf'
 include { ANNOTATE } from './subworkflows/variant_annotations.nf'
 include { GENE_FUSION } from './subworkflows/gene_fusion.nf'
+include { CUSTOM_DUMPSOFTWAREVERSIONS } from './modules/nfcore/software_versions/main.nf'
 
 
 
@@ -22,6 +23,9 @@ include { GENE_FUSION } from './subworkflows/gene_fusion.nf'
 
 workflow {
 
+	ch_versions = Channel.empty()
+
+
     // Ensure only one of the specialized workflows is selected
     if (params.only_qc && params.skip_star) { 
         error "You cannot enable both only_qc and skip_star at the same time. Set one to false."
@@ -29,23 +33,25 @@ workflow {
 
     //============================== PREPROCESSING / TRIMMING ===============================//
 
-    trimmed_reads_ch = Channel.empty() // Initialize empty channel
+    trimmed_reads_ch = Channel.empty() 
 
     if (params.input_reads) {
         log.info "Using provided input reads for STAR Alignment..."
-        trimmed_reads_ch = Channel.fromPath(params.input_reads)
+        trimmed_reads_ch = Channel.fromFilePairs(params.input_reads, flat: true)
+
     } else {
         log.info "No input reads provided. Running Preprocessing..."
-        PREPROCESSING(params.samplesheet)
+        PREPROCESSING(params.samplesheet, params.dump_script)
         
         trimmed_reads_ch  = PREPROCESSING.out.trimmed_reads
-        fastp_reports_ch  = PREPROCESSING.out.fastp_reports
-        qc_results_ch     = PREPROCESSING.out.qc_reports
+        reports_ch  = PREPROCESSING.out.reports
         multiqc_quality   = PREPROCESSING.out.multiqc
+		ch_versions 	  = ch_versions.mix(PREPROCESSING.out.versions)
     }
 
-    // If user wants QC-only mode, exit after preprocessing
+    // If user wants QC-only mode, dump versions and exit
     if (params.only_qc) {
+
         log.info("QC completed. Exiting pipeline...")
         return
     }

@@ -26,3 +26,4 @@ process MultiQC_quality {
   EOF
   """
 }
+

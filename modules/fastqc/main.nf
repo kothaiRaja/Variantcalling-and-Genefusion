@@ -9,7 +9,8 @@ process FASTQC_RAW {
     tuple val(sample_id), path(r1), path(r2), val(strandedness)
 
     output:
-    tuple val(sample_id), path("*_fastqc.zip"), path("*_fastqc.html"), val(strandedness), emit: qc_results
+    tuple val(sample_id), path("*_fastqc.zip"), val(strandedness), emit: qc_results
+	path("*_fastqc.html"), emit: fastqc_reports
 	path("versions.yml"), emit: versions
  
 
@@ -20,8 +21,8 @@ process FASTQC_RAW {
 	#Capture Versions
 	fastqc_version=\$(fastqc --version | awk '{print \$2}')
 	cat <<EOF > versions.yml
-	fastqc:
-	  version: "${fastqc_version}"
+	"${task.process}":
+	  fastqc: "\${fastqc_version}"
 	EOF
 
 

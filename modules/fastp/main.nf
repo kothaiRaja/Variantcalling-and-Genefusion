@@ -11,7 +11,7 @@ process TRIM_READS {
 
     output:
     tuple val(sample_id), path("trimmed_${sample_id}_R1.fastq.gz"), path("trimmed_${sample_id}_R2.fastq.gz"), val(strandedness), emit: trimmed_reads
-    tuple val(sample_id), path("${sample_id}_fastp.html"), path("${sample_id}_fastp.json"), emit: fastp_reports
+    tuple path ("${sample_id}_fastp.html"), path("${sample_id}_fastp.json"), emit: fastp_reports
 	path("versions.yml"), emit: versions
 
     script:
@@ -30,10 +30,11 @@ process TRIM_READS {
       --json ${sample_id}_fastp.json
 	  
 	#Capture the version
-	fastp_version=\$(fastp --version | grep -oP '[0-9.]+')
+	fastp_version=\$(fastp --version 2>&1 | head -n1 | awk '{print \$2}')
+
 	cat <<EOF > versions.yml
-	fastp:
-	  version: "${fastp_version}"
+	"${task.process}":
+	  fastp: "\${fastp_version}"
 	EOF
 
 
