@@ -15,31 +15,26 @@ process MERGE_BAMS {
     path("versions.yml"), emit: versions
 
     script:
-    """
-    echo "Merging BAM files for sample: ${sample_id}"
+"""
+echo "Merging BAM files for sample: ${sample_id}"
 
-    # List BAM files into a text file
-    ls "${bam_list}" > bam_files.txt
+# Merge BAMs directly using list expansion
+samtools merge -@ ${task.cpus} -o "${sample_id}_merged.bam" ${bam_list.join(' ')}
 
-    # Check if any BAM files are listed
-    if [ ! -s bam_files.txt ]; then
-        echo "ERROR: No BAM files found for sample: ${sample_id}"
-        exit 1
-    fi
+# Index the merged BAM
+samtools index "${sample_id}_merged.bam"
 
-    # Merge BAMs
-    samtools merge -@ ${task.cpus} -b bam_files.txt -o "${sample_id}_merged.bam"
+# Capture Samtools version
+samtools_version=\$(samtools --version | head -n 1 | awk '{print \$2}')
 
-    # Index the merged BAM
-    samtools index "${sample_id}_merged.bam"
+cat <<EOF > versions.yml
+"${task.process}":
+  samtools: "\${samtools_version}"
+EOF
 
-    # Capture Samtools version
-    samtools_version=\$(samtools --version | head -n 1 | awk '{print \$2}')
-    cat <<EOF > versions.yml
-    "${task.process}":
-      samtools: "\${samtools_version}"
-    EOF
+echo "Merge complete for sample: ${sample_id}"
+"""
 
-    echo "Merge complete for sample: ${sample_id}"
-    """
+
+    
 }

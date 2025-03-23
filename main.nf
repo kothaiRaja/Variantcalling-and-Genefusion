@@ -23,54 +23,92 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS } from './modules/nfcore/software_versions
 
 workflow {
 
-	ch_versions = Channel.empty()
+    ch_versions = Channel.empty()
 
-
-    // Ensure only one of the specialized workflows is selected
-    if (params.only_qc && params.skip_star) { 
-        error "You cannot enable both only_qc and skip_star at the same time. Set one to false."
+    // ============================ VALIDATION ============================
+    if (params.only_qc && params.only_star) {
+        error " Cannot run both 'only_qc' and 'only_star'. Please set only one to true."
     }
 
-    //============================== PREPROCESSING / TRIMMING ===============================//
-
-    trimmed_reads_ch = Channel.empty() 
-
-    if (params.input_reads) {
-        log.info "Using provided input reads for STAR Alignment..."
-        trimmed_reads_ch = Channel.fromFilePairs(params.input_reads, flat: true)
-
-    } else {
-        log.info "No input reads provided. Running Preprocessing..."
-        PREPROCESSING(params.samplesheet, params.dump_script)
-        
-        trimmed_reads_ch  = PREPROCESSING.out.trimmed_reads
-        reports_ch  = PREPROCESSING.out.reports
-        multiqc_quality   = PREPROCESSING.out.multiqc
-		ch_versions 	  = ch_versions.mix(PREPROCESSING.out.versions)
-    }
-
-    // If user wants QC-only mode, dump versions and exit
+    // ============================ ONLY QC MODE ============================
     if (params.only_qc) {
+        log.info " Running QC-only mode..."
 
-        log.info("QC completed. Exiting pipeline...")
+        PREPROCESSING(params.samplesheet, params.dump_script)
+
+        reports_ch       = PREPROCESSING.out.reports
+        multiqc_quality  = PREPROCESSING.out.multiqc
+        ch_versions      = ch_versions.mix(PREPROCESSING.out.versions)
+
+        log.info("✅ QC completed. Exiting pipeline.")
         return
     }
 
-    //==================================== STAR ALIGNMENT ====================================//
+    // ============================ ONLY STAR MODE ============================
+    if (params.only_star) {
+        log.info " Running ONLY STAR alignment..."
 
-    if (!params.skip_star) {
-        log.info "Running STAR Alignment..."
-        STAR_ALIGN(trimmed_reads_ch, params.star_genome_index, params.gtf_annotation)
-		// Capture Outputs from STAR Alignment
-        star_bam_ch         = STAR_ALIGN.out.bam_sorted
-        chimeric_reads_ch   = STAR_ALIGN.out.chimeric_reads
-        flagstats_ch        = STAR_ALIGN.out.flagstats
-        align_stats_ch      = STAR_ALIGN.out.align_stats
-        star_logs_ch        = STAR_ALIGN.out.star_logs
-		filtered_bams_ch 	= STAR_ALIGN.out.filtered_bams
-    } else {
-        log.info "Skipping STAR Alignment as per user request."
+        PREPROCESSING(params.samplesheet, params.dump_script)
+
+        STAR_ALIGN(
+            PREPROCESSING.out.trimmed_reads,
+            params.star_genome_index,
+            params.gtf_annotation,
+            null,
+            null
+        )
+
+        STAR_ALIGN.out.bam_sorted.view { " STAR sorted BAM: $it" }
+
+        return
     }
+
+    // ============================ FULL PIPELINE MODE ============================
+    log.info " Starting Preprocessing using sample sheet..."
+
+    PREPROCESSING(params.samplesheet, params.dump_script)
+
+    trimmed_reads_ch   = PREPROCESSING.out.trimmed_reads
+    reports_ch         = PREPROCESSING.out.reports
+    multiqc_quality    = PREPROCESSING.out.multiqc
+    ch_versions        = ch_versions.mix(PREPROCESSING.out.versions)
+
+    // ========================== STAR ALIGNMENT LOGIC ==========================
+    if (!params.skip_star) {
+        log.info " Running STAR Alignment..."
+
+        def aligned_bam_samplesheet = params.aligned_bam_samplesheet ? file(params.aligned_bam_samplesheet) : null
+        def aligned_bam_folder      = params.aligned_bam_folder      ? file(params.aligned_bam_folder) : null
+
+        STAR_ALIGN(
+            trimmed_reads_ch, 
+            params.star_genome_index, 
+            params.gtf_annotation, 
+            aligned_bam_samplesheet, 
+            aligned_bam_folder
+        )
+
+        star_bam_ch        = STAR_ALIGN.out.bam_sorted
+        chimeric_reads_ch  = STAR_ALIGN.out.chimeric_reads
+        flagstats_ch       = STAR_ALIGN.out.flagstats
+        align_stats_ch     = STAR_ALIGN.out.align_stats
+        star_logs_ch       = STAR_ALIGN.out.star_logs
+        filtered_bams_ch   = STAR_ALIGN.out.filtered_bams
+        ch_versions        = ch_versions.mix(STAR_ALIGN.out.versions)
+
+    } else {
+        log.info " Skipping STAR alignment as per user request."
+
+        star_bam_ch        = Channel.empty()
+        chimeric_reads_ch  = Channel.empty()
+        flagstats_ch       = Channel.empty()
+        align_stats_ch     = Channel.empty()
+        star_logs_ch       = Channel.empty()
+        filtered_bams_ch   = Channel.empty()
+    }
+
+
+
 	
 	//=====================================Intervals processing============================//
 	
@@ -85,6 +123,7 @@ workflow {
 
     // Capture Outputs from Interval Processing
     intervals_ch = INTERVAL_PROCESSING.out.intervals
+	ch_versions        = ch_versions.mix(INTERVAL_PROCESSING.out.versions)
 
     // **View the intervals to confirm output**
     intervals_ch.view { file -> "Generated Interval: ${file}" }
@@ -112,7 +151,9 @@ workflow {
 	)
 
 	// Set the final BAMs channel
-	final_bams_ch = SPLIT_MERGE_BAMS.out.merged_calmd_bams
+	final_bams_ch 	   = SPLIT_MERGE_BAMS.out.merged_calmd_bams
+	ch_versions        = ch_versions.mix(SPLIT_MERGE_BAMS.out.versions)
+	
 	
 	//======================BASE_RECALIBRATION=========================//
 	
@@ -129,6 +170,7 @@ workflow {
 		params.merged_vcf_index)
 
     recalibrated_bams_ch = BASE_RECALIBRATION.out.recalibrated_bams
+	ch_versions        = ch_versions.mix(BASE_RECALIBRATION.out.versions)
 } else {
     log.info "Skipping Base Recalibration. Using previous step's BAMs..."
     recalibrated_bams_ch = final_bams_ch
@@ -150,6 +192,7 @@ workflow {
     selected_snps_ch = VARIANT_CALLING.out.selected_snps
     selected_indels_ch = VARIANT_CALLING.out.selected_indels
 	selected_variants_ch = VARIANT_CALLING.out.selected_variants
+	ch_versions        = ch_versions.mix(VARIANT_CALLING.out.versions)
 
     log.info "✅ Variant Calling Completed!"
 	
@@ -175,20 +218,35 @@ workflow {
 	final_annotated_vcf = ANNOTATE.out.final_vcf_annotated
 	html_report 		= ANNOTATE.out.reports_html
 	
-	//================== Step 8: Run Gene Fusion Analysis on STAR Chimeric Reads================//
-    fusions = GENE_FUSION(
-		star_bam_ch,
-        chimeric_reads_ch,   
-        params.reference_genome,
-        params.gtf_annotation,
-        params.arriba_blacklist,
-        params.arriba_known_fusions,
-        params.scripts_dir
-	)
-    
-	//Capturing the output from ARRIBA
-	ARRIBA_fusion_ch = GENE_FUSION.out.fusion_results
-	ARRIBA_visualisation_ch = GENE_FUSION.out.fusion_visualizations
+	
+	//================== Step 8: Run Gene Fusion Analysis on STAR Chimeric Reads ================//
+
+if (params.run_fusion) {
+    // Make sure STAR was not skipped and chimeric reads exist
+    if (params.skip_star) {
+        log.warn " STAR alignment was skipped. Gene fusion analysis requires STAR chimeric reads."
+    } else {
+        log.info " Running Gene Fusion Analysis..."
+
+        fusions = GENE_FUSION(
+            star_bam_ch,
+            chimeric_reads_ch,   
+            params.reference_genome,
+            params.gtf_annotation,
+            params.arriba_blacklist,
+            params.arriba_known_fusions,
+            params.scripts_dir
+        )
+        
+        // Capture outputs
+        ARRIBA_fusion_ch = GENE_FUSION.out.fusion_results
+        ARRIBA_visualisation_ch = GENE_FUSION.out.fusion_visualizations
+        ch_versions = ch_versions.mix(GENE_FUSION.out.versions)
+    }
+} else {
+    log.info " Skipping gene fusion detection as per configuration (params.run_fusion = false)"
+}
+
 	
 }
    

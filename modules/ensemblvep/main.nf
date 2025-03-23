@@ -49,8 +49,11 @@ process ANNOTATEVARIANTS_VEP {
         --force_overwrite \\
         --offline
 
-    # Capture VEP version
-    vep_version=\$(vep --help 2>&1 | grep -oP 'version\\s+\\K[0-9.]+' | head -n 1)
+    
+    # Capture VEP version using awk
+	vep_version=\$(vep --help 2>&1 | awk '/version/ { print \$NF }')
+
+
 
     cat <<EOF > versions.yml
     "${task.process}":

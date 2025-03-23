@@ -19,8 +19,9 @@ workflow GENE_FUSION {
         
         log.info "Starting Gene Fusion Detection Workflow..."
 
-        
-
+        ch_versions = Channel.empty()
+		
+	
         // **Step 2: ARRIBA Fusion Detection**
         arriba_results = ARRIBA(
 			STAR_bam_output,
@@ -30,19 +31,25 @@ workflow GENE_FUSION {
             arriba_blacklist,
             arriba_known_fusions
         )
+		
+		arriba_results_ch = ARRIBA.out.fusions
+		ch_versions = ch_versions.mix(ARRIBA.out.versions.first())
 
         // **Step 3: ARRIBA Visualization**
         fusion_visuals = ARRIBA_VISUALIZATION(
-            arriba_results[0],
+            arriba_results_ch,
             arriba_scripts_dir,
             reference_genome,
             gtf_annotation
         )
-
+		
+		fusion_visual_ch = ARRIBA_VISUALIZATION.out.fusion_plot
+		ch_versions = ch_versions.mix(ARRIBA_VISUALIZATION.out.versions.first())
         log.info " Gene Fusion Detection Workflow Completed."
 
     emit:
         fusion_results = arriba_results.fusions
 		discarded_results = arriba_results.fusions_discarded
-        fusion_visualizations = fusion_visuals
+        fusion_visualizations = fusion_visual_ch
+		versions  = ch_versions
 }

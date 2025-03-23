@@ -15,6 +15,9 @@ workflow SPLIT_MERGE_BAMS {
 	reference_genome_dict
 
     main:
+	
+	ch_versions = Channel.empty()
+	
     log.info "Starting Split & Merge BAMs Workflow..."
 split_bams_ch = bam_input_ch
     .map { tuple(it[0], it[1], it[2], it[3]) }
@@ -32,30 +35,44 @@ split_bams = SPLIT_NCIGAR_READS(
     reference_genome_dict
 )
 
-split_bams.view { "SplitNcigar Output : $it" }
+split_bams_ch = SPLIT_NCIGAR_READS.out.split_interval_bams
+split_bams_ch.view {"Split_ch_bams : $it "}
+ch_versions = ch_versions.mix(SPLIT_NCIGAR_READS.out.versions.first())
 
-split_bams
+split_bams_ch
     .groupTuple() // Groups by sample ID
     .map { sample_id, strandedness_list, bams, bais -> 
         tuple(sample_id, strandedness_list.unique()[0], bams.flatten(), bais.flatten()) 
     }
     .set { ch_merged_bams }
 
+ch_merged_bams.view {"channel_merged_bams : $it" }
+
+
 
 merged_bams = MERGE_BAMS(ch_merged_bams)
 
-merged_bams.view { "Merged BAMs Output : $it" }
+merged_bams_ch = MERGE_BAMS.out.merged_bams
+ch_versions = ch_versions.mix(MERGE_BAMS.out.versions.first())
+
+
+merged_bams_ch.view { "Merged BAMs Output : $it" }
 
 // **Step 3: Apply samtools calmd**
-    calmd_bams_ch = SAMTOOLS_CALMD(merged_bams, reference_genome, reference_genome_index)
+    calmd_bams = SAMTOOLS_CALMD(merged_bams_ch, reference_genome, reference_genome_index)
+	
+	calmd_bams_ch = SAMTOOLS_CALMD.out.calmd_bams
+	ch_versions = ch_versions.mix(SAMTOOLS_CALMD.out.versions.first())
+	
 
 	calmd_bams_ch.view { "Calmd BAM Output: $it" }
 
 
 // **Emit Outputs**
     emit:
-    split_bams  = split_bams
-    merged_bams = merged_bams
+    split_bams  = split_bams_ch
+    merged_bams = merged_bams_ch
 	merged_calmd_bams 	= calmd_bams_ch
+	versions  = ch_versions
 
 }

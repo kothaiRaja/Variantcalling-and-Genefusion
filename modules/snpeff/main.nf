@@ -15,7 +15,8 @@ process ANNOTATE_VARIANTS {
     output:
     tuple val(sample_id), path("annotated_${sample_id}.vcf"), emit: annotated_vcf
     path "annotated_${sample_id}.summary.html", emit: summary_html
-    path "annotated_${sample_id}.csv", emit: annotation_csv  
+    path "annotated_${sample_id}.csv", emit: annotation_csv 
+	path("versions.yml"), emit: versions
 
     script:
     """
@@ -46,8 +47,10 @@ process ANNOTATE_VARIANTS {
         -csvStats annotated_${sample_id}.csv \
         ${vcf} > /dev/null
 		
-	# Capture SnpEff version
-    snpeff_version=\$(java -jar "${snpEffJar}" -version 2>&1 | head -n 1)
+	
+    # Capture SnpEff version
+	snpeff_version=\$(java -jar "${snpEffJar}" -version 2>&1 | awk 'NR==1')
+
 
     cat <<EOF > versions.yml
     "${task.process}":

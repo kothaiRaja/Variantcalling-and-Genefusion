@@ -47,7 +47,8 @@ process ARRIBA_VISUALIZATION {
     fi
 
     # Version tracking
-    r_version=\$(Rscript --version 2>&1 | grep -o '[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+' | head -n 1)
+    r_version=\$(Rscript --version 2>&1 | awk '{print \$NF}')
+
     cat <<EOF > versions.yml
     "${task.process}":
       R: "\${r_version}"

@@ -90,12 +90,17 @@ process STAR_ALIGNMENT {
 		 $strand_option \
 		$extra_args
 		
-	#capture the versions
+	# Capture the STAR version
 	star_version=\$(STAR --version)
-	cat <<EOF > versions.yml
-	STAR:
-	  version: "${star_version}"
+
+	# Append the version to versions.yml
+	cat <<EOF >> versions.yml
+	  "${task.process}":
+	STAR_version: "\${star_version}"
 	EOF
+
+		
+	
 
 
     """

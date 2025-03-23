@@ -25,6 +25,7 @@ workflow ANNOTATE {
     // Initialize empty channels
     annotated_vcfs = Channel.empty()
     annotation_reports = Channel.empty()
+	ch_versions = Channel.empty()
     
 	
 	log.info "Starting variant annotation workflow..."
@@ -44,6 +45,7 @@ workflow ANNOTATE {
 	annotated_vcfs = annotated_vcfs.mix(VARIANT_ANNOTATION.out.final_annotated_variants)
     annotation_reports = annotation_reports.mix(VARIANT_ANNOTATION.out.annotated_html)
 	
+	
 	}
 	
 	if (tools.contains('combine')) {
@@ -57,6 +59,8 @@ workflow ANNOTATE {
         )
         annotated_vcfs  = annotated_vcfs.mix( COMBINED_ANNOTATE.out.final_vep_annotated_vcf)
         annotation_reports  = annotation_reports.mix(COMBINED_ANNOTATE.out.annotated_html)
+		
+		
     }
 	
 	if (tools.contains('vep')) {
@@ -70,10 +74,12 @@ workflow ANNOTATE {
     )
         annotated_vcfs  = annotated_vcfs.mix(VEP_ANNOTATION_WORKFLOW.out.final_vep_annotated_vcf)
         annotation_reports  = annotation_reports.mix(VEP_ANNOTATION_WORKFLOW.out.annotated_html)
+		
         
     }
 	
 	emit: 
 		final_vcf_annotated     = annotated_vcfs
         reports_html     		= annotation_reports
+		
     }

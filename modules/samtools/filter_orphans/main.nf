@@ -24,8 +24,8 @@ process SAMTOOLS_FILTER_ORPHANS {
 	# Capture samtools version
     samtools_version=\$(samtools --version | head -n 1 | awk '{print \$2}')
     cat <<EOF > versions.yml
-    samtools_filter_orphans:
-      version: "\${samtools_version}"
+    "${task.process}":
+      samtools: "\${samtools_version}"
     EOF
     """
 }

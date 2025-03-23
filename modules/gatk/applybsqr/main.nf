@@ -21,7 +21,7 @@ process GATK_APPLYBQSR {
     def interval_command = interval ? "--intervals ${interval}" : ""
 
     """
-    THREADS=\${task.cpus}
+    THREADS=${task.cpus}
 
     echo "Applying BQSR for sample: ${sample_id}, interval: ${interval.baseName}"
 
@@ -44,7 +44,8 @@ process GATK_APPLYBQSR {
         -I "${sample_id}_${interval.baseName}_recalibrated.bam"
 
     # Capture version
-    gatk_version=\$(gatk --version | grep -Eo '[0-9.]+' | head -n 1)
+    gatk_version=\$(gatk --version | awk '{print \$2}')
+	
     cat <<EOF > versions.yml
     "${task.process}":
       gatk: "\${gatk_version}"

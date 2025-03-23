@@ -15,6 +15,9 @@ workflow BASE_RECALIBRATION {
 	merged_vcf_index
 
     main:
+	
+	ch_versions = Channel.empty()
+	
     log.info "Starting Base Recalibration Workflow..."
 	
 	// Pair split BAMs with Scattered Intervals using combine()
@@ -29,15 +32,19 @@ workflow BASE_RECALIBRATION {
 	
 		//Run GATK Recalibration 
 	recalibrated_bams_table = GATK_BASERECALIBRATOR(ch_recalibrated_bam_bai_interval, reference_genome, reference_genome_index, reference_genome_dict, merged_vcf, merged_vcf_index )
+	
+	recalibrated_bams_table_ch = GATK_BASERECALIBRATOR.out.recal_table
+	ch_versions = ch_versions.mix(GATK_BASERECALIBRATOR.out.versions.first())
+	
        
-	recalibrated_bams_table.view{"Recalibrated Bams Output: $it" }
+	recalibrated_bams_table_ch.view{"Recalibrated Bams Output: $it" }
 	
 	//Applying BSQR 
 	
 	// Join Calmd BAMs with Recalibrated Tables (Removing Redundant Strandedness)
 ch_applybqsr = bam_input_ch.map { sample_id, strandedness, bam, bai ->  
     tuple(sample_id, strandedness, bam, bai) 
-}.join(recalibrated_bams_table.map { sample_id, _ , recal_table ->  // Ignore strandedness
+}.join(recalibrated_bams_table_ch.map { sample_id, _ , recal_table ->  
     tuple(sample_id, recal_table)
 }, by: 0)  // Join by sample_id
 
@@ -65,9 +72,13 @@ bams_base_recalibrated = GATK_APPLYBQSR(
     reference_genome_dict 
 )
 
-bams_base_recalibrated.view { "recalibrated_bsqr_bams:$it " }
+bams_base_recalibrated_ch = GATK_APPLYBQSR.out.recalibrated_bam
+ch_versions = ch_versions.mix(GATK_APPLYBQSR.out.versions.first())
+
+bams_base_recalibrated_ch.view { "recalibrated_bsqr_bams:$it " }
 
 emit:
-    recalibrated_bams = bams_base_recalibrated
+    recalibrated_bams = bams_base_recalibrated_ch
+	versions  = ch_versions
 	
 }

@@ -21,7 +21,7 @@ process GATK_HAPLOTYPE_CALLER {
 
     script:
     """
-    THREADS=\${task.cpus}
+    THREADS=${task.cpus}
 
     echo "Running GATK HaplotypeCaller for sample: ${sample_id}"
 
@@ -46,7 +46,8 @@ process GATK_HAPLOTYPE_CALLER {
     fi
 
     # Capture GATK version
-    gatk_version=\$(gatk --version | grep -Eo '[0-9.]+' | head -n 1)
+    gatk_version=\$(gatk --version | awk '{print \$2}')
+	
     cat <<EOF > versions.yml
     "${task.process}":
       gatk: "\${gatk_version}"

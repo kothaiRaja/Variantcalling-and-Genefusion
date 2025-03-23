@@ -26,8 +26,8 @@ process SAMTOOLS_SORT_INDEX {
     # Capture the version
     samtools_version=\$(samtools --version | head -n 1 | awk '{print \$2}')
     cat <<EOF > versions.yml
-    samtools:
-      version: "\${samtools_version}"
+    "${task.process}":
+      SAMTOOLS: "\${samtools_version}"
     EOF
     """
 }

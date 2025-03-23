@@ -19,9 +19,16 @@ workflow VARIANT_CALLING {
 	known_variants_index
 	
 	main:
-    log.info "🔹 Starting Variant Calling Workflow..."
 	
-	ch_GATK_variant_caller = GATK_HAPLOTYPE_CALLER(recalibrated_bams_ch,reference_genome, reference_genome_index, reference_genome_dict, known_variants, known_variants_index)
+	ch_versions = Channel.empty()
+
+    log.info " Starting Variant Calling Workflow..."
+	
+	GATK_variant_caller = GATK_HAPLOTYPE_CALLER(recalibrated_bams_ch,reference_genome, reference_genome_index, reference_genome_dict, known_variants, known_variants_index)
+	
+	ch_GATK_variant_caller = GATK_HAPLOTYPE_CALLER.out.vcf_output 
+	ch_versions = ch_versions.mix(GATK_HAPLOTYPE_CALLER.out.versions.first())
+
 
 	ch_GATK_variant_caller.view { "HaplotypeCaller_output: $it " }
 
@@ -38,13 +45,21 @@ workflow VARIANT_CALLING {
 	ch_haplotypecaller_grouped.view { "Grouped VCFs for Merging: $it" }
 
 
-	merged_vcf_ch = GATK_MERGEVCFS(
+	merged_vcf = GATK_MERGEVCFS(
 		ch_haplotypecaller_grouped.map { sample_id, strandedness, vcf_list, tbi_list -> 
 			tuple(sample_id, vcf_list, tbi_list)
 		}
 	)
+	
+	merged_vcf_ch = GATK_MERGEVCFS.out.merged_vcf
+	ch_versions = ch_versions.mix(GATK_MERGEVCFS.out.versions.first())
+	
 
-	bcftools_stats_ch = BCFTOOLS_STATS(merged_vcf_ch)
+	bcftools_stats = BCFTOOLS_STATS(merged_vcf_ch)
+	
+	bcftools_stats_ch = BCFTOOLS_STATS.out.stats_output
+	ch_versions = ch_versions.mix(BCFTOOLS_STATS.out.versions.first())
+	
 
 
 	// Correct assignment of the new channel
@@ -56,17 +71,29 @@ workflow VARIANT_CALLING {
 	ch_merged_vcfs.view { it -> "Merged_vcf_output: $it" }
 
 
-	ch_variant_filter = GATK_VARIANT_FILTER(ch_merged_vcfs, reference_genome, reference_genome_index, reference_genome_dict)
+	variant_filter = GATK_VARIANT_FILTER(ch_merged_vcfs, reference_genome, reference_genome_index, reference_genome_dict)
+	
+	ch_variant_filter = GATK_VARIANT_FILTER.out.filtered_vcf
+	ch_versions = ch_versions.mix(GATK_VARIANT_FILTER.out.versions.first())
+	
         
 	ch_variant_filter.view {"Filtered_vcf: $it"}
+	
 
-	bcftools_query_ch = BCFTOOLS_QUERY(ch_variant_filter)
+	bcftools_query = BCFTOOLS_QUERY(ch_variant_filter)
+	
+	bcftools_query_ch = BCFTOOLS_QUERY.out.query_output
+	ch_versions = ch_versions.mix(BCFTOOLS_QUERY.out.versions.first())
+	
+	
 
 
 	if (params.select_variants) {
-		selected_snps_ch = SELECT_SNPs(ch_variant_filter, reference_genome, reference_genome_index, reference_genome_dict)
+		selected_snps = SELECT_SNPs(ch_variant_filter, reference_genome, reference_genome_index, reference_genome_dict)
+		selected_snps_ch = SELECT_SNPs.out.selected_snps
 		selected_snps_ch.view {"SNPs output: $it"}
-		selected_indels_ch = SELECT_INDELs(ch_variant_filter, reference_genome, reference_genome_index, reference_genome_dict)
+		selected_indels = SELECT_INDELs(ch_variant_filter, reference_genome, reference_genome_index, reference_genome_dict)
+		selected_indels_ch = SELECT_INDELs.out.selected_indels
 		selected_indels_ch.view {"INDELS output: $it"}
 		
 	 // Combine SNPs & INDELs before annotation
@@ -79,6 +106,7 @@ workflow VARIANT_CALLING {
     selected_snps = selected_snps_ch ?: Channel.empty()
     selected_indels = selected_indels_ch ?: Channel.empty()
     selected_variants = ch_selected_variants
+	versions  = ch_versions
 		
 	
 	
