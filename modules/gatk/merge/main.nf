@@ -27,11 +27,12 @@ process GATK_MERGEVCFS {
     gatk IndexFeatureFile -I "merged_${sample_id}.vcf.gz"
 
     # Capture GATK version
-    gatk_version=\$(gatk --version | awk '{print \$2}')
-    cat <<EOF > versions.yml
-    "${task.process}":
-      gatk: "\${gatk_version}"
-    EOF
+    gatk_version=\$(gatk --version | head -n 1)
+
+cat <<EOF > versions.yml
+"${task.process}":
+  gatk: "\${gatk_version}"
+EOF
     """
 }
 

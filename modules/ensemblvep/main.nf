@@ -14,7 +14,7 @@ process ANNOTATEVARIANTS_VEP {
 
     output:
     tuple val(sample_id), path("vep_annotated_${sample_id}.vcf"), emit: annotated_vcf  
-    tuple val(sample_id), path("vep_annotated_${sample_id}.html"), emit: summary_html
+    path("vep_annotated_${sample_id}.html"), emit: summary_html
     path("versions.yml"), emit: versions
 
     script:
@@ -50,14 +50,9 @@ process ANNOTATEVARIANTS_VEP {
         --offline
 
     
-    # Capture VEP version using awk
-	vep_version=\$(vep --help 2>&1 | awk '/version/ { print \$NF }')
-
-
-
-    cat <<EOF > versions.yml
-    "${task.process}":
-      ensembl-vep: "\${vep_version}"
-    EOF
+cat <<-END_VERSIONS > versions.yml
+"${task.process}":
+  ensemblvep: \$( echo \$(vep --help 2>&1) | sed 's/^.*Versions:.*ensembl-vep : //;s/ .*\$//')
+END_VERSIONS
     """
 }

@@ -21,7 +21,9 @@ workflow MARK_DUPLICATES {
     dedup_bams = GATK_MARK_DUPLICATES(bam_input_ch)
 	
 	dedup_bams_ch = GATK_MARK_DUPLICATES.out.marked_bams_bai
-	dedup_metrics_ch = GATK_MARK_DUPLICATES.out.marked_bams_bai_metrics 
+	dedup_metrics_ch = GATK_MARK_DUPLICATES.out.marked_bams_bai_metrics
+		.collect { it[2] }
+		.ifEmpty([])
 	ch_versions = ch_versions.mix(GATK_MARK_DUPLICATES.out.versions.first())
 	
 	

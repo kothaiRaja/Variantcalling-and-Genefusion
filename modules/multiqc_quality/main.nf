@@ -1,4 +1,4 @@
-process MultiQC_quality {
+process MultiQC {
   tag "MultiQC_quality"
   label 'process_low'
 

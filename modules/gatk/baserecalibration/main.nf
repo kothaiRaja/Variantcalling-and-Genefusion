@@ -39,12 +39,12 @@ process GATK_BASERECALIBRATOR {
     fi
 
     # Capture GATK version
-    gatk_version=\$(gatk --version | awk '{print \$2}')
+    gatk_version=\$(gatk --version | head -n 1)
 	
-    cat <<EOF > versions.yml
-    "${task.process}":
-      gatk: "\${gatk_version}"
-    EOF
+cat <<EOF > versions.yml
+"${task.process}":
+  gatk: "\${gatk_version}"
+EOF
 
     echo "BaseRecalibrator completed for ${sample_id}"
     """

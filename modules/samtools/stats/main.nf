@@ -19,9 +19,9 @@ process SAMTOOLS_STATS {
 	
 	# Capture samtools version
     samtools_version=\$(samtools --version | head -n 1 | awk '{print \$2}')
-    cat <<EOF > versions.yml
-    "${task.process}":
-      samtools: "\${samtools_version}"
-    EOF
+cat <<EOF > versions.yml
+"${task.process}":
+  samtools: "\${samtools_version}"
+EOF
     """
 }

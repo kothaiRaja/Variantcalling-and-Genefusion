@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 include { CONCAT_FASTQ } from '../modules/cat_fastq/main.nf'
 include { FASTQC_RAW } from '../modules/fastqc/main.nf'
 include { TRIM_READS } from '../modules/fastp/main.nf'
-include { MultiQC_quality } from '../modules/multiqc_quality/main.nf'
+include { MultiQC as MultiQC_quality } from '../modules/multiqc_quality/main.nf'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nfcore/software_versions/main.nf'
 
 workflow PREPROCESSING {
@@ -45,7 +45,8 @@ workflow PREPROCESSING {
     // Step 4: Trim reads using Fastp
     trimmed_reads = TRIM_READS(concatenated_reads_ch)
 	
-	trimmed_reads_ch =trimmed_reads_ch.mix(TRIM_READS.out.trimmed_reads)  
+	trimmed_reads_ch =trimmed_reads_ch.mix(TRIM_READS.out.trimmed_reads) 
+	fastp_reports_ch = TRIM_READS.out.fastp_reports
 	reports_ch = reports_ch.mix(TRIM_READS.out.fastp_reports.map { it[1] })
 	reports_ch.view { " QC report: $it" }
 	
@@ -77,7 +78,9 @@ workflow PREPROCESSING {
     log.info " Preprocessing Completed."
 
     emit:
-    trimmed_reads = trimmed_reads_ch
+	qc_results 	   = qc_results_ch
+	fastp_reports = fastp_reports_ch
+    trimmed_reads  = trimmed_reads_ch
     reports        = reports_ch
     multiqc        = multiqc_quality.report
     versions       = ch_versions

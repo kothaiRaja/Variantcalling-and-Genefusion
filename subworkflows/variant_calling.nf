@@ -106,6 +106,8 @@ workflow VARIANT_CALLING {
     selected_snps = selected_snps_ch ?: Channel.empty()
     selected_indels = selected_indels_ch ?: Channel.empty()
     selected_variants = ch_selected_variants
+	bcftools_stats = bcftools_stats_ch
+	bcftools_query = bcftools_query_ch
 	versions  = ch_versions
 		
 	

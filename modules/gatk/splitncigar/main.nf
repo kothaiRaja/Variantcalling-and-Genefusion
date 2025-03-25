@@ -36,12 +36,12 @@ process SPLIT_NCIGAR_READS {
         ${interval_command}
 
     # Capture version
-    gatk_version=\$(gatk --version | awk '{print \$2}')
+    gatk_version=\$(gatk --version | head -n 1)
 	
-    cat <<EOF > versions.yml
-    "${task.process}":
-      gatk: "\${gatk_version}"
-    EOF
+cat <<EOF > versions.yml
+"${task.process}":
+  gatk: "\${gatk_version}"
+EOF
 
     echo "SplitNCigarReads completed for sample: ${sample_id} on interval: ${interval.baseName}"
     """

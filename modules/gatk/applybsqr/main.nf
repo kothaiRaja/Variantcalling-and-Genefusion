@@ -42,13 +42,16 @@ process GATK_APPLYBQSR {
     # Step 2: Index BAM
     gatk BuildBamIndex \\
         -I "${sample_id}_${interval.baseName}_recalibrated.bam"
+		
+	
+
 
     # Capture version
-    gatk_version=\$(gatk --version | awk '{print \$2}')
-	
-    cat <<EOF > versions.yml
-    "${task.process}":
-      gatk: "\${gatk_version}"
-    EOF
+    gatk_version=\$(gatk --version | head -n 1)
+
+cat <<EOF > versions.yml
+"${task.process}":
+  gatk: "\${gatk_version}"
+EOF
     """
 }

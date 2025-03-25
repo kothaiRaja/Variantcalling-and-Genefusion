@@ -28,10 +28,11 @@ process SELECT_SNPs {
     gatk IndexFeatureFile -I "${sample_id}_snps.vcf.gz"
 
     # Capture version
-    gatk_version=\$(gatk --version | awk '{print \$2}')
-    cat <<EOF > versions.yml
-    "${task.process}":
-      gatk: "\${gatk_version}"
-    EOF
+    gatk_version=\$(gatk --version | head -n 1)
+	
+cat <<EOF > versions.yml
+"${task.process}":
+  gatk: "\${gatk_version}"
+EOF
     """
 }

@@ -34,9 +34,9 @@ workflow STAR_ALIGN {
         log.info "Running STAR alignment..."
 
         star_aligned_ch = STAR_ALIGNMENT(trimmed_reads_ch, star_index, gtf_file)
-        star_bam_ch      = star_aligned_ch.bam
-        chimeric_reads_ch = star_aligned_ch.chimeric_sam
-        star_logs_ch      = star_aligned_ch.log_final
+        star_bam_ch      = star_bam_ch.mix(star_aligned_ch.bam)
+        chimeric_reads_ch = chimeric_reads_ch.mix(star_aligned_ch.chimeric_sam)
+        star_logs_ch      = star_logs_ch.mix(star_aligned_ch.log_final)
 		ch_versions = ch_versions.mix(STAR_ALIGNMENT.out.versions.first())
 
     } else {
@@ -66,20 +66,20 @@ workflow STAR_ALIGN {
 
     // STEP: Collect stats
     align_stats = SAMTOOLS_STATS(sorted_bams_ch)
-	align_stats_ch = SAMTOOLS_STATS.out.stats
+	align_stats_ch = align_stats_ch.mix(SAMTOOLS_STATS.out.stats)
 	ch_versions = ch_versions.mix(SAMTOOLS_STATS.out.versions.first())
 	
 	
 
     // STEP: Filter orphans
     filtered_bams = SAMTOOLS_FILTER_ORPHANS(sorted_bams_ch)
-	filtered_bams_ch = SAMTOOLS_FILTER_ORPHANS.out.filtered_sorted_bams
+	filtered_bams_ch = filtered_bams_ch.mix(SAMTOOLS_FILTER_ORPHANS.out.filtered_sorted_bams)
 	ch_versions = ch_versions.mix(SAMTOOLS_FILTER_ORPHANS.out.versions.first())
 	
 
     // STEP: Flagstat
     flagstats_filtered_bam = SAMTOOLS_FLAGSTAT(filtered_bams_ch)
-	flagstats_filtered_bam_ch = SAMTOOLS_FLAGSTAT.out.flagstat
+	flagstats_ch = flagstats_ch.mix(SAMTOOLS_FLAGSTAT.out.flagstat)
 	ch_versions = ch_versions.mix(SAMTOOLS_FLAGSTAT.out.versions.first())
 	
 

@@ -10,7 +10,7 @@ process SAMTOOLS_FLAGSTAT {
     tuple val(sample_id), val(strandedness), path(sorted_bam), path(bai)
 
     output:
-    tuple val(sample_id), val(strandedness), path("${sample_id}_flagstat.txt"), path("${sample_id}_stats_report.txt"),emit: flagstat
+    tuple val(sample_id), val(strandedness), path("${sample_id}_flagstat.txt"),emit: flagstat
 	path("versions.yml"), emit: versions
 
     script:
@@ -37,10 +37,10 @@ process SAMTOOLS_FLAGSTAT {
 	
 	# Capture samtools version
     samtools_version=\$(samtools --version | head -n 1 | awk '{print \$2}')
-    cat <<EOF > versions.yml
-    "${task.process}":
-      samtools: "\${samtools_version}"
-    EOF
+cat <<EOF > versions.yml
+"${task.process}":
+  samtools: "\${samtools_version}"
+EOF
     """
 }
 

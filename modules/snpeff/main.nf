@@ -48,16 +48,15 @@ process ANNOTATE_VARIANTS {
         ${vcf} > /dev/null
 		
 	
-    # Capture SnpEff version
-	snpeff_version=\$(java -jar "${snpEffJar}" -version 2>&1 | awk 'NR==1')
+    # Capture version cleanly using safe awk (extract only 5.2f)
+snpeff_version=\$(java -jar snpEff.jar -version 2>&1 | awk 'NR==1 { for(i=1;i<=NF;i++) if (\$i ~ /[0-9]+\\\\.[0-9]+[a-z]?\$/) print \$i }')
 
+cat <<-END_VERSIONS > versions.yml
+"${task.process}":
+  snpeff: \$(echo \$(snpEff -version 2>&1) | cut -f 2 -d ' ')
+END_VERSIONS
 
-    cat <<EOF > versions.yml
-    "${task.process}":
-      snpEff: "\${snpeff_version}"
-    EOF
-
-    echo "Annotation complete for sample: ${sample_id}"
+echo "Annotation complete for sample: ${sample_id}"
 
     
     """

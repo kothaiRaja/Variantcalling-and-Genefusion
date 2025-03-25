@@ -9,6 +9,7 @@ process BGZIP_TABIX_ANNOTATIONS {
     
     output:
     tuple val(sample_id), path("annotated_${sample_id}.vcf.gz"), path("annotated_${sample_id}.vcf.gz.tbi"), emit: compressed_indexed
+	path("versions.yml"), emit: versions
     
 
     script:
@@ -20,6 +21,16 @@ process BGZIP_TABIX_ANNOTATIONS {
 
     # Index the compressed VCF file
     tabix -p vcf annotated_${sample_id}.vcf.gz
+	
+	# Capture versions
+    bgzip_version=\$(bgzip --version 2>&1 | head -n 1)
+    tabix_version=\$(tabix --version 2>&1 | head -n 1)
+
+cat <<EOF > versions.yml
+"${task.process}":
+  bgzip: "\${bgzip_version}"
+  tabix: "\${tabix_version}"
+EOF
 
    
     """

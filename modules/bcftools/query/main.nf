@@ -20,9 +20,9 @@ process BCFTOOLS_QUERY {
 
     # Capture bcftools version
     bcftools_version=\$(bcftools --version | head -n 1 | awk '{print \$2}')
-    cat <<EOF > versions.yml
-    "${task.process}":
-      bcftools: "\${bcftools_version}"
-    EOF
+cat <<EOF > versions.yml
+"${task.process}":
+  bcftools: "\${bcftools_version}"
+EOF
     """
 }

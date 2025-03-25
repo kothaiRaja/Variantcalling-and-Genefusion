@@ -34,12 +34,9 @@ process ARRIBA {
 
     echo "Arriba finished for Sample: ${sample_id}"
 
-    # Capture Arriba version
-    arriba_version=\$(arriba --version 2>&1 | grep -oP '[0-9]+\\.[0-9]+\\.[0-9]+' || echo "unknown")
-
-    cat <<EOF > versions.yml
+cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      arriba: "\${arriba_version}"
-    EOF
+        arriba: \$(arriba -h | grep 'Version:' 2>&1 |  sed 's/Version:\s//')
+    END_VERSIONS
     """
 }

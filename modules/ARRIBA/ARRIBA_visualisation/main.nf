@@ -47,11 +47,11 @@ process ARRIBA_VISUALIZATION {
     fi
 
     # Version tracking
-    r_version=\$(Rscript --version 2>&1 | awk '{print \$NF}')
+r_version=\$(Rscript --version 2>&1 | awk '{print \$NF}')
 
-    cat <<EOF > versions.yml
-    "${task.process}":
-      R: "\${r_version}"
-    EOF
+cat <<EOF > versions.yml
+"${task.process}":
+  R: "\${r_version}"
+EOF
     """
 }

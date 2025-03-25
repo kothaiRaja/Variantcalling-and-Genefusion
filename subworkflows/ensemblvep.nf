@@ -15,9 +15,11 @@ workflow VEP_ANNOTATION_WORKFLOW {
 	
     main:
     log.info "Starting Ensembl VEP annotation..."
+	
+	ch_versions = Channel.empty()
 
     // Step 1: Annotate VCF using Ensembl VEP
-    annotated_vcf_ch = ANNOTATEVARIANTS_VEP(
+    annotated_vcf = ANNOTATEVARIANTS_VEP(
         vcf_files_ch,
 		vep_cache,
         genome_assembly,
@@ -25,14 +27,22 @@ workflow VEP_ANNOTATION_WORKFLOW {
 		species
        
     )
+	
+	annotated_vcf_ch = ANNOTATEVARIANTS_VEP.out.annotated_vcf
+	annotated_html_ch = ANNOTATEVARIANTS_VEP.out.summary_html
+	ch_versions = ch_versions.mix(ANNOTATEVARIANTS_VEP.out.versions) 
 
     log.info "Compressing and indexing annotated VCFs..."
 
     // Step 2: Compress and index annotated VCFs
-    compressed_vcf_ch = BGZIP_TABIX_ANNOTATIONS(annotated_vcf_ch[0])
-
+    compressed_vcf = BGZIP_TABIX_ANNOTATIONS(annotated_vcf_ch)
+	
+	compressed_vcf_ch = BGZIP_TABIX_ANNOTATIONS.out.compressed_indexed
+	ch_versions = ch_versions.mix(BGZIP_TABIX_ANNOTATIONS.out.versions)
+	
     emit:
-	annotated_variants = annotated_vcf_ch.annotated_vcf
-	annotated_html = annotated_vcf_ch.summary_html
-    final_vep_annotated_vcf = compressed_vcf_ch.compressed_indexed
+	annotated_variants = annotated_vcf_ch
+	annotated_html = annotated_html_ch
+    final_vep_annotated_vcf = compressed_vcf_ch
+	versions = ch_versions
 }
