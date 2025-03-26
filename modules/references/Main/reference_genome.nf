@@ -2,13 +2,13 @@
 process CHECK_OR_DOWNLOAD_REF_GENOME {
     tag "Check or Download Reference Genome"
     container null
-    publishDir "${params.actual_data_dir}/reference", mode: 'copy'
+    publishDir "${params.main_data_dir}/reference", mode: 'copy'
 
     output:
     path "genome.fa", emit: genome
 
     when:
-    !file("${params.actual_data_dir}/reference/genome.fa").exists()
+    !file("${params.main_data_dir}/reference/genome.fa").exists()
 
     script:
     """

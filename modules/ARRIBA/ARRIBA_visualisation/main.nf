@@ -23,15 +23,15 @@ process ARRIBA_VISUALIZATION {
     """
     set -euo pipefail
 
-    echo "🔍 Running fusion visualization for sample: ${sample_id}"
-    echo "📄 Fusions file: \$(realpath ${fusions_tsv})"
-    echo "📄 GTF file: \$(realpath ${gtf})"
+    echo " Running fusion visualization for sample: ${sample_id}"
+    echo " Fusions file: \$(realpath ${fusions_tsv})"
+    echo " GTF file: \$(realpath ${gtf})"
 
     if [ ! -s "${fusions_tsv}" ] || ! awk 'NR > 1 { exit 1 }' ${fusions_tsv}; then
-        echo "⚠️ No fusions detected for ${sample_id}. Creating placeholder plot."
+        echo " No fusions detected for ${sample_id}. Creating placeholder plot."
         echo "No fusions found for ${sample_id}." | convert -background white -fill black -font Helvetica -pointsize 20 text:- ${prefix}.fusion_plot.pdf
     else
-        echo "✅ Fusions detected, generating plot..."
+        echo " Fusions detected, generating plot..."
         draw_fusions.R \\
             --fusions=${fusions_tsv} \\
             --alignments=${bam} \\

@@ -1,7 +1,7 @@
 process DOWNLOAD_GENOME_INDEX {
     tag "Download Genome Index"
     container null
-    publishDir "${params.actual_data_dir}/reference", mode: 'copy'
+    publishDir "${params.main_data_dir}/reference", mode: 'copy'
 
     output:
     path "genome.fa.fai", emit: genome_fai
@@ -25,16 +25,18 @@ process DOWNLOAD_GENOME_INDEX {
 }
 
 
+
 process CREATE_GENOME_INDEX {
     tag "Create Genome Index"
     container "https://depot.galaxyproject.org/singularity/samtools%3A1.14--hb421002_0"
-    publishDir "${params.actual_data_dir}/reference", mode: 'copy'
+    publishDir "${params.main_data_dir}/reference", mode: 'copy'
 
     input:
-    path genome_fa
+    path genome_fa 
 
     output:
-    path "genome.fa.fai", emit: genome_fai
+    path("genome.fa.fai"), emit: genome_fai  
+
 
     script:
     """

@@ -44,7 +44,7 @@ workflow {
         multiqc_quality  = PREPROCESSING.out.multiqc
         ch_versions      = ch_versions.mix(PREPROCESSING.out.versions)
 
-        log.info("✅ QC completed. Exiting pipeline.")
+        log.info(" QC completed. Exiting pipeline.")
         return
     }
 
@@ -121,7 +121,7 @@ workflow {
 	
 	//=====================================Intervals processing============================//
 	
-	// **Step 1: Convert BED file to Channel**
+	// Step 1: Convert BED file to Channel
     ch_exon_bed = Channel
         .fromPath(params.exons_BED)
         .map { file_path -> tuple(file_path.baseName, file_path) }
@@ -134,7 +134,7 @@ workflow {
     intervals_ch = INTERVAL_PROCESSING.out.intervals
 	ch_versions        = ch_versions.mix(INTERVAL_PROCESSING.out.versions)
 
-    // **View the intervals to confirm output**
+    // View the intervals to confirm output
     intervals_ch.view { file -> "Generated Interval: ${file}" }
 	
 	//===================================Markduplicates==============================//
@@ -168,7 +168,7 @@ workflow {
 	
 	//======================BASE_RECALIBRATION=========================//
 	
-	if (!params.skip_base_recalibration) {
+	
     log.info "Running Base Recalibration..."
 
     BASE_RECALIBRATION(
@@ -182,13 +182,10 @@ workflow {
 
     recalibrated_bams_ch = BASE_RECALIBRATION.out.recalibrated_bams
 	ch_versions        = ch_versions.mix(BASE_RECALIBRATION.out.versions)
-} else {
-    log.info "Skipping Base Recalibration. Using previous step's BAMs..."
-    recalibrated_bams_ch = final_bams_ch
-}
+
 	
 	// =========== Step 6: Variant Calling =========== //
-    log.info "🔹 Running Variant Calling..."
+    log.info " Running Variant Calling..."
     VARIANT_CALLING(
         recalibrated_bams_ch,            // BAMs after splitting & merging
         params.reference_genome,
@@ -207,22 +204,20 @@ workflow {
 	reports_ch = reports_ch
     .mix(
         (VARIANT_CALLING.out.bcftools_stats
-            .filter { it[1] != null }   // Removes tuples where the file is null
-            .collect { it[1] }          // Extracts only the file part
-        ).ifEmpty([])                   // Ensures nothing is added if the channel is empty
+            .collect { it[1] }          
+        ).ifEmpty([])                   
     )
     .mix(
         (VARIANT_CALLING.out.bcftools_query
-            .filter { it[1] != null }   // Same logic for bcftools_query
             .collect { it[1] }
         ).ifEmpty([])
     )
 
 
-    log.info "✅ Variant Calling Completed!"
+    log.info " Variant Calling Completed!"
 	
 	// ===================== Step 7: Variant Annotation ===================== //
-	log.info "🔹 Running Variant Annotation..."
+	log.info " Running Variant Annotation..."
 
 	annotation_results = ANNOTATE(
         filtered_vcf_ch,
@@ -281,25 +276,9 @@ reports_ch = reports_ch.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.ifEmpty([]))
  
  //=====================================Multiqc================================//
  
- reports_ch.view { 
-    if (it == null) {
-        println "🚨 NULL found inside reports_ch!"
-    } else {
-        println "✅ Report file added: $it"
-    }
-    return it
-}
-
- 
  collected_reports_ch = reports_ch
-    .filter { it != null }
 	.collect()
 
- 
- collected_reports_ch.view { it -> 
-    println " Collected for MultiQC: $it (${it.getClass().getSimpleName()})"
-    return it
-}
  multiqc_quality = MultiQC(collected_reports_ch)
 	
 }

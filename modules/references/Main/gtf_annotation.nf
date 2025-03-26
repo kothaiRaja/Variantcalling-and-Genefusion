@@ -2,7 +2,7 @@
 process CHECK_OR_DOWNLOAD_GTF {
     tag "Check or Download GTF File"
     container null
-    publishDir "${params.actual_data_dir}/reference", mode: 'copy'
+    publishDir "${params.main_data_dir}/reference", mode: 'copy'
 
     output: 
     path "annotations.gtf", emit: gtf
@@ -41,3 +41,4 @@ process CHECK_OR_DOWNLOAD_GTF {
     fi
     """
 }
+

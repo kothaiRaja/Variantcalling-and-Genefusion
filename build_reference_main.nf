@@ -2,10 +2,12 @@ nextflow.enable.dsl = 2
 
 
 include { CHECK_OR_DOWNLOAD_REF_GENOME } from './modules/references/Main/reference_genome.nf'
+include { GUNZIP } from './modules/references/Main/gunzip.nf'
 include { DOWNLOAD_GENOME_INDEX } from './modules/references/Main/genome_index.nf'
 include { CREATE_GENOME_INDEX } from './modules/references/Main/genome_index.nf'
 include { CREATE_GENOME_DICT } from './modules/references/Main/genome_dict.nf'
 include { CHECK_OR_DOWNLOAD_GTF } from './modules/references/Main/gtf_annotation.nf'
+include { GENERATEEXONS_BED } from './modules/references/Main/exons_bed.nf'
 include { CREATE_STAR_INDEX } from './modules/references/Main/STAR_index.nf'
 include { CHECK_OR_DOWNLOAD_DENYLIST } from './modules/references/Main/denylist.nf'
 include { CHECK_OR_DOWNLOAD_VARIANTS_SNP } from './modules/references/Main/snp.nf'
@@ -20,7 +22,7 @@ include { DOWNLOAD_SNPEFF_TOOL } from './modules/references/Main/Tools.nf'
 include { DOWNLOAD_SNPEFF_DB } from './modules/references/Main/Tools.nf'
 include { DOWNLOAD_ARRIBA } from './modules/references/Main/Tools.nf'
 include { DOWNLOAD_VEP_CACHE } from './modules/references/Main/VEP.nf'
-include { DOWNLOAD_CLINVAR } from './modules/references/Main/VEP.nf'
+
 
 
 
@@ -49,43 +51,61 @@ workflow {
 	def genome_build = 'GRCh38' 
 	
     // ========================== Reference Genome Handling ========================== //
-    genome_ch = 
-        params.reference_genome_path && file(params.reference_genome_path).exists() ? 
-            Channel.of(file(params.reference_genome_path)) :
-        file("${params.actual_data_dir}/reference/genome.fa").exists() ?
-            Channel.of(file("${params.actual_data_dir}/reference/genome.fa")) :
-            CHECK_OR_DOWNLOAD_REF_GENOME()
+genome_ch = 
+    params.reference_genome_path && file(params.reference_genome_path).exists() ? 
+        Channel.fromPath(params.reference_genome_path) :
+    file("${params.main_data_dir}/reference/genome.fa").exists() ? 
+        Channel.fromPath("${params.main_data_dir}/reference/genome.fa") :
+    CHECK_OR_DOWNLOAD_REF_GENOME()
 
-    // Capture the reference genome path from the published directory
-    genome_ch.view { genome_path ->  
-    if (genome_path.toString().contains('/work/')) {
-        // Force the path to the published directory
-        referenceGenomePath = "${params.actual_data_dir}/reference/genome.fa"
+// ========================== Automatically Decompress if Needed ========================== //
+genome_ch = genome_ch.map { file -> 
+    if (file.toString().endsWith('.gz')) {
+        println " Decompressing reference genome: ${file}"
+        return GUNZIP(file).out.gunzip
     } else {
-        // If it’s already in the publish or server directory, keep it
+        return file
+    }
+}
+
+// ========================== Capture Reference Genome Path ========================== //
+genome_ch.view { genome_path ->  
+    if (genome_path.toString().contains('/work/')) {
+        referenceGenomePath = "${params.main_data_dir}/reference/genome.fa"
+    } else {
         referenceGenomePath = genome_path.toString()
     }
     println " Reference genome path set to: ${referenceGenomePath}"
 }
 
+	
+	// ========================= Genome Index Channel ========================= //
+genome_index_ch = 
+    params.reference_genome_index_path && file(params.reference_genome_index_path).exists() ? 
+        Channel.fromPath(params.reference_genome_index_path) :
 
-    // ========================== Reference Genome Index Handling ========================== //
-    genome_index_ch = 
-        params.reference_genome_index_path && file(params.reference_genome_index_path).exists() ? 
-            Channel.of(file(params.reference_genome_index_path)) :
-        file("${params.actual_data_dir}/reference/genome.fa.fai").exists() ?
-            Channel.of(file("${params.actual_data_dir}/reference/genome.fa.fai")) :
-        params.genome_index_download_url ? 
-            DOWNLOAD_GENOME_INDEX() :
-            CREATE_GENOME_INDEX(genome_ch)
+    file("${params.main_data_dir}/reference/genome.fa.fai").exists() ? 
+        Channel.fromPath("${params.main_data_dir}/reference/genome.fa.fai") :
 
-    // Capture the genome index path from the published directory
-	genome_index_ch.view { genome_index_path ->  
-	if (genome_index_path.toString().contains('/work/')) {
-		// Force the path to the published directory
-		genomeIndexPath = "${params.actual_data_dir}/reference/genome.fa.fai"
-	} else {
-        // If it's already in the publish or server directory, keep the original path
+    params.genome_index_download_url ? 
+        DOWNLOAD_GENOME_INDEX() :
+        CREATE_GENOME_INDEX(genome_ch)
+
+// ========================= Automatically Decompress if Needed ========================= //
+genome_index_ch = genome_index_ch.map { file -> 
+    if (file.toString().endsWith('.gz')) {
+        println " Decompressing genome index file: ${file}"
+        return GUNZIP(file).out.gunzip
+    } else {
+        return file
+    }
+}
+
+// ========================= Capture and Store the Genome Index Path ========================= //
+genome_index_ch.view { genome_index_path ->  
+    if (genome_index_path.toString().contains('/work/')) {
+        genomeIndexPath = "${params.main_data_dir}/reference/genome.fa.fai"
+    } else {
         genomeIndexPath = genome_index_path.toString()
     }
     println " Genome index path set to: ${genomeIndexPath}"
@@ -93,95 +113,163 @@ workflow {
 
 	
 	// ========================== Reference Genome Dictionary Handling ========================== //
-    genome_dict_ch = 
-        params.reference_genome_dict_path && file(params.reference_genome_dict_path).exists() ? 
-            Channel.of(file(params.reference_genome_dict_path)) :
-        file("${params.actual_data_dir}/reference/genome.dict").exists() ?
-            Channel.of(file("${params.actual_data_dir}/reference/genome.dict")) :
-            CREATE_GENOME_DICT(genome_ch)
+genome_dict_ch = 
+    params.reference_genome_dict_path && file(params.reference_genome_dict_path).exists() ? 
+        Channel.fromPath(params.reference_genome_dict_path) :
 
-    // Capture the genome dictionary path from the published directory
-	genome_dict_ch.view { genome_dict_path ->  
-    if (genome_dict_path.toString().contains('/work/')) {
-        // Force the path to the published directory
-        genomeDictPath = "${params.actual_data_dir}/reference/genome.dict"
+    file("${params.main_data_dir}/reference/genome.dict").exists() ? 
+        Channel.fromPath("${params.main_data_dir}/reference/genome.dict") :
+
+    CREATE_GENOME_DICT(genome_ch)
+
+// ========================== Automatically Decompress if Needed ========================== //
+genome_dict_ch = genome_dict_ch.map { file -> 
+    if (file.toString().endsWith('.gz')) {
+        println " Decompressing genome dictionary file: ${file}"
+        return GUNZIP(file).out.gunzip
     } else {
-        // If it's already in the publish or server directory, keep the original path
+        return file
+    }
+}
+
+// ========================== Capture and Store the Genome Dictionary Path ========================== //
+genome_dict_ch.view { genome_dict_path ->  
+    if (genome_dict_path.toString().contains('/work/')) {
+        genomeDictPath = "${params.main_data_dir}/reference/genome.dict"
+    } else {
         genomeDictPath = genome_dict_path.toString()
     }
     println " Genome dictionary path set to: ${genomeDictPath}"
 }
 
-	
-	// ========================== GTF Annotation File Handling ========================== //
-    gtf_ch = 
-        params.reference_genome_gtf && file(params.reference_genome_gtf).exists() ? 
-            Channel.of(file(params.reference_genome_gtf)) :
-        file("${params.actual_data_dir}/reference/annotations.gtf").exists() ?
-            Channel.of(file("${params.actual_data_dir}/reference/annotations.gtf")) :
-            CHECK_OR_DOWNLOAD_GTF()
 
-    // Capture the GTF annotation path from the published directory
+// ========================== GTF Annotation File Handling ========================== //
+gtf_ch = 
+    params.reference_genome_gtf && file(params.reference_genome_gtf).exists() ? 
+        Channel.fromPath(params.reference_genome_gtf) :
+
+    file("${params.main_data_dir}/reference/annotations.gtf").exists() ? 
+        Channel.fromPath("${params.main_data_dir}/reference/annotations.gtf") :
+
+    CHECK_OR_DOWNLOAD_GTF()
+
+// ========================== Automatically Decompress if Needed ========================== //
+gtf_ch = gtf_ch.map { file -> 
+    if (file.toString().endsWith('.gz')) {
+        println " Decompressing GTF annotation file: ${file}"
+        return GUNZIP(file).out.gunzip
+    } else {
+        return file
+    }
+}
+
+// ========================== Capture and Store the GTF Annotation Path ========================== //
 gtf_ch.view { gtf_path ->  
     if (gtf_path.toString().contains('/work/')) {
-        // Force the path to the published directory
-        gtfPath = "${params.actual_data_dir}/reference/annotations.gtf"
+        gtfPath = "${params.main_data_dir}/reference/annotations.gtf"
     } else {
-        // If it's already in the publish or server directory, keep the original path
         gtfPath = gtf_path.toString()
     }
     println " GTF annotation path set to: ${gtfPath}"
 }
 
-	
-	// ========================== STAR Genome Index Handling ========================== //
-    star_index_ch = 
-        params.star_genome_index_path && file(params.star_genome_index_path).exists() ? 
-            Channel.of(file(params.star_genome_index_path)) :
-        file("${params.actual_data_dir}/reference/STAR_index").exists() ?
-            Channel.of(file("${params.actual_data_dir}/reference/STAR_index")) :
-            CREATE_STAR_INDEX(genome_ch, gtf_ch)
+// ========================== Exons BED File Handling ========================== //
+exons_bed_ch = 
+    file("${params.main_data_dir}/reference/exons.bed").exists() ? 
+        Channel.fromPath("${params.main_data_dir}/reference/exons.bed") :
 
-    // Capture the STAR genome index path from the published directory
+    // If not found, generate it using the GTF annotation file
+    GENERATEEXONS_BED(gtf_ch)
+
+// ========================== Automatically Decompress if Needed ========================== //
+exons_bed_ch = exons_bed_ch.map { file -> 
+    if (file.toString().endsWith('.gz')) {
+        println " Decompressing Exons BED file: ${file}"
+        return GUNZIP(file).out.gunzip
+    } else {
+        return file
+    }
+}
+
+// ========================== Capture and Store the Exons BED Path ========================== //
+exons_bed_ch.view { exons_bed_path ->  
+    if (exons_bed_path.toString().contains('/work/')) {
+        exonsBedPath = "${params.main_data_dir}/reference/exons.bed"
+    } else {
+        exonsBedPath = exons_bed_path.toString()
+    }
+    println " Exons BED file path set to: ${exonsBedPath}"
+}
+
+// ========================== STAR Genome Index Handling ========================== //
+star_index_ch = 
+    params.star_genome_index_path && file(params.star_genome_index_path).exists() ? 
+        Channel.fromPath(params.star_genome_index_path) :
+
+    file("${params.main_data_dir}/reference/STAR_index").exists() ? 
+        Channel.fromPath("${params.main_data_dir}/reference/STAR_index") :
+
+    // If still missing, generate it using the reference genome and GTF file
+    CREATE_STAR_INDEX(genome_ch, gtf_ch)
+
+// ========================== Automatically Decompress if Needed ========================== //
+star_index_ch = star_index_ch.map { file -> 
+    if (file.toString().endsWith('.tar.gz')) {
+        println " Decompressing STAR genome index: ${file}"
+        return UNTAR(file).out.untar
+    } else {
+        return file
+    }
+}
+
+// ========================== Capture and Store the STAR Index Path ========================== //
 star_index_ch.view { star_index_path ->  
     if (star_index_path.toString().contains('/work/')) {
-        // Force the path to the published directory
-        starIndexPath = "${params.actual_data_dir}/reference/STAR_index"
+        starIndexPath = "${params.main_data_dir}/reference/STAR_index"
     } else {
-        // If it's already in the publish or server directory, keep the original path
         starIndexPath = star_index_path.toString()
     }
     println " STAR genome index path set to: ${starIndexPath}"
 }
 
-	
-	// ========================== Denylist File Handling ========================== //
-    denylist_ch = 
-        params.reference_denylist_path && file(params.reference_denylist_path).exists() ? 
-            Channel.of(file(params.reference_denylist_path)) :
-        file("${params.actual_data_dir}/reference/denylist.bed").exists() ?
-            Channel.of(file("${params.actual_data_dir}/reference/denylist.bed")) :
-            CHECK_OR_DOWNLOAD_DENYLIST()
+// ========================== Denylist File Handling ========================== //
+denylist_ch = 
+    params.reference_denylist_path && file(params.reference_denylist_path).exists() ? 
+        Channel.fromPath(params.reference_denylist_path) :
 
-    // Capture the denylist path from the published directory
+    file("${params.main_data_dir}/reference/denylist.bed").exists() ? 
+        Channel.fromPath("${params.main_data_dir}/reference/denylist.bed") :
+
+    // If still missing, download it
+    CHECK_OR_DOWNLOAD_DENYLIST()
+
+// ========================== Automatically Decompress if Needed ========================== //
+denylist_ch = denylist_ch.map { file -> 
+    if (file.toString().endsWith('.gz')) {
+        println " Decompressing denylist file: ${file}"
+        return GUNZIP(file).out.gunzip
+    } else {
+        return file
+    }
+}
+
+// ========================== Capture and Store the Denylist Path ========================== //
 denylist_ch.view { denylist_path ->  
     if (denylist_path.toString().contains('/work/')) {
-        // Force the path to the published directory
-        denylistPath = "${params.actual_data_dir}/reference/denylist.bed"
+        denylistPath = "${params.main_data_dir}/reference/denylist.bed"
     } else {
-        // If it's already in the publish or server directory, keep the original path
         denylistPath = denylist_path.toString()
     }
     println " Denylist BED file path set to: ${denylistPath}"
 }
 
-	
-	// ========================== SNP VCF Handling ========================== //
+
+// ========================== SNP VCF Handling ========================== //
     snp_vcf_ch = 
         params.variants_snp_path && file(params.variants_snp_path).exists() ? 
             Channel.of(file(params.variants_snp_path)) :
-        file("${params.actual_data_dir}/reference/variants_snp.vcf.gz").exists() ?
-            Channel.of(file("${params.actual_data_dir}/reference/variants_snp.vcf.gz")) :
+        file("${params.main_data_dir}/reference/variants_snp.vcf.gz").exists() ?
+            Channel.of(file("${params.main_data_dir}/reference/variants_snp.vcf.gz")) :
             CHECK_OR_DOWNLOAD_VARIANTS_SNP()
 	
 	//Capture the snps path from published directory
@@ -189,7 +277,7 @@ denylist_ch.view { denylist_path ->
 	snp_vcf_ch.view { snp_vcf_path ->  
     if (snp_vcf_path.toString().contains('/work/')) {
         // Force the path to the published directory
-        snpVcfPath = "${params.actual_data_dir}/reference/variants_snp.vcf.gz"
+        snpVcfPath = "${params.main_data_dir}/reference/variants_snp.vcf.gz"
     } else {
         // If it's already in the publish or server directory, keep the original path
         snpVcfPath = snp_vcf_path.toString()
@@ -202,8 +290,8 @@ denylist_ch.view { denylist_path ->
     snp_index_ch = 
     params.variants_snp_index_path && file(params.variants_snp_index_path).exists() ? 
         Channel.of(file(params.variants_snp_index_path)) :
-    file("${params.actual_data_dir}/reference/variants_snp.vcf.gz.tbi").exists() ? 
-        Channel.of(file("${params.actual_data_dir}/reference/variants_snp.vcf.gz.tbi")) :
+    file("${params.main_data_dir}/reference/variants_snp.vcf.gz.tbi").exists() ? 
+        Channel.of(file("${params.main_data_dir}/reference/variants_snp.vcf.gz.tbi")) :
     params.variants_snp_index_download_url ? 
         DOWNLOAD_VARIANTS_SNP_INDEX() :
         INDEX_SNP_VCF(snp_vcf_ch)
@@ -211,7 +299,7 @@ denylist_ch.view { denylist_path ->
 	snp_index_ch.view { snp_index_path ->  
     if (snp_index_path.toString().contains('/work/')) {
         // Force the path to the published directory
-        snpIndexPath = "${params.actual_data_dir}/reference/variants_snp.vcf.gz.tbi"
+        snpIndexPath = "${params.main_data_dir}/reference/variants_snp.vcf.gz.tbi"
     } else {
         // If it's already in the publish or server directory, keep the original path
         snpIndexPath = snp_index_path.toString()
@@ -225,14 +313,14 @@ denylist_ch.view { denylist_path ->
     indels_vcf_ch = 
         params.variants_indels_path && file(params.variants_indels_path).exists() ? 
             Channel.of(file(params.variants_indels_path)) :
-        file("${params.actual_data_dir}/reference/variants_indels.vcf.gz").exists() ?
-            Channel.of(file("${params.actual_data_dir}/reference/variants_indels.vcf.gz")) :
+        file("${params.main_data_dir}/reference/variants_indels.vcf.gz").exists() ?
+            Channel.of(file("${params.main_data_dir}/reference/variants_indels.vcf.gz")) :
             CHECK_OR_DOWNLOAD_VARIANTS_INDELS()
 			
 	indels_vcf_ch.view { indels_vcf_path ->  
     if (indels_vcf_path.toString().contains('/work/')) {
         // Force the path to the published directory
-        indelsVcfPath = "${params.actual_data_dir}/reference/variants_indels.vcf.gz"
+        indelsVcfPath = "${params.main_data_dir}/reference/variants_indels.vcf.gz"
     } else {
         // If it's already in the publish or server directory, keep the original path
         indelsVcfPath = indels_vcf_path.toString()
@@ -245,8 +333,8 @@ denylist_ch.view { denylist_path ->
 	indels_index_ch = 
     params.variants_indels_index_path && file(params.variants_indels_index_path).exists() ? 
         Channel.of(file(params.variants_indels_index_path)) :
-    file("${params.actual_data_dir}/reference/variants_indels.vcf.gz.tbi").exists() ? 
-        Channel.of(file("${params.actual_data_dir}/reference/variants_indels.vcf.gz.tbi")) :
+    file("${params.main_data_dir}/reference/variants_indels.vcf.gz.tbi").exists() ? 
+        Channel.of(file("${params.main_data_dir}/reference/variants_indels.vcf.gz.tbi")) :
     params.variants_indels_index_download_url ? 
         DOWNLOAD_VARIANTS_INDELS_INDEX() :
         INDEX_INDEL_VCF(indels_vcf_ch).indels_index
@@ -254,7 +342,7 @@ denylist_ch.view { denylist_path ->
 	indels_index_ch.view { indels_index_path ->  
     if (indels_index_path.toString().contains('/work/')) {
         // Redirect to the published directory
-        indelsIndexPath = "${params.actual_data_dir}/reference/variants_indels.vcf.gz.tbi"
+        indelsIndexPath = "${params.main_data_dir}/reference/variants_indels.vcf.gz.tbi"
     } else {
         // Keep the original path if it's from the server or already published
         indelsIndexPath = indels_index_path.toString()
@@ -270,12 +358,12 @@ denylist_ch.view { denylist_path ->
     def merged_vcf_ch
     def merged_vcf_index_ch
 
-    if (file("${params.actual_data_dir}/reference/merged.filtered.recode.vcf.gz").exists() &&
-        file("${params.actual_data_dir}/reference/merged.filtered.recode.vcf.gz.tbi").exists()) {
+    if (file("${params.main_data_dir}/reference/merged.filtered.recode.vcf.gz").exists() &&
+        file("${params.main_data_dir}/reference/merged.filtered.recode.vcf.gz.tbi").exists()) {
 
         // If files exist in the publish directory, create channels from them
-        merged_vcf_ch = Channel.of(file("${params.actual_data_dir}/reference/merged.filtered.recode.vcf.gz"))
-        merged_vcf_index_ch = Channel.of(file("${params.actual_data_dir}/reference/merged.filtered.recode.vcf.gz.tbi"))
+        merged_vcf_ch = Channel.of(file("${params.main_data_dir}/reference/merged.filtered.recode.vcf.gz"))
+        merged_vcf_index_ch = Channel.of(file("${params.main_data_dir}/reference/merged.filtered.recode.vcf.gz.tbi"))
 
         println " Merged VCF and index already exist in the publish directory. Skipping merge."
 
@@ -294,7 +382,7 @@ denylist_ch.view { denylist_path ->
 merged_vcf_ch.view { merged_vcf_path ->
     if (merged_vcf_path.toString().contains('/work/')) {
         // Redirect to the published directory
-        mergedVcfPath = "${params.actual_data_dir}/reference/merged.filtered.recode.vcf.gz"
+        mergedVcfPath = "${params.main_data_dir}/reference/merged.filtered.recode.vcf.gz"
     } else {
         // Keep the original path if it's from the server or already published
         mergedVcfPath = merged_vcf_path.toString()
@@ -306,7 +394,7 @@ merged_vcf_ch.view { merged_vcf_path ->
 merged_vcf_index_ch.view { merged_vcf_index_path ->
     if (merged_vcf_index_path.toString().contains('/work/')) {
         // Redirect to the published directory
-        mergedVcfIndexPath = "${params.actual_data_dir}/reference/merged.filtered.recode.vcf.gz.tbi"
+        mergedVcfIndexPath = "${params.main_data_dir}/reference/merged.filtered.recode.vcf.gz.tbi"
     } else {
         // Keep the original path if it's from the server or already published
         mergedVcfIndexPath = merged_vcf_index_path.toString()
@@ -314,16 +402,15 @@ merged_vcf_index_ch.view { merged_vcf_index_path ->
     println "Merged VCF Index path set to: ${mergedVcfIndexPath}"
 }
 
-	
-	// ========================== Java Version Check ========================== //
+// ========================== Java Version Check ========================== //
 
     def java_check_ch
 
-    if (file("${params.actual_data_dir}/reference/java_check.log").exists()) {
+    if (file("${params.main_data_dir}/reference/java_check.log").exists()) {
         println " Java check log already exists in the publish directory. Skipping Java check."
 
         // If the log exists, create a channel from the existing log file
-        java_check_ch = Channel.of(file("${params.actual_data_dir}/reference/java_check.log"))
+        java_check_ch = Channel.of(file("${params.main_data_dir}/reference/java_check.log"))
 
     } else {
         // Run the CHECK_JAVA process if the log file does not exist
@@ -333,7 +420,7 @@ merged_vcf_index_ch.view { merged_vcf_index_path ->
     // ========================== Capture Java Check Output ========================== //
 
     java_check_ch.view { java_log_path ->
-        javaLogPath = file("${params.actual_data_dir}/reference/java_check.log").toString()
+        javaLogPath = file("${params.main_data_dir}/reference/java_check.log").toString()
         println " Java check log path set to: ${javaLogPath}"
     }
 	
@@ -350,16 +437,16 @@ merged_vcf_index_ch.view { merged_vcf_index_path ->
 		snpEffJarPath = params.snpeff_jar_path
 		snpEffConfigPath = params.snpeff_config_path
 
-	} else if (file("${params.actual_data_dir}/Tools/snpEff/snpEff.jar").exists() && 
-			file("${params.actual_data_dir}/Tools/snpEff/snpEff.config").exists()) {
+	} else if (file("${params.main_data_dir}/Tools/snpEff/snpEff.jar").exists() && 
+			file("${params.main_data_dir}/Tools/snpEff/snpEff.config").exists()) {
     
 		println " SnpEff tool found in the publish directory. Skipping download."
 
-		snpeff_jar_ch = Channel.of(file("${params.actual_data_dir}/Tools/snpEff/snpEff.jar"))
-		snpeff_config_ch = Channel.of(file("${params.actual_data_dir}/Tools/snpEff/snpEff.config"))
+		snpeff_jar_ch = Channel.of(file("${params.main_data_dir}/Tools/snpEff/snpEff.jar"))
+		snpeff_config_ch = Channel.of(file("${params.main_data_dir}/Tools/snpEff/snpEff.config"))
 
-		snpEffJarPath = "${params.actual_data_dir}/Tools/snpEff/snpEff.config"
-		snpEffConfigPath = "${params.actual_data_dir}/Tools/snpEff/snpEff.config"
+		snpEffJarPath = "${params.main_data_dir}/Tools/snpEff/snpEff.config"
+		snpEffConfigPath = "${params.main_data_dir}/Tools/snpEff/snpEff.config"
 
 	} else {
 		println " SnpEff tool not found. Downloading..."
@@ -374,7 +461,7 @@ merged_vcf_index_ch.view { merged_vcf_index_path ->
     // Capture SnpEff JAR path
 	snpeff_jar_ch.view { snpeff_jar_path ->  
     if (snpeff_jar_path.toString().contains('/work/')) {
-        snpEffJarPath = "${params.actual_data_dir}/Tools/snpEff/snpEff.jar"
+        snpEffJarPath = "${params.main_data_dir}/Tools/snpEff/snpEff.jar"
     } else {
         snpEffJarPath = snpeff_jar_path.toString()
     }
@@ -384,7 +471,7 @@ merged_vcf_index_ch.view { merged_vcf_index_path ->
 	// Capture SnpEff Config path
 	snpeff_config_ch.view { snpeff_config_path ->  
     if (snpeff_config_path.toString().contains('/work/')) {
-        snpEffConfigPath = "${params.actual_data_dir}/Tools/snpEff/snpEff.config"
+        snpEffConfigPath = "${params.main_data_dir}/Tools/snpEff/snpEff.config"
     } else {
         snpEffConfigPath = snpeff_config_path.toString()
     }
@@ -403,18 +490,18 @@ if (params.snpeff_db_dir && file("${params.snpeff_db_dir_path}/${params.genomedb
     snpeff_db_ch = Channel.of(file("${params.snpeff_db_dir_path}/${params.genomedb}"))
     snpEffDbPath = "${params.snpeff_db_dir_path}/${params.genomedb}"
 
-} else if (file("${params.actual_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}").exists()) {
+} else if (file("${params.main_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}").exists()) {
     println " SnpEff database found in the publish directory. Skipping download."
 
-    snpeff_db_ch = Channel.of(file("${params.actual_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"))
-    snpEffDbPath = "${params.actual_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"
+    snpeff_db_ch = Channel.of(file("${params.main_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"))
+    snpEffDbPath = "${params.main_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"
 
 } else {
     println " SnpEff database not found. Downloading..."
     def result = DOWNLOAD_SNPEFF_DB(params.genomedb, snpeff_jar_ch)
 
     snpeff_db_ch = result
-    snpEffDbPath = "${params.actual_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"
+    snpEffDbPath = "${params.main_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"
 }
 
 // ========================== Capture SnpEff Database Path ========================== //
@@ -423,7 +510,7 @@ if (params.snpeff_db_dir && file("${params.snpeff_db_dir_path}/${params.genomedb
 snpeff_db_ch.view { snpeff_db_path ->  
     if (snpeff_db_path.toString().contains('/work/')) {
         
-        snpEffDbPath = "${params.actual_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"
+        snpEffDbPath = "${params.main_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"
     } else {
         
         snpEffDbPath = snpeff_db_path.toString()
@@ -442,9 +529,9 @@ if (params.arriba_tool_dir_path && file("${params.arriba_tool_dir_path}/arriba_v
     println " Arriba tool found in the server directory."
     arriba_dir_ch = Channel.of(file("${params.arriba_tool_dir_path}/arriba_v2.4.0"))
 
-} else if (file("${params.actual_data_dir}/Tools/ARRIBA/arriba_v2.4.0").exists()) {
+} else if (file("${params.main_data_dir}/Tools/ARRIBA/arriba_v2.4.0").exists()) {
     println " Arriba tool found in the publish directory."
-    arriba_dir_ch = Channel.of(file("${params.actual_data_dir}/Tools/ARRIBA/arriba_v2.4.0"))
+    arriba_dir_ch = Channel.of(file("${params.main_data_dir}/Tools/ARRIBA/arriba_v2.4.0"))
 
 } else {
     println " Arriba tool not found. Downloading..."
@@ -458,7 +545,7 @@ arriba_dir_ch.view { arriba_dir_path ->
     // Set Arriba path after checking if it exists in the server or publish directory
     if (arriba_dir_path.toString().contains('/work/')) {
         
-        arribaPath = "${params.actual_data_dir}/Tools/ARRIBA/arriba_v2.4.0"
+        arribaPath = "${params.main_data_dir}/Tools/ARRIBA/arriba_v2.4.0"
     } else {
         
         arribaPath = arriba_dir_path.toString()
@@ -469,9 +556,14 @@ arriba_dir_ch.view { arriba_dir_path ->
     // Define known fusions and blacklist paths directly without immediate file check
     knownFusionsPath = "${arribaPath}/database/known_fusions_hg38_GRCh38_v2.4.0.tsv.gz"
     blacklistPath = "${arribaPath}/database/blacklist_hg38_GRCh38_v2.4.0.tsv.gz"
+	protein_domainsPath = "/home/kothai/cq-git-sample/vc_and_gf/data/actual/Tools/ARRIBA/arriba_v2.4.0/database/protein_domains_hg38_GRCh38_v2.4.0.gff3"
+	cytobandsPath = "/home/kothai/cq-git-sample/vc_and_gf/data/actual/Tools/ARRIBA/arriba_v2.4.0/database/cytobands_hg38_GRCh38_v2.4.0.tsv"
 
     println " Known fusions path set to: ${knownFusionsPath}"
     println " Blacklist path set to: ${blacklistPath}"
+	println " protein_domains path set to: ${protein_domainsPath}"
+	println " cytobands path set to: ${cytobandsPath}"
+	
 }
 
 
@@ -484,9 +576,9 @@ arriba_dir_ch.view { arriba_dir_path ->
         println " VEP cache found in the server directory."
         vep_cache_ch = Channel.of(file("${params.vep_cache_dir_path}"))
 
-    } else if (file("${params.actual_data_dir}/Tools/VEP").exists()) {
+    } else if (file("${params.main_data_dir}/Tools/VEP").exists()) {
         println " VEP cache found in the publish directory."
-        vep_cache_ch = Channel.of(file("${params.actual_data_dir}/Tools/VEP"))
+        vep_cache_ch = Channel.of(file("${params.main_data_dir}/Tools/VEP"))
 
     } else {
         println " VEP cache not found. Downloading..."
@@ -498,59 +590,12 @@ arriba_dir_ch.view { arriba_dir_path ->
 vep_cache_ch.view { vep_cache_path ->  
     if (vep_cache_path.toString().contains('/work/')) {
         // Redirect to the published directory
-        vepCachePath = "${params.actual_data_dir}/Tools/VEP"
+        vepCachePath = "${params.main_data_dir}/Tools/VEP"
     } else {
         // Keep the original path if it's from the server or already published
         vepCachePath = vep_cache_path.toString()
     }
     println " VEP Cache path set to: ${vepCachePath}"
-}
-
-
-// ========================== ClinVar VCF Handling ========================== //
-    def clinvar_vcf_ch, clinvar_tbi_ch
-
-   
-
-if (params.clinvar_path && params.clinvartbi_path && 
-    file(params.clinvar_path).exists() && file(params.clinvartbi_path).exists()) {
-
-    println " ClinVar VCF and index found in the server directory."
-    clinvar_vcf_ch = Channel.of(file(params.clinvar_path))
-    clinvar_tbi_ch = Channel.of(file(params.clinvartbi_path))
-
-} else if (file("${params.actual_data_dir}/Tools/VEP/clinvar.vcf.gz").exists() && 
-           file("${params.actual_data_dir}/Tools/VEP/clinvar.vcf.gz.tbi").exists()) {
-
-    println " ClinVar VCF and index found in the publish directory."
-    clinvar_vcf_ch = Channel.of(file("${params.actual_data_dir}/Tools/VEP/clinvar.vcf.gz"))
-    clinvar_tbi_ch = Channel.of(file("${params.actual_data_dir}/Tools/VEP/clinvar.vcf.gz.tbi"))
-
-} else {
-    println " ClinVar VCF and index not found. Downloading..."
-    def clinvar_results = DOWNLOAD_CLINVAR()
-	clinvar_vcf_ch = clinvar_results.clinvar_vcf
-	clinvar_tbi_ch = clinvar_results.clinvar_tbi
-
-}
-
-// ========================== Capture ClinVar Paths ========================== //
-clinvar_vcf_ch.view { clinvar_vcf_path ->  
-    if (clinvar_vcf_path.toString().contains('/work/')) {
-        clinvarVcfPath = "${params.actual_data_dir}/Tools/VEP/clinvar.vcf.gz"
-    } else {
-        clinvarVcfPath = clinvar_vcf_path.toString()
-    }
-    println " ClinVar VCF path set to: ${clinvarVcfPath}"
-}
-
-clinvar_tbi_ch.view { clinvar_tbi_path ->  
-    if (clinvar_tbi_path.toString().contains('/work/')) {
-        clinvarTbiPath = "${params.actual_data_dir}/Tools/VEP/clinvar.vcf.gz.tbi"
-    } else {
-        clinvarTbiPath = clinvar_tbi_path.toString()
-    }
-    println " ClinVar VCF Index path set to: ${clinvarTbiPath}"
 }
 
 
@@ -562,21 +607,22 @@ clinvar_tbi_ch.view { clinvar_tbi_path ->
     // ========================== Writing to Config After Completion ========================== //
     workflow.onComplete {
         try {
-            def baseDir = System.getProperty('user.dir')
-            def outputDir = new File("${baseDir}/reference_paths.config").getParentFile()
+        def baseDir = System.getProperty('user.dir')
+        def configDir = new File("${baseDir}/configs/main")
 
-            if (!outputDir.exists()) {
-                println "Output directory does not exist. Creating: ${outputDir}"
-                outputDir.mkdirs()
-            }
+        if (!configDir.exists()) {
+            println "Creating config directory: ${configDir}"
+            configDir.mkdirs()
+        }
 
-            def configFile = new File("${baseDir}/reference_paths.config")
+        def configFile = new File(configDir, "reference_paths.config")
 
             configFile.text = """  
             params.reference_genome = '${referenceGenomePath ?: 'NOT_FOUND'}'
             params.reference_genome_index = '${genomeIndexPath ?: 'NOT_FOUND'}'
 			params.reference_genome_dict = '${genomeDictPath ?: 'NOT_FOUND'}'
 			params.gtf_annotation = '${gtfPath ?: 'NOT_FOUND'}'
+			params.exons_BED = '${exonsBedPath ?: 'NOT_FOUND'}'
 			params.star_genome_index = '${starIndexPath ?: 'NOT_FOUND'}'
 			params.denylist_bed = '${denylistPath ?: 'NOT_FOUND'}'
 			params.variants_snp = '${snpVcfPath ?: 'NOT_FOUND'}'
@@ -591,9 +637,10 @@ clinvar_tbi_ch.view { clinvar_tbi_path ->
 			params.arriba_tool_dir = '${arribaPath ?: 'NOT_FOUND'}'
 			params.arriba_known_fusions = '${knownFusionsPath ?: 'NOT_FOUND'}'
 			params.arriba_blacklist = '${blacklistPath ?: 'NOT_FOUND'}'
+			params.protein_domains = '${protein_domainsPath ?: 'NOT_FOUND'}'
+			params.cytobands = '${cytobandsPath ?: 'NOT_FOUND'}'
 			params.vep_cache_dir = '${vepCachePath ?: 'NOT_FOUND'}'
-			params.clinvar = '${clinvarVcfPath ?: 'NOT_FOUND'}'
-            params.clinvartbi = '${clinvarTbiPath ?: 'NOT_FOUND'}'
+			
             """
 
             println " Reference paths successfully written to ${configFile}"

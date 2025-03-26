@@ -15,7 +15,7 @@ workflow GENE_FUSION {
 
     main:
 
-        log.info "🔬 Starting Gene Fusion Detection Workflow..."
+        log.info " Starting Gene Fusion Detection Workflow..."
 
         ch_versions = Channel.empty()
 
@@ -24,7 +24,7 @@ workflow GENE_FUSION {
             .map { sample_id, _, bam, bai ->
                 tuple(sample_id, bam, bai)
             }
-            .view { "📦 arriba_input_bam_ch: ${it}" }
+            .view { " arriba_input_bam_ch: ${it}" }
 
         // Step 2: Run ARRIBA
         ARRIBA(
@@ -51,7 +51,7 @@ workflow GENE_FUSION {
         fusion_visual_ch = ARRIBA_VISUALIZATION.out.fusion_plot
         ch_versions = ch_versions.mix(ARRIBA_VISUALIZATION.out.versions.first())
 
-        log.info "✅ Gene Fusion Detection Workflow Completed."
+        log.info " Gene Fusion Detection Workflow Completed."
 
     emit:
         fusion_results        = ARRIBA.out.fusions

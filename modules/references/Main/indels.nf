@@ -2,13 +2,13 @@
 process CHECK_OR_DOWNLOAD_VARIANTS_INDELS {
     tag "Check or Download Indels Variants"
     container null
-    publishDir "${params.actual_data_dir}/reference", mode: 'copy'
+    publishDir "${params.main_data_dir}/reference", mode: 'copy'
 
     output:
     path "variants_indels.vcf.gz", emit: variants_indels
 
     when:
-	!file("${params.actual_data_dir}/reference/variants_indels.vcf.gz").exists()
+	!file("${params.main_data_dir}/reference/variants_indels.vcf.gz").exists()
 
 
     script:
@@ -20,7 +20,7 @@ process CHECK_OR_DOWNLOAD_VARIANTS_INDELS {
 process INDEX_INDEL_VCF {
     tag "Index INDEL VCF"
     container "https://depot.galaxyproject.org/singularity/bcftools%3A1.15.1--h0ea216a_0"
-    publishDir "${params.actual_data_dir}/reference", mode: 'copy'
+    publishDir "${params.main_data_dir}/reference", mode: 'copy'
 
     input:
     path vcf_file
@@ -39,7 +39,7 @@ process INDEX_INDEL_VCF {
 process DOWNLOAD_VARIANTS_INDELS_INDEX {
     tag "Download Indels Index"
     container null
-    publishDir "${params.actual_data_dir}/reference", mode: 'copy'
+    publishDir "${params.main_data_dir}/reference", mode: 'copy'
 
     output:
     path "variants_indels.vcf.gz.tbi", emit: indels_index

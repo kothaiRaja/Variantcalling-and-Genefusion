@@ -1,6 +1,6 @@
 process DOWNLOAD_SNPEFF_TOOL {
     tag "Download SnpEff Tool"
-    publishDir "${params.actual_data_dir}/Tools", mode: 'copy'
+    publishDir "${params.main_data_dir}/Tools", mode: 'copy'
     container null  // No container needed, using wget and unzip
 
     output:
@@ -18,7 +18,7 @@ process DOWNLOAD_SNPEFF_TOOL {
 
 process DOWNLOAD_SNPEFF_DB {
     tag "Download SnpEff Database"
-	publishDir "${params.actual_data_dir}/Tools/snpEff", mode: 'copy'
+	publishDir "${params.main_data_dir}/Tools/snpEff", mode: 'copy'
 	container null
 	
 	
