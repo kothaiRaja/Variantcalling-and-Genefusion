@@ -8,7 +8,9 @@
 
 This flowchart represents the RNA-seq analysis workflow, including variant calling and gene fusion detection.
 
-![RNA-seq Workflow](rna_seq_workflow_fusion_headings.png)
+
+![RNA-seq Workflow](rna_seq_workflow_fusion_bold.png)
+
 
 ---
 
