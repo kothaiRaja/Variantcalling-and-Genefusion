@@ -5,14 +5,15 @@ process CREATE_GENOME_DICT {
     publishDir "${params.test_data_dir}/reference", mode: 'copy'
 
     input:
-    path genome_fa
+    path(genome_fa)  
 
     output:
-    path "genome.dict", emit: genome_dict
+    path "genome.dict", emit: genome_dict  
+
 
     script:
     """
-    echo " Creating genome dictionary using Picard..."
+    echo "Creating genome dictionary using Picard..."
     picard CreateSequenceDictionary R=$genome_fa O=genome.dict
     """
 }

@@ -31,14 +31,13 @@ process DOWNLOAD_VARIANTS_SNP_INDEX {
     """
 }
 
-//==========================Create Indexing=============================//
 process INDEX_SNP_VCF {
     tag "Index SNP VCF"
     container "https://depot.galaxyproject.org/singularity/bcftools%3A1.15.1--h0ea216a_0"
     publishDir "${params.test_data_dir}/reference", mode: 'copy'
 
     input:
-    path vcf_file
+    path(vcf_file)
 
     output:
     path "${vcf_file}.tbi", emit: snp_index

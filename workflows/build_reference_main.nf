@@ -1,27 +1,27 @@
 nextflow.enable.dsl = 2
 
 
-include { CHECK_OR_DOWNLOAD_REF_GENOME } from './modules/references/Main/reference_genome.nf'
-include { GUNZIP } from './modules/references/Main/gunzip.nf'
-include { DOWNLOAD_GENOME_INDEX } from './modules/references/Main/genome_index.nf'
-include { CREATE_GENOME_INDEX } from './modules/references/Main/genome_index.nf'
-include { CREATE_GENOME_DICT } from './modules/references/Main/genome_dict.nf'
-include { CHECK_OR_DOWNLOAD_GTF } from './modules/references/Main/gtf_annotation.nf'
-include { GENERATEEXONS_BED } from './modules/references/Main/exons_bed.nf'
-include { CREATE_STAR_INDEX } from './modules/references/Main/STAR_index.nf'
-include { CHECK_OR_DOWNLOAD_DENYLIST } from './modules/references/Main/denylist.nf'
-include { CHECK_OR_DOWNLOAD_VARIANTS_SNP } from './modules/references/Main/snp.nf'
-include { DOWNLOAD_VARIANTS_SNP_INDEX } from './modules/references/Main/snp.nf'
-include { INDEX_SNP_VCF } from './modules/references/Main/snp.nf'
-include { CHECK_OR_DOWNLOAD_VARIANTS_INDELS } from './modules/references/Main/indels.nf'
-include { INDEX_INDEL_VCF } from './modules/references/Main/indels.nf'
-include { DOWNLOAD_VARIANTS_INDELS_INDEX } from './modules/references/Main/indels.nf'
-include { FILTER_AND_MERGE_VCF } from './modules/references/Main/prepare_vcfs.nf'
-include { CHECK_JAVA } from './modules/references/check_java.nf'
-include { DOWNLOAD_SNPEFF_TOOL } from './modules/references/Main/Tools.nf'
-include { DOWNLOAD_SNPEFF_DB } from './modules/references/Main/Tools.nf'
-include { DOWNLOAD_ARRIBA } from './modules/references/Main/Tools.nf'
-include { DOWNLOAD_VEP_CACHE } from './modules/references/Main/VEP.nf'
+include { CHECK_OR_DOWNLOAD_REF_GENOME } from '../modules/references/Main/reference_genome.nf'
+include { GUNZIP } from '../modules/references/Main/gunzip.nf'
+include { DOWNLOAD_GENOME_INDEX } from '../modules/references/Main/genome_index.nf'
+include { CREATE_GENOME_INDEX } from '../modules/references/Main/genome_index.nf'
+include { CREATE_GENOME_DICT } from '../modules/references/Main/genome_dict.nf'
+include { CHECK_OR_DOWNLOAD_GTF } from '../modules/references/Main/gtf_annotation.nf'
+include { GENERATEEXONS_BED } from '../modules/references/Main/exons_bed.nf'
+include { CREATE_STAR_INDEX } from '../modules/references/Main/STAR_index.nf'
+include { CHECK_OR_DOWNLOAD_DENYLIST } from '../modules/references/Main/denylist.nf'
+include { CHECK_OR_DOWNLOAD_VARIANTS_SNP } from '../modules/references/Main/snp.nf'
+include { DOWNLOAD_VARIANTS_SNP_INDEX } from '../modules/references/Main/snp.nf'
+include { INDEX_SNP_VCF } from '../modules/references/Main/snp.nf'
+include { CHECK_OR_DOWNLOAD_VARIANTS_INDELS } from '../modules/references/Main/indels.nf'
+include { INDEX_INDEL_VCF } from '../modules/references/Main/indels.nf'
+include { DOWNLOAD_VARIANTS_INDELS_INDEX } from '../modules/references/Main/indels.nf'
+include { FILTER_AND_MERGE_VCF } from '../modules/references/Main/prepare_vcfs.nf'
+include { CHECK_JAVA } from '../modules/references/check_java.nf'
+include { DOWNLOAD_SNPEFF_TOOL } from '../modules/references/Main/Tools.nf'
+include { DOWNLOAD_SNPEFF_DB } from '../modules/references/Main/Tools.nf'
+include { DOWNLOAD_ARRIBA } from '../modules/references/Main/Tools.nf'
+include { DOWNLOAD_VEP_CACHE } from '../modules/references/Main/VEP.nf'
 
 
 
@@ -45,7 +45,7 @@ def arribaPath = ''
 
 
 
-workflow {
+workflow BUILD_REFERENCE {
 
 	// ========================== Define Genome Build ========================== //
 	def genome_build = 'GRCh38' 

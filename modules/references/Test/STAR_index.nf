@@ -5,11 +5,11 @@ process CREATE_STAR_INDEX {
     publishDir "${params.test_data_dir}/reference", mode: 'copy'
 
     input:
-    path genome_fasta
-    path genome_gtf
+    path(genome_fasta)  
+    path(genome_gtf)    
 
     output:
-    path "STAR_index", type: 'dir', emit: STAR_index
+    path("STAR_index")
 
     script:
     """

@@ -1,7 +1,7 @@
 process DOWNLOAD_SNPEFF_TOOL {
     tag "Download SnpEff Tool"
     publishDir "${params.test_data_dir}/Tools", mode: 'copy'
-    container null
+    container null  // No container needed, using wget and unzip
 
     output:
     path "${params.snpeff_jar_dir}/snpEff.jar", emit: snpeff_jar
@@ -31,10 +31,10 @@ process DOWNLOAD_SNPEFF_DB {
 	
 	script:
     """
-    
+    # Ensure the output directory exists first
     mkdir -p ${params.snpeff_db_dir}
 
-    
+    # Use an absolute path for the data directory
     data_dir=\$(realpath ${params.snpeff_db_dir})
 
     # Download the database
@@ -57,7 +57,7 @@ process DOWNLOAD_ARRIBA {
 	
 	script:
     """
-   
+    # Define the Arriba download URL and target directory
     URL="https://github.com/suhrig/arriba/releases/download/v2.4.0/arriba_v2.4.0.tar.gz"
     TARGET_DIR="arriba_v2.4.0"
 
@@ -75,4 +75,3 @@ process DOWNLOAD_ARRIBA {
     echo "Arriba tool extracted to: \$TARGET_DIR"
     """
 }
-

@@ -37,7 +37,7 @@ process INDEX_INDEL_VCF {
 
 // ========================== Download Indels Variants Index ========================== //
 process DOWNLOAD_VARIANTS_INDELS_INDEX {
-    tag "Download INDELS Index"
+    tag "Download Indels Index"
     container null
     publishDir "${params.test_data_dir}/reference", mode: 'copy'
 
