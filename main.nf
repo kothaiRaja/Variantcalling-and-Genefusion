@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl = 2
 
-params.build_references = params.build_references ?: false
+
 
 
 /*
@@ -18,6 +18,7 @@ params.build_references = params.build_references ?: false
 */
 
 include { BUILD_REFERENCE }             from './workflows/build_reference_main.nf'
+include { BUILD_REFERENCE_TEST }         from './workflows/build_reference_test.nf'
 include { RNA_VARIANT_CALLING_GENE_FUSION } from './workflows/varfuse.nf'
 
 /*
@@ -31,10 +32,10 @@ workflow MASTER_PIPELINE {
     main:
 
     if (params.build_references) {
-        // If --build_references is passed, only build reference files
         BUILD_REFERENCE()
+    } else if (params.build_references_test) {
+        BUILD_REFERENCE_TEST()
     } else {
-        // Otherwise, proceed to full variant calling + fusion detection
         RNA_VARIANT_CALLING_GENE_FUSION()
     }
 }

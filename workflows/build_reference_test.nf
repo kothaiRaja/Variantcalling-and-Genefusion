@@ -45,7 +45,7 @@ def arribaPath = ''
 
 
 
-workflow BUILD_REFERENCE {
+workflow BUILD_REFERENCE_TEST {
 
 	// ========================== Define Genome Build ========================== //
 	def genome_build = 'GRCh38' 
@@ -556,8 +556,8 @@ arriba_dir_ch.view { arriba_dir_path ->
     // Define known fusions and blacklist paths directly without immediate file check
     knownFusionsPath = "${arribaPath}/database/known_fusions_hg38_GRCh38_v2.4.0.tsv.gz"
     blacklistPath = "${arribaPath}/database/blacklist_hg38_GRCh38_v2.4.0.tsv.gz"
-	protein_domainsPath = "/home/kothai/cq-git-sample/vc_and_gf/data/actual/Tools/ARRIBA/arriba_v2.4.0/database/protein_domains_hg38_GRCh38_v2.4.0.gff3"
-	cytobandsPath = "/home/kothai/cq-git-sample/vc_and_gf/data/actual/Tools/ARRIBA/arriba_v2.4.0/database/cytobands_hg38_GRCh38_v2.4.0.tsv"
+	protein_domainsPath = "${arribaPath}/database/protein_domains_hg38_GRCh38_v2.4.0.gff3"
+	cytobandsPath = "${arribaPath}/database/cytobands_hg38_GRCh38_v2.4.0.tsv"
 
     println " Known fusions path set to: ${knownFusionsPath}"
     println " Blacklist path set to: ${blacklistPath}"

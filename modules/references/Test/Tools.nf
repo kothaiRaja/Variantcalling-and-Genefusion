@@ -1,7 +1,7 @@
 process DOWNLOAD_SNPEFF_TOOL {
     tag "Download SnpEff Tool"
     publishDir "${params.test_data_dir}/Tools", mode: 'copy'
-    container null  // No container needed, using wget and unzip
+    container null
 
     output:
     path "${params.snpeff_jar_dir}/snpEff.jar", emit: snpeff_jar

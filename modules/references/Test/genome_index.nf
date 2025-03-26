@@ -41,6 +41,13 @@ process CREATE_GENOME_INDEX {
     script:
     """
     echo "Creating genome index using samtools..."
-    samtools faidx $genome_fa
+
+if [[ "${genome_fa}" == *.gz ]]; then
+    gunzip -c ${genome_fa} > genome.fa
+else
+    cp ${genome_fa} genome.fa
+fi
+
+samtools faidx genome.fa
     """
 }

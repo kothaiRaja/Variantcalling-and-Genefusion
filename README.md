@@ -55,7 +55,7 @@ Downloads and processes **reference genomes, annotation files, and known variant
 ### ** Easy User defined Parameters**
 Users are able to easily define the path to the reference files(if available). 
 Even if the reference files are unavailable, the pipeline fetched all the reference files by executing the processes. 
-Running the build_reference_main.nl pipeline, the paths to all the required reference files are written to config file which is used for main.nl pipeline execution.  
+Running the build_reference_main.nf pipeline, the paths to all the required reference files are written to config file which is used for main.nl pipeline execution.  
 
 ---
 
@@ -85,7 +85,7 @@ Before running the pipeline on actual data, test it with the provided test datas
 
 ### **A. Prepare References (for Test Data)**  
 ```bash
-nextflow run buildreference_test.nf -c nextflow_ref_test.config -profile singularity
+nextflow run main.nf -c nextflow_ref_test.config --build_references_test -profile singularity
 ```
 
 ### **B. Run the Test Pipeline**  
@@ -102,29 +102,17 @@ Once validated, run the pipeline on actual datasets.
 
 ### **A. Prepare References (for Actual Data)**  
 ```bash
-nextflow run build_reference_main.nf -c nextflow_ref_main.config,user_params.config -profile singularity
+nextflow run main.nf -c nextflow_ref_main.config --build_references -profile singularity
+
 ```
 
 ### **B. Run the Full Pipeline on Actual Data**  
 ```bash
-nextflow run main.nf -c nextflow_main.config,user_params.config -profile singularity
+nextflow run main.nf -c nextflow_main.config -profile singularity
 ```
 
 ---
 
-# **Running Specific Workflows**  
-
-### ** Run Only Variant Calling**  
-```bash
-nextflow run main.nf -c nextflow_main.config,user_params.config -profile singularity --only_variant_calling true
-```
-
-### **  Run Only RNA Fusion Detection**  
-```bash
-nextflow run main.nf -c nextflow_main.config,user_params.config -profile singularity --only_fusion_detection true
-```
-
----
 
 # **Input: Sample Sheet Format**  
 
@@ -140,19 +128,29 @@ The pipeline requires a **CSV file** (`samplesheet.csv`) with sample metadata.
 # **Pipeline Outputs**  
 
 **MultiQC Reports**: Summarizes quality control and variant statistics.  
-**Annotated VCF Files**: Identified genetic variants.  
-**Structured CSV Reports**: Variant & fusion details for downstream analysis.  
+**Annotated VCF Files**: Identified genetic variants.    
 **Fusion Detection Results**: Lists fusion genes with graphical representation.  
 
 ---
 
-# **Customization & Configuration**  
+---
 
-Modify `params.config` to customize:  
-- `merge_vcf: true` → Merge VCF files for annotation.  
-- `only_variant_calling: true` → Run only variant calling.  
-- `only_fusion_detection: true` → Run only fusion detection. 
-- `only_qc: true` → Runs only Quality control
+# **Pipeline Behavior**
+
+Set the following flags in your `.config` files to control the pipeline execution. These parameters allow selective execution of specific steps and are especially useful for testing or partial runs.
+
+| **Parameter**     | **Description**                                                                 |
+|-------------------|---------------------------------------------------------------------------------|
+| `concatenate`     | **If true**, merges all FASTQ files belonging to the same sample before processing. Useful when reads are split across lanes or runs. |
+| `only_qc`         | **If true**, runs only **quality control** steps (FastQC & MultiQC) and exits.  |
+| `only_star`       | **If true**, runs only **STAR alignment** and stops without downstream steps.   |
+| `skip_star`       | **If true**, skips STAR alignment. Assumes **pre-aligned BAM** files are provided. |
+| `run_fusion`      | **If true**, runs **Arriba** for gene fusion detection and generates visualization plots. |
+
+>  **Tip:** Use these flags to isolate specific workflow components, reduce runtime, or debug step-by-step execution.
+
+---
+
 
 ---
 

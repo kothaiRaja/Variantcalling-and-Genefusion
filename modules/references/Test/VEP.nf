@@ -11,7 +11,8 @@ process DOWNLOAD_VEP_CACHE {
     mkdir -p vep_cache  
     echo "Downloading VEP cache for ${params.species}, Ensembl ${params.ensembl_release}, ${params.genome_assembly}..."
 
-    curl -sSLo vep_cache.tar.gz https://ftp.ensembl.org/pub/release-${params.ensembl_release}/variation/indexed_vep_cache/${params.species}_vep_${params.ensembl_release}_${params.genome_assembly}.tar.gz
+    wget -q -O vep_cache.tar.gz https://ftp.ensembl.org/pub/release-${params.ensembl_release}/variation/indexed_vep_cache/${params.species}_vep_${params.ensembl_release}_${params.genome_assembly}.tar.gz
+
 
     tar -xzvf vep_cache.tar.gz -C vep_cache --strip-components=1
     rm vep_cache.tar.gz
