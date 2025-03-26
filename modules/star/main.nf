@@ -68,6 +68,7 @@ process STAR_ALIGNMENT {
          --sjdbGTFfile ${gtf_file} \
          --twopassMode None \
          --outFilterType BySJout \
+		 --outSAMtype BAM SortedByCoordinate \
          --alignSJoverhangMin ${params.get('star_alignSJoverhangMin', 8)} \
          --alignSJDBoverhangMin ${params.get('star_alignSJDBoverhangMin', 1)} \
          --outFilterMismatchNmax ${params.get('star_outFilterMismatchNmax', 999)} \
@@ -78,10 +79,9 @@ process STAR_ALIGNMENT {
          --chimJunctionOverhangMin ${params.get('star_chimJunctionOverhangMin', 10)} \
          --chimScoreJunctionNonGTAG ${params.get('star_chimScoreJunctionNonGTAG', -4)} \
          --chimScoreMin ${params.get('star_chimScoreMin', 1)} \
-         --chimOutType ${params.get('star_chimOutType', 'WithinBAM SeparateSAMold')} \
+         --chimOutType WithinBAM HardClip \
          --chimScoreDropMax ${params.get('star_chimScoreDropMax', 50)} \
          --chimScoreSeparation ${params.get('star_chimScoreSeparation', 10)} \
-         --outSAMtype BAM SortedByCoordinate \
          --limitBAMsortRAM \$RAM_LIMIT \
          --outSAMunmapped Within \
 		 --quantMode TranscriptomeSAM GeneCounts \

@@ -251,17 +251,15 @@ if (params.run_fusion && !params.skip_star) {
     log.info " Running Gene Fusion Analysis..."
 
     fusions = GENE_FUSION(
-        star_bam_ch,
-        chimeric_reads_ch,   
+        star_bam_ch,  
         params.reference_genome,
         params.gtf_annotation,
         params.arriba_blacklist,
-        params.arriba_known_fusions,
-        params.scripts_dir
+        params.arriba_known_fusions
     )
 
     ARRIBA_fusion_ch = GENE_FUSION.out.fusion_results
-    reports_ch = report_ch.mix(GENE_FUSION.out.fusion_visualizations.ifEmpty([]))
+    reports_ch = report_ch.mix(GENE_FUSION.out.fusion_visualizations.collect { it[1] }.ifEmpty([]))
     ch_versions = ch_versions.mix(GENE_FUSION.out.versions)
 
 } else if (params.run_fusion && params.skip_star) {
