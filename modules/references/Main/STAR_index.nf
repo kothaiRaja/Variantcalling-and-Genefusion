@@ -1,6 +1,8 @@
 // ========================== Create STAR Genome Index ========================== //
 process CREATE_STAR_INDEX {
     tag "Create STAR Genome Index"
+	label 'process_medium'
+	
     container "https://depot.galaxyproject.org/singularity/star%3A2.7.10b--h6b7c446_1"
     publishDir "${params.main_data_dir}/reference", mode: 'copy'
 

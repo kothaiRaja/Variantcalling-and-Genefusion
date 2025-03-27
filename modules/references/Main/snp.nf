@@ -33,6 +33,7 @@ process DOWNLOAD_VARIANTS_SNP_INDEX {
 
 process INDEX_SNP_VCF {
     tag "Index SNP VCF"
+	label 'process_low'
     container "https://depot.galaxyproject.org/singularity/bcftools%3A1.15.1--h0ea216a_0"
     publishDir "${params.main_data_dir}/reference", mode: 'copy'
 

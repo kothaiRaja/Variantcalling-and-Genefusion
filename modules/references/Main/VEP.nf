@@ -1,5 +1,6 @@
 process DOWNLOAD_VEP_CACHE {
     tag "Download VEP Cache ${params.species} Ensembl ${params.ensembl_release} ${params.genome_assembly}"
+	label 'process_high'
     publishDir "${params.main_data_dir}/Tools/VEP", mode: 'copy'
     container null
 

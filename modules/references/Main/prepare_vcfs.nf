@@ -1,11 +1,11 @@
 process FILTER_AND_MERGE_VCF {
     tag "Filter and Merge VCF Files"
+	label 'process_high'
+	
     container "https://depot.galaxyproject.org/singularity/bcftools%3A1.15.1--h0ea216a_0"
     publishDir "${params.main_data_dir}/reference", mode: 'copy'
 	
-    cpus params.get('filter_merge_vcf_cpus', 12)
-    memory params.get('filter_merge_vcf_memory', '32 GB')
-    time params.get('filter_merge_vcf_time', '6h')
+   
 
     input: 
     path variants_snp

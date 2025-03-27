@@ -28,6 +28,7 @@ process DOWNLOAD_GENOME_INDEX {
 
 process CREATE_GENOME_INDEX {
     tag "Create Genome Index"
+	label 'process_medium'
     container "https://depot.galaxyproject.org/singularity/samtools%3A1.14--hb421002_0"
     publishDir "${params.main_data_dir}/reference", mode: 'copy'
 

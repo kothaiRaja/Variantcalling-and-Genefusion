@@ -1,5 +1,7 @@
 process GENERATEEXONS_BED {
     tag "Generate Exons BED File"
+	label 'process_medium'
+	
     container "https://depot.galaxyproject.org/singularity/bedtools%3A2.30.0--h7d7f7ad_1"
     publishDir "${params.main_data_dir}/reference", mode: 'copy'
 

@@ -19,6 +19,7 @@ process CHECK_OR_DOWNLOAD_VARIANTS_INDELS {
 
 process INDEX_INDEL_VCF {
     tag "Index INDEL VCF"
+	label 'process_low'
     container "https://depot.galaxyproject.org/singularity/bcftools%3A1.15.1--h0ea216a_0"
     publishDir "${params.main_data_dir}/reference", mode: 'copy'
 
