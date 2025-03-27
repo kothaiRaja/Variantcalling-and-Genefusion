@@ -8,7 +8,7 @@ include { VEP_ANNOTATION_WORKFLOW } from '../subworkflows/ensemblvep.nf'
 
 workflow ANNOTATE {
     take:
-    vcf          // channel: [ val(meta), vcf ]
+    vcf          
     tools
 	snpeff_jar
     snpeff_db
