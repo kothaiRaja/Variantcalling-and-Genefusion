@@ -97,8 +97,8 @@ run_fusion = true
 ```
 
 Flags to enable or skip specific modules:
-- `only_qc`: Runs only QC steps
-- `skip_star`: Skips STAR alignment if BAMs are already aligned
+- `only_qc`: Runs only QC steps and produces a multiqc report
+- `skip_star`: Skips STAR alignment if BAMs are already aligned and bams sample sheet or star output folder is given in "aligned_bam_samplesheet = path/to/bam or aligned_bam_folder = path/to/star_folder(in previous run)       = null 
 - `run_fusion`: Enables fusion detection
 
 ---
@@ -249,5 +249,85 @@ This sets `--fork 4` and `--everything` for the VEP annotation process.
 ---
 
 This file makes your pipeline **flexible**, **configurable**, and **production-ready** across HPC, cloud, or local environments.
+
+
+# ⚠️ Appendix B: Chromosome Naming Convention – Important Caution
+
+## Why This Matters
+
+This pipeline expects all reference files to follow a **consistent chromosome naming convention**. Specifically, the pipeline is configured to work with **numeric chromosome names** such as:
+
+```
+22, X, Y, MT
+```
+
+Not UCSC-style names like:
+
+```
+chr22, chrX, chrY, chrM
+```
+
+---
+
+## ❗ Potential Issues If Names Are Inconsistent
+
+If the naming convention is inconsistent across files, it may result in:
+
+-  **No variants being called**
+-  **Empty VCF outputs**
+-  **Errors during annotation or alignment**
+-  **Contig mismatch errors** from tools like GATK, STAR, or bcftools
+
+---
+
+##  What You Should Check
+
+Ensure all of the following files use **numeric chromosome names only**:
+
+| File Type | Description |
+|-----------|-------------|
+| `*.fa / *.fasta` | Reference genome |
+| `*.dict` | Reference dictionary |
+| `*.gtf` | Gene annotation |
+| `*.vcf` | Known variant files (e.g., dbSNP, Mills) |
+| `*.bed / *.interval_list` | Target regions or intervals |
+
+---
+
+##  How to Convert Chromosome Names
+
+You can use simple tools like:
+
+```bash
+# Example: Convert 'chr22' to '22' in a VCF file
+sed 's/^chr//' input.vcf > output_cleaned.vcf
+
+# For GTF files
+sed 's/^chr//' input.gtf > cleaned.gtf
+
+# For FASTA headers
+sed -i 's/^>chr/>/' reference.fasta
+```
+
+Alternatively, tools like `bcftools annotate`, `picard LiftoverVcf`, or `GATK LiftoverIntervalList` may be required for more complex transformations.
+
+---
+
+##  Final Reminder
+
+Please **ensure consistent chromosome naming before starting the workflow**. This is a **common cause of silent failures** or misinterpreted results.
+
+If you're unsure, you can inspect chromosome headers with:
+
+```bash
+grep '^>' reference.fasta        # For FASTA
+zcat input.vcf.gz | grep -v '^#' | cut -f1 | sort | uniq
+head -n 5 annotation.gtf
+```
+
+---
+
+Stay consistent, and the pipeline will thank you 
+```
 
 ---
