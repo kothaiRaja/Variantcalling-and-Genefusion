@@ -1,5 +1,6 @@
 process ANNOTATEVARIANTS_VEP {
-    tag "Annotate variants using VEP"
+    tag { "${sample_id}_${task.process}" }
+
 
     label 'process_medium'
     container params.annotate_vep_container
@@ -19,6 +20,14 @@ process ANNOTATEVARIANTS_VEP {
 
     script:
     def args = task.ext.args ?: ''
+	def avail_mem = 3
+if (task.memory) {
+    avail_mem = task.memory.giga
+} else {
+    log.info '[VEP] No memory set — defaulting to 3GB.'
+}
+	def buffer_size = (avail_mem < 8) ? 100 : (avail_mem < 20 ? 200 : 500)
+
 
     """
     echo "Running VEP for sample: ${sample_id}"
@@ -40,14 +49,16 @@ process ANNOTATEVARIANTS_VEP {
         --format vcf \\
         --vcf \\
         --symbol \\
-        --protein \\
-        --check_existing \\
-        --everything \\
-        --filter_common \\
-        --per_gene \\
-        --total_length \\
-        --force_overwrite \\
-        --offline
+		--buffer_size ${buffer_size} \\
+		--protein \\
+		--check_existing \\
+		--filter_common \\
+		--per_gene \\
+		--total_length \\
+		--force_overwrite \\
+		--offline \\
+		${args}
+	
 
     
 cat <<-END_VERSIONS > versions.yml

@@ -1,5 +1,6 @@
 process SAMTOOLS_CALMD {
-    tag { "${sample_id}_${bam.baseName}" }  
+    tag { "${sample_id}_${task.process}" }
+ 
     label 'process_medium'
 
     container params.samtools_container

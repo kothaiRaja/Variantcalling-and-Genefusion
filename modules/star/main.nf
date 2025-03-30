@@ -1,6 +1,7 @@
 process STAR_ALIGNMENT {
-    tag { sample_id }
-	label 'process_high'
+    tag { "${sample_id}_${task.process}" }
+
+	label 'process_very_high'
 
 
     container params.star_container

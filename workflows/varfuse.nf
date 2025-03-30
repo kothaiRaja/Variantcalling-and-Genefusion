@@ -12,6 +12,7 @@ include { ANNOTATE } from '../subworkflows/variant_annotations.nf'
 include { GENE_FUSION } from '../subworkflows/gene_fusion.nf'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nfcore/software_versions/main.nf'
 include { MultiQC } from '../modules/multiqc_quality/main.nf'
+include { GATK_VCF_TO_TABLE } from '../modules/gatk/vcf2table/main.nf'
 
 
 
@@ -238,6 +239,13 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	final_annotated_vcf = ANNOTATE.out.final_vcf_annotated
 	report_ch   		= reports_ch.mix(ANNOTATE.out.reports_html.ifEmpty([]))
 	ch_versions        = ch_versions.mix(ANNOTATE.out.versions)
+	
+	//=====================Create Table============================//
+	
+	GATK_VCF_TO_TABLE(final_annotated_vcf)
+	
+	table_ch 			= GATK_VCF_TO_TABLE.out.vcf_table
+	ch_versions        = ch_versions.mix(GATK_VCF_TO_TABLE.out.versions)
 	
 	
 	//================== Step 8: Run Gene Fusion Analysis on STAR Chimeric Reads ================//

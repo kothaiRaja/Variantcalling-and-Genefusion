@@ -1,5 +1,6 @@
 process ANNOTATE_VARIANTS {
-    tag "Annotate variants"
+    tag { "${sample_id}_${task.process}" }
+
 	label 'process_medium'
 
     container params.annotate_container_snpeff
@@ -19,20 +20,29 @@ process ANNOTATE_VARIANTS {
 	path("versions.yml"), emit: versions
 
     script:
+	
+	def avail_mem = 3
+if (task.memory) {
+    avail_mem = task.memory.giga
+} else {
+    log.info '[SnpEff] No memory set — defaulting to 3GB.'
+}
+
+	
     """
     THREADS=${task.cpus}
 
     echo "Annotating variants for sample: ${sample_id}"
 
     # Run SnpEff for annotation (VCF)
-    java -Xmx16G -jar ${snpEffJar} \
+    java -Xmx${avail_mem}G -jar ${snpEffJar} \
         -c ${snpEffConfig} \
         -v ${genomedb} \
         -dataDir ${snpEffDbDir} \
         ${vcf} > annotated_${sample_id}.vcf
 
     # Generate annotation summary report (HTML)
-    java -Xmx16G -jar ${snpEffJar} \
+    java -Xmx${avail_mem}G -jar ${snpEffJar} \
         -c ${snpEffConfig} \
         -v ${genomedb} \
         -dataDir ${snpEffDbDir} \
@@ -40,7 +50,7 @@ process ANNOTATE_VARIANTS {
         ${vcf} > /dev/null
 
     # Generate CSV file with annotation statistics
-    java -Xmx16G -jar ${snpEffJar} \
+    java -Xmx${avail_mem}G -jar ${snpEffJar} \
         -c ${snpEffConfig} \
         -v ${genomedb} \
         -dataDir ${snpEffDbDir} \

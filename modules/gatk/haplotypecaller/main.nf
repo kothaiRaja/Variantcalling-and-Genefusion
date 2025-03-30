@@ -1,5 +1,6 @@
 process GATK_HAPLOTYPE_CALLER {
-    tag { sample_id }
+    tag { "${sample_id}_${task.process}" }
+
     label 'process_high'
 
     container params.gatk_container
@@ -20,14 +21,23 @@ process GATK_HAPLOTYPE_CALLER {
     path("versions.yml"), emit: versions
 
     script:
+	
+	def avail_mem = 3
+if (task.memory) {
+    avail_mem = task.memory.giga
+} else {
+    log.info '[GATK HaplotypeCaller] No memory set — defaulting to 3GB.'
+}
+
+
     """
     THREADS=${task.cpus}
 
     echo "Running GATK HaplotypeCaller for sample: ${sample_id}"
 
     # Run HaplotypeCaller with RNA-seq optimizations
-    gatk HaplotypeCaller \\
-        --native-pair-hmm-threads \${THREADS} \\
+    gatk --java-options "-Xmx${avail_mem}g" HaplotypeCaller \\
+		--native-pair-hmm-threads \${THREADS} \\
         --reference "${genome}" \\
         --output "output_${bam.baseName}.vcf.gz" \\
         -I "${bam}" \\

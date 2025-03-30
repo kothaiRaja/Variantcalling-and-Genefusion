@@ -1,5 +1,6 @@
 process CONCAT_FASTQ {
-    tag { sample_id }
+    tag { "${sample_id}_${task.process}" }
+
     container "https://depot.galaxyproject.org/singularity/ubuntu%3A24.04"
     publishDir "${params.outdir}/concatenated", mode: "copy"
 

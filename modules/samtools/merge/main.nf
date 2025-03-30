@@ -1,5 +1,5 @@
 process MERGE_BAMS {
-    tag "MERGE_BAMS"
+    tag { "${sample_id}_${task.process}" }
     label 'process_medium'
 
     container params.samtools_container

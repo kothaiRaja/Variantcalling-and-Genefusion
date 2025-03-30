@@ -1,5 +1,5 @@
 process BCFTOOLS_QUERY {
-    tag { sample_id }
+    tag { "${sample_id}_${task.process}" }
     label 'process_low'
 
     container params.bcftools_container

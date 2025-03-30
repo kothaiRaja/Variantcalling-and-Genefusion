@@ -1,5 +1,5 @@
 process FASTQC_RAW {
-    tag { sample_id }
+    tag { "${sample_id}_${task.process}" }
 	label 'process_low'
 	
 	publishDir params.fastqc_outdir, mode: "copy", pattern: "*_fastqc.*"

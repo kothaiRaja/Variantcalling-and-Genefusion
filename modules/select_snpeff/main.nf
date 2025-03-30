@@ -1,5 +1,5 @@
 process ANNOTATE_VARIANTS_SELECTED {
-    tag "${sample_id}_annotate"
+    tag { "${sample_id}_${task.process}" }
 
     container "https://depot.galaxyproject.org/singularity/snpeff%3A5.2--hdfd78af_1"
     publishDir "${params.outdir}/annotated_variants/${sample_id}", mode: "copy"

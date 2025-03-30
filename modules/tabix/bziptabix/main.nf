@@ -1,5 +1,6 @@
 process BGZIP_TABIX_ANNOTATIONS {
-    tag "Compress & Index annotated variants"
+    tag { "${sample_id}_${task.process}" }
+
 
     container "https://depot.galaxyproject.org/singularity/tabix:1.11--hdfd78af_0"
     publishDir "${params.outdir}/compressed_annotations", mode: 'copy'

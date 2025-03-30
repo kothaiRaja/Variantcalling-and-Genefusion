@@ -1,5 +1,6 @@
 process GATK_APPLYBQSR {
-    tag { sample_id }
+    tag { "${sample_id}_${task.process}" }
+
     label 'process_high'
 
     container params.gatk_container
@@ -19,6 +20,13 @@ process GATK_APPLYBQSR {
 
     script:
     def interval_command = interval ? "--intervals ${interval}" : ""
+	def avail_mem = 3
+if (task.memory) {
+    avail_mem = task.memory.giga
+} else {
+    log.info '[GATK ApplyBQSR] No memory set — defaulting to 3GB.'
+}
+
 
     """
     THREADS=${task.cpus}
@@ -26,7 +34,7 @@ process GATK_APPLYBQSR {
     echo "Applying BQSR for sample: ${sample_id}, interval: ${interval.baseName}"
 
     # Step 1: ApplyBQSR
-    gatk ApplyBQSR \\
+    gatk --java-options "-Xmx${avail_mem}g" ApplyBQSR \\
         -R "${genome_fasta}" \\
         -I "${bam}" \\
         --bqsr-recal-file "${recal_table}" \\

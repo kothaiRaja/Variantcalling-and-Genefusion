@@ -1,5 +1,6 @@
 process SELECT_SNPs {
-    tag "${sample_id}_select_snps"
+    tag { "${sample_id}_${task.process}" }
+
     label 'process_medium'
     
     container params.gatk_container
@@ -16,16 +17,26 @@ process SELECT_SNPs {
     path("versions.yml"), emit: versions
 
     script:
+	
+	def avail_mem = 3
+if (task.memory) {
+    avail_mem = task.memory.giga
+} else {
+    log.info '[GATK SelectVariants] No memory set — defaulting to 3GB.'
+}
+
+	
     """
     echo "Selecting SNPs for sample: ${sample_id}"
 
-    gatk SelectVariants \\
+    gatk --java-options "-Xmx${avail_mem}g" SelectVariants \\
         -R "${genome}" \\
         -V "${vcf_file}" \\
         --select-type-to-include SNP \\
         -O "${sample_id}_snps.vcf.gz"
 
-    gatk IndexFeatureFile -I "${sample_id}_snps.vcf.gz"
+    gatk --java-options "-Xmx${avail_mem}g" IndexFeatureFile -I "${sample_id}_snps.vcf.gz"
+
 
     # Capture version
     gatk_version=\$(gatk --version | head -n 1)

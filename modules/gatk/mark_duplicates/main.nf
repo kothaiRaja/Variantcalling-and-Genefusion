@@ -1,6 +1,7 @@
 process GATK_MARK_DUPLICATES {
    
-    tag { sample_id }
+    tag { "${sample_id}_${task.process}" }
+
 	label 'process_high'
 	
 	container params.gatk_container
@@ -15,10 +16,20 @@ process GATK_MARK_DUPLICATES {
 	path("versions.yml"), emit: versions
 
     script:
+	
+	def avail_mem = 3  // default to 3 GB
+    if (task.memory) {
+        avail_mem = task.memory.giga
+    } else {
+        log.info '[GATK MarkDuplicates] No memory set — defaulting to 3 GB.'
+    }
+	
     """
+	
+	
     THREADS=${task.cpus}
 
-    gatk MarkDuplicates \
+    gatk --java-options "-Xmx${avail_mem}g" MarkDuplicates \
         -I ${sorted_bam} \
         -O ${sample_id}_marked_duplicates.bam \
         -M ${sample_id}_dup_metrics.txt \

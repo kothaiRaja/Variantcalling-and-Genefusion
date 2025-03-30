@@ -1,5 +1,6 @@
 process ARRIBA_VISUALIZATION {
-    tag { sample_id }
+    tag { "${sample_id}_${task.process}" }
+
 
     label 'process_medium'
 

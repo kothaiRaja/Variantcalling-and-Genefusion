@@ -1,5 +1,6 @@
 process SPLIT_NCIGAR_READS {
-    tag { "${sample_id}_${interval.baseName}" } 
+    tag { "${sample_id}_${interval.baseName}_${task.process}" }
+
     label 'process_high'
 
     container params.gatk_container

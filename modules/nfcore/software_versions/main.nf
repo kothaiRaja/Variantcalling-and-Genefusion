@@ -1,5 +1,6 @@
 process CUSTOM_DUMPSOFTWAREVERSIONS {
-    label 'process_low'
+    tag 'container_Version'
+	label 'process_low'
 
     container params.multiqc_container
 	publishDir "${params.software_versions_outdir}", mode: 'copy'

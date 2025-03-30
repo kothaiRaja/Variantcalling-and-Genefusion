@@ -1,5 +1,5 @@
 process SAMTOOLS_FLAGSTAT {
-    tag { sample_id }
+    tag { "${sample_id}_${task.process}" }
 	label 'process_medium'
 
     container params.samtools_container

@@ -1,5 +1,6 @@
 process GATK_VARIANT_FILTER {
-    tag "${sample_id}_variant_filter"
+    tag { "${sample_id}_${task.process}" }
+
     label 'process_high'
 
     container params.gatk_container
@@ -18,12 +19,21 @@ process GATK_VARIANT_FILTER {
     path("versions.yml"), emit: versions
 
     script:
+	
+	def avail_mem = 3
+if (task.memory) {
+    avail_mem = task.memory.giga
+} else {
+    log.info '[GATK VariantFiltration] No memory set — defaulting to 3GB.'
+}
+
+	
     """
     THREADS=${task.cpus}
 
     echo "Running GATK VariantFiltration for sample: ${sample_id}"
 
-    gatk VariantFiltration \\
+    gatk --java-options "-Xmx${avail_mem}g" VariantFiltration \\
         -R "${genome}" \\
         -V "${vcf_file}" \\
         --cluster-window-size ${params.gatk_vf_window_size} \\
@@ -37,7 +47,8 @@ process GATK_VARIANT_FILTER {
         --filter-name "LowBaseQRankSum"  --filter-expression "BaseQRankSum < ${params.gatk_vf_baseq_filter}" \\
         -O "${sample_id}_filtered.vcf.gz"
 
-    gatk IndexFeatureFile -I "${sample_id}_filtered.vcf.gz"
+    gatk --java-options "-Xmx${avail_mem}g" IndexFeatureFile -I "${sample_id}_filtered.vcf.gz"
+
 
     if [ ! -s "${sample_id}_filtered.vcf.gz" ] || [ ! -s "${sample_id}_filtered.vcf.gz.tbi" ]; then
         echo "Error: Filtered VCF or index is empty for ${sample_id}" >&2

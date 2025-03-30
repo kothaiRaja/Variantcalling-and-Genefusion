@@ -1,5 +1,5 @@
 process SAMTOOLS_IDXSTATS {
-    tag { sample_id }
+    tag { "${sample_id}_${task.process}" }
     label 'process_low'
 
     container params.samtools_container

@@ -1,5 +1,5 @@
 process ARRIBA {
-    tag { sample_id }
+    tag { "${sample_id}_${task.process}" }
     label 'process_high'
 
     container params.arriba_container

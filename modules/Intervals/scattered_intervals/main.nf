@@ -1,5 +1,5 @@
 process SCATTER_INTERVAL_LIST {
-    tag "Scatter interval list"
+    tag { "${meta_id}_${bed_file.baseName}_${task.process}" }
 	label 'process_medium'
 
     container params.gatk_container

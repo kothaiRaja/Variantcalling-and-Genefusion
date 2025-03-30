@@ -1,5 +1,5 @@
 process MultiQC {
-  tag "MultiQC_quality"
+  tag "MultiQC"
   label 'process_low'
 
   publishDir params.multiqc_qualtiy_outdir, mode: "copy"

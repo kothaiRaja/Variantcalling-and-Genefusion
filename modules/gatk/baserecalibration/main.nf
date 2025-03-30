@@ -1,5 +1,6 @@
 process GATK_BASERECALIBRATOR {
-    tag { sample_id }
+    tag { "${sample_id}_${task.process}" }
+
     label 'process_high'
 
     container params.gatk_container
@@ -19,13 +20,20 @@ process GATK_BASERECALIBRATOR {
 
     script:
     def interval_command = interval ? "--intervals ${interval}" : ""
+	def avail_mem = 3
+if (task.memory) {
+    avail_mem = task.memory.giga
+} else {
+    log.info '[GATK BaseRecalibrator] No memory set — defaulting to 3GB.'
+}
+
 
     """
     THREADS=${task.cpus}
 
     echo "Running GATK BaseRecalibrator for sample: ${sample_id}"
 
-    gatk BaseRecalibrator \\
+    gatk --java-options "-Xmx${avail_mem}g" BaseRecalibrator \\
         -R "${genome_fasta}" \\
         -I "${bam}" \\
         --known-sites "${known_variants}" \\
