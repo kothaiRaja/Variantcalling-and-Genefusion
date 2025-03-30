@@ -90,6 +90,9 @@ zcat annotations.gtf.gz | cut -f1 | grep -v '^#' | sort -u
 
 >  All must use either `1`, `2`, … `X`, `Y` or `chr1`, `chr2`, … — not mixed.
 
+![Chromosome Naming Convention](Documentation/chromosome naming.png)
+
+
 ---
 
 ##  Once Steps 1 & 2 are verified, you're ready to proceed to **Step 3: Run `buildreference.nf`**.
