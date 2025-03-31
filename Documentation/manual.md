@@ -5,7 +5,7 @@ This document describes the step-by-step setup and validation required before ex
 
 ---
 
-## ✅ Step 1: Input Reference Files Required for `buildreference.nf`
+##  Step 1: Input Reference Files Required for `buildreference.nf`
 
 Before running the pipeline, make sure the following reference files and folders are available and correctly formatted.
 

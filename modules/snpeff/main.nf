@@ -9,7 +9,7 @@ process ANNOTATE_VARIANTS {
     input:
     tuple val(sample_id), path(vcf), path(tbi)
     path(snpEffJar)
-    path(snpEffConfig)
+    path snpEffConfig
     path(snpEffDbDir)
     val(genomedb)
 
@@ -33,6 +33,17 @@ if (task.memory) {
     THREADS=${task.cpus}
 
     echo "Annotating variants for sample: ${sample_id}"
+	
+	# ---------------- PATCH CONFIG -------------------
+    config_file=\$(realpath ${snpEffConfig})
+
+    if ! grep -q "^GRCh38.105\\.genome" "\$config_file"; then
+        echo "GRCh38.105.genome : Homo_sapiens" >> "\$config_file"
+    fi
+
+    if ! grep -q "^database.repository" "\$config_file"; then
+        echo "database.repository : https://snpeff.blob.core.windows.net/databases/" >> "\$config_file"
+    fi
 
     # Run SnpEff for annotation (VCF)
     java -Xmx${avail_mem}G -jar ${snpEffJar} \
