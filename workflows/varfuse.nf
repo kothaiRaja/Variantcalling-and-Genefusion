@@ -13,6 +13,8 @@ include { GENE_FUSION } from '../subworkflows/gene_fusion.nf'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nfcore/software_versions/main.nf'
 include { MultiQC } from '../modules/multiqc_quality/main.nf'
 include { GATK_VCF_TO_TABLE } from '../modules/gatk/vcf2table/main.nf'
+include { MAF_ANALYSIS } from '../subworkflows/maf_analysis.nf'
+
 
 
 
@@ -237,6 +239,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
     log.info "Variant annotation complete!"
 
 	final_annotated_vcf = ANNOTATE.out.final_vcf_annotated
+	uncompressed_annotated_vcf = ANNOTATE.out.uncompressed_vcf_annotated
 	report_ch   		= reports_ch.mix(ANNOTATE.out.reports_html.ifEmpty([]))
 	ch_versions        = ch_versions.mix(ANNOTATE.out.versions)
 	
@@ -246,6 +249,22 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	
 	table_ch 			= GATK_VCF_TO_TABLE.out.vcf_table
 	ch_versions        = ch_versions.mix(GATK_VCF_TO_TABLE.out.versions)
+	
+	//=====================Maftools Visualisation======================//
+	
+	log.info " Running MAF_ANALYSIS Subworkflow..."
+	
+	MAF_ANALYSIS(
+    uncompressed_annotated_vcf,
+    params.reference_genome,
+    params.vep_cache_dir,
+    params.rscript
+)
+
+	// Capture outputs
+	maf_reports_ch = MAF_ANALYSIS.out.maf_plots
+	ch_versions = ch_versions.mix(MAF_ANALYSIS.out.versions)
+	
 	
 	
 	//================== Step 8: Run Gene Fusion Analysis on STAR Chimeric Reads ================//
