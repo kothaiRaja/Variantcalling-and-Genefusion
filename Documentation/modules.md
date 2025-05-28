@@ -58,39 +58,28 @@ tuple val(sample_id), path("${sample_id}_fastp.html"), path("${sample_id}_fastp.
 ## Code Block: The `fastp` Command
 
 ```bash
-fastp -i ${r1} -I ${r2} \
-  -o trimmed_${sample_id}_R1.fastq.gz \
-  -O trimmed_${sample_id}_R2.fastq.gz \
-  --detect_adapter_for_pe ${params.trim_reads_detect_adapters} \
-  --adapter_sequence ${params.trim_reads_adapter_sequence} \
-  --adapter_sequence_r2 ${params.trim_reads_adapter_sequence_r2} \
-  --length_required ${params.trim_reads_length_required} \
-  --cut_front ${params.trim_reads_cut_front} \
-  --cut_tail ${params.trim_reads_cut_tail} \
-  --cut_window_size ${params.trim_reads_cut_window_size} \
-  --cut_mean_quality ${params.trim_reads_cut_mean_quality} \
-  --html ${sample_id}_fastp.html \
-  --json ${sample_id}_fastp.json
+fastp -i "${r1}" -I "${r2}" \
+		-o "trimmed_${sample_id}_R1.fastq.gz" \
+		-O "trimmed_${sample_id}_R2.fastq.gz" \
+		${params.fastp_extra} \
+		--html "${sample_id}_fastp.html" \
+		--json "${sample_id}_fastp.json"
 ```
 
 ---
 
 ## Parameter Breakdown and Purpose
 
-| Parameter | Description | Why It’s Used |
-|----------|-------------|----------------|
-| `-i` and `-I` | Input FASTQ files for R1 and R2 | Specifies paired-end read files |
-| `-o` and `-O` | Output trimmed FASTQ files | Writes the cleaned reads |
-| `--detect_adapter_for_pe` | Auto-detect adapter sequences in PE mode | Removes adapter contamination automatically; should be `true` if adapter sequences are unknown |
-| `--adapter_sequence` | Adapter sequence for Read 1 | Used when auto-detection is off or needs overriding |
-| `--adapter_sequence_r2` | Adapter sequence for Read 2 | Specifies reverse read adapter |
-| `--length_required` | Minimum length required after trimming | Filters short, potentially low-quality reads |
-| `--cut_front` | Enables quality trimming at the 5′ end | Removes low-quality bases at the start of reads |
-| `--cut_tail` | Enables trimming at the 3′ end | Removes low-quality bases at the end of reads |
-| `--cut_window_size` | Sliding window size for quality checking | Defines how many bases are evaluated at once |
-| `--cut_mean_quality` | Minimum mean quality to retain window | Helps decide if trimming should occur in the window |
-| `--html` | Output HTML QC report | Easy-to-read visual summary of quality before/after trimming |
-| `--json` | Output JSON report | Structured data for programmatic QC parsing or tools like MultiQC |
+| Parameter                               | Description                                                             |
+| --------------------------------------- | ----------------------------------------------------------------------- |
+| `-i "${r1}"`                            | Input FASTQ file – Read 1 (forward reads)                               |
+| `-I "${r2}"`                            | Input FASTQ file – Read 2 (reverse reads)                               |
+| `-o "trimmed_${sample_id}_R1.fastq.gz"` | Output file for trimmed Read 1 FASTQ                                    |
+| `-O "trimmed_${sample_id}_R2.fastq.gz"` | Output file for trimmed Read 2 FASTQ                                    |
+| `${params.fastp_extra}`                 | **User-configurable space to add extra parameters**; passed from config |
+| `--html "${sample_id}_fastp.html"`      | Generates an interactive HTML report for QC visualization               |
+| `--json "${sample_id}_fastp.json"`      | Generates a structured JSON report used by MultiQC or other tools       |
+
 
 ---
 
