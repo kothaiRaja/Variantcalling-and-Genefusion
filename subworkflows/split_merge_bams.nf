@@ -3,13 +3,14 @@ nextflow.enable.dsl = 2
 // Import processes
 include { SPLIT_NCIGAR_READS } from '../modules/gatk/splitncigar/main.nf'
 include { MERGE_BAMS } from '../modules/samtools/merge/main.nf'
+include { RESET_READGROUPS } from '../modules/gatk/AddRG_Group/main.nf'
 include { SAMTOOLS_CALMD } from '../modules/samtools/calmd/main.nf'
 
 
 workflow SPLIT_MERGE_BAMS {
     take:
-    bam_input_ch   // Input BAMs channel (already processed BAMs)
-    intervals_ch   // Scattered interval list
+    bam_input_ch   
+    intervals_ch  
 	reference_genome
 	reference_genome_index
 	reference_genome_dict
@@ -58,8 +59,18 @@ ch_versions = ch_versions.mix(MERGE_BAMS.out.versions.first())
 
 merged_bams_ch.view { "Merged BAMs Output : $it" }
 
+
+// Apply RESET_READGROUPS to fix @RG info
+reset_bams = RESET_READGROUPS(merged_bams_ch)
+
+reset_rg_bams_ch = RESET_READGROUPS.out.fixed_bams
+ch_versions = ch_versions.mix(RESET_READGROUPS.out.versions.first())
+
+reset_rg_bams_ch.view { "Fixed RG BAMs: $it" }
+
+
 // **Step 3: Apply samtools calmd**
-    calmd_bams = SAMTOOLS_CALMD(merged_bams_ch, reference_genome, reference_genome_index)
+    calmd_bams = SAMTOOLS_CALMD(reset_rg_bams_ch, reference_genome, reference_genome_index)
 	
 	calmd_bams_ch = SAMTOOLS_CALMD.out.calmd_bams
 	ch_versions = ch_versions.mix(SAMTOOLS_CALMD.out.versions.first())
@@ -70,9 +81,10 @@ merged_bams_ch.view { "Merged BAMs Output : $it" }
 
 // **Emit Outputs**
     emit:
-    split_bams  = split_bams_ch
-    merged_bams = merged_bams_ch
+    split_bams  		= split_bams_ch
+    merged_bams 		= merged_bams_ch
+	fixed_bams      	= reset_rg_bams_ch
 	merged_calmd_bams 	= calmd_bams_ch
-	versions  = ch_versions
+	versions  			= ch_versions
 
 }

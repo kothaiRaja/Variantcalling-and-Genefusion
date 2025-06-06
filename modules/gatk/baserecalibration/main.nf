@@ -7,7 +7,7 @@ process GATK_BASERECALIBRATOR {
     publishDir params.recalibration_table_outdir, mode: "copy"
 
     input:
-    tuple val(sample_id), val(strandedness), path(bam), path(bai), path(interval)
+    tuple val(sample_id), val(strandedness), path(bam), path(bai)
     path genome_fasta
     path index
     path dict
@@ -19,14 +19,12 @@ process GATK_BASERECALIBRATOR {
     path("versions.yml"), emit: versions
 
     script:
-    def interval_command = interval ? "--intervals ${interval}" : ""
-	def avail_mem = 3
-if (task.memory) {
-    avail_mem = task.memory.giga
-} else {
-    log.info '[GATK BaseRecalibrator] No memory set — defaulting to 3GB.'
-}
-
+    def avail_mem = 3
+    if (task.memory) {
+        avail_mem = task.memory.giga
+    } else {
+        log.info '[GATK BaseRecalibrator] No memory set — defaulting to 3GB.'
+    }
 
     """
     THREADS=${task.cpus}
@@ -37,8 +35,7 @@ if (task.memory) {
         -R "${genome_fasta}" \\
         -I "${bam}" \\
         --known-sites "${known_variants}" \\
-        -O "${sample_id}_recal_data.table" \\
-        ${interval_command}
+        -O "${sample_id}_recal_data.table"
 
     # Check if recalibration table was created
     if [ ! -s "${sample_id}_recal_data.table" ]; then
@@ -48,8 +45,8 @@ if (task.memory) {
 
     # Capture GATK version
     gatk_version=\$(gatk --version | head -n 1)
-	
-cat <<EOF > versions.yml
+
+    cat <<EOF > versions.yml
 "${task.process}":
   gatk: "\${gatk_version}"
 EOF

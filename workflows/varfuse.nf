@@ -250,20 +250,6 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	table_ch 			= GATK_VCF_TO_TABLE.out.vcf_table
 	ch_versions        = ch_versions.mix(GATK_VCF_TO_TABLE.out.versions)
 	
-	//=====================Maftools Visualisation======================//
-	
-	log.info " Running MAF_ANALYSIS Subworkflow..."
-	
-	MAF_ANALYSIS(
-    uncompressed_annotated_vcf,
-    params.reference_genome,
-    params.vep_cache_dir,
-    params.rscript
-)
-
-	// Capture outputs
-	maf_reports_ch = MAF_ANALYSIS.out.maf_plots
-	ch_versions = ch_versions.mix(MAF_ANALYSIS.out.versions)
 	
 	
 	
@@ -298,15 +284,16 @@ if (params.run_fusion && !params.skip_star) {
 		ch_versions.unique().collectFile(name: "software_versions_input.yml"),
 		params.dump_script
 	)
-reports_ch = reports_ch.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.ifEmpty([]))
+report_ch = reports_ch.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.ifEmpty([]))
 
  
  //=====================================Multiqc================================//
  
  collected_reports_ch = reports_ch
 	.collect()
+multiqc_quality = MultiQC(collected_reports_ch)
 
- multiqc_quality = MultiQC(collected_reports_ch)
+
 	
 }
    

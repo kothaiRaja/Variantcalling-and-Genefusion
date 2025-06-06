@@ -1,8 +1,7 @@
 process STAR_ALIGNMENT {
     tag { "${sample_id}_${task.process}" }
 
-	label 'process_very_high'
-
+    label 'process_very_high'
 
     container params.star_container
     publishDir params.star_outdir, mode: "copy"
@@ -14,62 +13,34 @@ process STAR_ALIGNMENT {
 
     output:
     tuple val(sample_id), val(strandedness), path("${sample_id}_Aligned.sortedByCoord.out.bam"), emit: bam
+    tuple val(sample_id), val(strandedness), path("${sample_id}_Aligned.toTranscriptome.out.bam"), emit: transcriptome_bam
+    tuple val(sample_id), val(strandedness), path("${sample_id}_Chimeric.out.sam"), optional: true, emit: chimeric_sam
+    tuple val(sample_id), val(strandedness), path("${sample_id}_SJ.out.tab"), emit: junctions
+    tuple val(sample_id), val(strandedness), path("${sample_id}_ReadsPerGene.out.tab"), emit: gene_counts
     tuple val(sample_id), val(strandedness), path("${sample_id}_Log.final.out"), emit: log_final
     tuple val(sample_id), val(strandedness), path("${sample_id}_Log.out"), emit: log_out
     tuple val(sample_id), val(strandedness), path("${sample_id}_Log.progress.out"), emit: log_progress
-    tuple val(sample_id), val(strandedness), path("${sample_id}_Chimeric.out.sam"), optional: true, emit: chimeric_sam
-    tuple val(sample_id), val(strandedness), path("${sample_id}_SJ.out.tab"), optional: true, emit: junctions
-	path("versions.yml"), emit: versions
-
+    path("versions.yml"), emit: versions
 
     script:
     def extra_args = params.get('star_extra_args', '') 
-    def out_sam_type = "BAM SortedByCoordinate"
-	def out_sam_attr = "--outSAMattrRGline ID:${sample_id} LB:library PL:${params.get('seq_platform', 'ILLUMINA')} PU:machine SM:${sample_id} CN:${params.get('seq_center', 'Unknown')}"
-	def RAM_LIMIT = task.memory.toMega() * 1000000
-	// Determine if we should use --outSAMstrandField intronMotif
-    def strand_option = ""
-    if (strandedness == 'unstranded') {
-        strand_option = "--outSAMstrandField intronMotif"
-    } 
-
+    def out_sam_attr = "--outSAMattrRGline ID:${sample_id} LB:library PL:${params.get('seq_platform', 'ILLUMINA')} PU:machine SM:${sample_id} CN:${params.get('seq_center', 'Unknown')}"
+    def RAM_LIMIT = task.memory.toMega() * 1000000
+    def strand_option = (strandedness == 'unstranded') ? "--outSAMstrandField intronMotif" : ""
 
     """
-    echo "Running STAR Alignment for Sample: ${sample_id}"
+    echo "Running STAR Alignment with Automatic Two-Pass for Sample: ${sample_id}"
 
     THREADS=${task.cpus}
     RAM_LIMIT=${RAM_LIMIT}
 
-
-
-    # **First Pass: Discover Splice Junctions**
     STAR --genomeDir ${star_index_dir} \
          --readFilesIn ${trimmed_r1} ${trimmed_r2} \
-         --runThreadN \$THREADS \
          --readFilesCommand zcat \
-         --outFilterType BySJout \
-         --alignSJoverhangMin ${params.get('star_alignSJoverhangMin', 8)} \
-         --alignSJDBoverhangMin ${params.get('star_alignSJDBoverhangMin', 1)} \
-         --outFilterMismatchNmax ${params.get('star_outFilterMismatchNmax', 999)} \
-         --outFilterMatchNmin ${params.get('star_outFilterMatchNmin', 16)} \
-         --outFilterMatchNminOverLread ${params.get('star_outFilterMatchNminOverLread', 0.3)} \
-         --outFilterScoreMinOverLread ${params.get('star_outFilterScoreMinOverLread', 0.3)} \
-         --outSAMattributes NH HI AS nM MD NM \
-         --outFileNamePrefix ${sample_id}_pass1_ \
-         --limitBAMsortRAM \$RAM_LIMIT \
-		 $strand_option \
-         
-
-    # **Second Pass: Final Alignment**
-    STAR --genomeDir ${star_index_dir} \
-         --readFilesIn ${trimmed_r1} ${trimmed_r2} \
          --runThreadN \$THREADS \
-         --readFilesCommand zcat \
-         --sjdbFileChrStartEnd ${sample_id}_pass1_SJ.out.tab \
+         --twopassMode Basic \
          --sjdbGTFfile ${gtf_file} \
-         --twopassMode None \
          --outFilterType BySJout \
-		 --outSAMtype BAM SortedByCoordinate \
          --alignSJoverhangMin ${params.get('star_alignSJoverhangMin', 8)} \
          --alignSJDBoverhangMin ${params.get('star_alignSJDBoverhangMin', 1)} \
          --outFilterMismatchNmax ${params.get('star_outFilterMismatchNmax', 999)} \
@@ -85,13 +56,14 @@ process STAR_ALIGNMENT {
          --chimScoreSeparation ${params.get('star_chimScoreSeparation', 10)} \
          --limitBAMsortRAM \$RAM_LIMIT \
          --outSAMunmapped Within \
-		 --quantMode TranscriptomeSAM GeneCounts \
-		 --outFileNamePrefix ${sample_id}_ \
+         --quantMode TranscriptomeSAM GeneCounts \
+         --outSAMtype BAM SortedByCoordinate \
+         --outFileNamePrefix ${sample_id}_ \
          ${out_sam_attr} \
-		 $strand_option \
-		$extra_args
-		
-	# Capture the STAR version
+         $strand_option \
+         $extra_args
+
+# Capture the STAR version
 	star_version=\$(STAR --version)
 
 
@@ -99,10 +71,5 @@ cat <<EOF > versions.yml
 "${task.process}":
   STAR: "\${star_version}"
 EOF
-
-		
-	
-
-
     """
 }

@@ -7,8 +7,8 @@ process GATK_APPLYBQSR {
     publishDir params.recalibrated_bams_outdir, mode: "copy"
 
     input:
-    tuple val(sample_id), val(strandedness), path(bam), path(bai), path(recal_table), path(interval)
-    path genome_fasta
+	tuple val(sample_id), val(strandedness), path(bam), path(bai), path(recal_table), path(interval)
+	path genome_fasta
     path index
     path dict
 

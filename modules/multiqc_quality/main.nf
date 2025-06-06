@@ -18,12 +18,12 @@ process MultiQC {
 
   multiqc ${report_files.join(' ')} -o .
 
-  # Capture MultiQC version
-  multiqc_version=\$(multiqc --version 2>&1 | grep -oP '[0-9]+\\.[0-9]+(\\.[0-9]+)?')
-  cat <<EOF > versions.yml
-  "${task.process}":
-    multiqc: "\${multiqc_version}"
-  EOF
+
+# Capture MultiQC version
+multiqc_version=\$(multiqc --version 2>&1 | grep -oP '[0-9]+\\.[0-9]+(\\.[0-9]+)?')
+cat <<EOF > versions.yml
+"${task.process}":
+  multiqc: "\${multiqc_version}"
+EOF
   """
 }
-
