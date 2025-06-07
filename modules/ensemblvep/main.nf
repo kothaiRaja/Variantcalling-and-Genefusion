@@ -8,7 +8,8 @@ process ANNOTATEVARIANTS_VEP {
 
     input:
     tuple val(sample_id), path(input_vcf), path(input_vcf_tbi)
-    path vep_cache    
+    path vep_cache 
+	path vep_plugins
     val genome_assembly
     val cache_version
     val species
@@ -37,27 +38,28 @@ if (task.memory) {
         exit 1
     fi
 
-    vep \\
-        --input_file "${input_vcf}" \\
-        --output_file "vep_annotated_${sample_id}.vcf" \\
-        --stats_file "vep_annotated_${sample_id}.vep.html" \\
-        --cache \\
-        --dir_cache "${vep_cache}" \\
-        --species "${species}" \\
-        --assembly "${genome_assembly}" \\
-        --cache_version ${cache_version} \\
-        --format vcf \\
-        --vcf \\
-        --symbol \\
-		--buffer_size ${buffer_size} \\
-		--protein \\
-		--check_existing \\
-		--filter_common \\
-		--per_gene \\
-		--total_length \\
-		--force_overwrite \\
-		--offline \\
-		${args}
+    vep \
+  --input_file "${input_vcf}" \
+  --output_file "vep_annotated_${sample_id}.vcf" \
+  --stats_file "vep_annotated_${sample_id}.vep.html" \
+  --cache \
+  --dir_cache "${vep_cache}" \
+  --dir_plugins "${vep_plugins}" \
+  --plugin LoF \
+  --plugin PolyPhen_SIFT \
+  --plugin CADD \
+  --plugin REVEL \
+  --species "${species}" \
+  --assembly "${genome_assembly}" \
+  --cache_version ${cache_version} \
+  --format vcf \
+  --vcf \
+  --symbol \
+  --protein \
+  --check_existing \
+  --offline \
+  --force_overwrite
+
 	
 
     

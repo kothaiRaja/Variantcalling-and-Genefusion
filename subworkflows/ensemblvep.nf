@@ -9,6 +9,7 @@ workflow VEP_ANNOTATION_WORKFLOW {
     take:
     vcf_files_ch 
 	vep_cache
+	vep_plugin
 	genome_assembly
 	vep_version
 	species
@@ -22,6 +23,7 @@ workflow VEP_ANNOTATION_WORKFLOW {
     annotated_vcf = ANNOTATEVARIANTS_VEP(
         vcf_files_ch,
 		vep_cache,
+		vep_plugin,
         genome_assembly,
 		vep_version,
 		species
