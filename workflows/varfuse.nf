@@ -191,6 +191,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
     log.info " Running Variant Calling..."
     VARIANT_CALLING(
         recalibrated_bams_ch,            // BAMs after splitting & merging
+		intervals_ch,
         params.reference_genome,
         params.reference_genome_index,
         params.reference_genome_dict,
@@ -200,9 +201,6 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 
     // Capture Variant Calling Outputs
     filtered_vcf_ch = VARIANT_CALLING.out.final_variants
-    selected_snps_ch = VARIANT_CALLING.out.selected_snps
-    selected_indels_ch = VARIANT_CALLING.out.selected_indels
-	selected_variants_ch = VARIANT_CALLING.out.selected_variants
 	ch_versions        = ch_versions.mix(VARIANT_CALLING.out.versions)
 	reports_ch = reports_ch
     .mix(

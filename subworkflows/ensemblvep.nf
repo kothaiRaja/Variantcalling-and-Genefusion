@@ -29,7 +29,7 @@ workflow VEP_ANNOTATION_WORKFLOW {
     )
 	
 	annotated_vcf_ch = ANNOTATEVARIANTS_VEP.out.annotated_vcf
-	annotated_html_ch = ANNOTATEVARIANTS_VEP.out.summary_html
+	annotated_summary_ch = ANNOTATEVARIANTS_VEP.out.summary
 	ch_versions = ch_versions.mix(ANNOTATEVARIANTS_VEP.out.versions) 
 
     log.info "Compressing and indexing annotated VCFs..."
@@ -42,7 +42,7 @@ workflow VEP_ANNOTATION_WORKFLOW {
 	
     emit:
 	annotated_variants = annotated_vcf_ch
-	annotated_html = annotated_html_ch
+	annotated_summary = annotated_summary_ch
     final_vep_annotated_vcf = compressed_vcf_ch
 	versions = ch_versions
 }

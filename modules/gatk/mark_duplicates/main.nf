@@ -34,6 +34,7 @@ process GATK_MARK_DUPLICATES {
         -O ${sample_id}_marked_duplicates.bam \
         -M ${sample_id}_dup_metrics.txt \
         --CREATE_INDEX true \
+		--ASSUME_SORTED true \
 		--REMOVE_DUPLICATES ${params.remove_duplicates ? 'true' : 'false'} \
         --VALIDATION_STRINGENCY ${params.validation_stringency ?: 'LENIENT'}
 		

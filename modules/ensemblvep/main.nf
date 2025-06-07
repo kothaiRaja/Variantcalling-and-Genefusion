@@ -15,7 +15,7 @@ process ANNOTATEVARIANTS_VEP {
 
     output:
     tuple val(sample_id), path("vep_annotated_${sample_id}.vcf"), emit: annotated_vcf  
-    path("vep_annotated_${sample_id}.html"), emit: summary_html
+    path("vep_annotated_${sample_id}.vep.html"), emit: summary
     path("versions.yml"), emit: versions
 
     script:
@@ -40,7 +40,7 @@ if (task.memory) {
     vep \\
         --input_file "${input_vcf}" \\
         --output_file "vep_annotated_${sample_id}.vcf" \\
-        --stats_file "vep_annotated_${sample_id}.html" \\
+        --stats_file "vep_annotated_${sample_id}.vep.html" \\
         --cache \\
         --dir_cache "${vep_cache}" \\
         --species "${species}" \\

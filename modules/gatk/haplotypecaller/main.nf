@@ -7,21 +7,21 @@ process GATK_HAPLOTYPE_CALLER {
     publishDir params.haplotype_caller_outdir, mode: "copy"
 
     input:
-    tuple val(sample_id), val(strandedness), path(bam), path(bai)
+    tuple val(sample_id), val(strandedness), path(bam), path(bai), path(interval)
     path(genome)
     path(genome_index)
     path(genome_dict)
     path(known_sites_vcf)
     path(known_sites_vcf_index)
 
-    output:
-    tuple val(sample_id), val(strandedness), 
-          path("output_${bam.baseName}.vcf.gz"), 
-          path("output_${bam.baseName}.vcf.gz.tbi"), emit: vcf_output
-    path("versions.yml"), emit: versions
+	output:
+	tuple val(sample_id), val(strandedness), 
+		path("output_${sample_id}_split_${interval.baseName}.vcf.gz"), 
+		path("output_${sample_id}_split_${interval.baseName}.vcf.gz.tbi"), emit: vcf_output
+	path("versions.yml"), emit: versions
 
     script:
-	
+	def interval_command = interval ? "--intervals ${interval}" : ""
 	def avail_mem = 3
 if (task.memory) {
     avail_mem = task.memory.giga
@@ -39,18 +39,19 @@ if (task.memory) {
     gatk --java-options "-Xmx${avail_mem}g" HaplotypeCaller \\
 		--native-pair-hmm-threads \${THREADS} \\
         --reference "${genome}" \\
-        --output "output_${bam.baseName}.vcf.gz" \\
+        --output "output_${sample_id}_split_${interval.baseName}.vcf.gz" \\
         -I "${bam}" \\
         --standard-min-confidence-threshold-for-calling 10.0 \\
         --min-base-quality-score 10 \\
         --output-mode EMIT_VARIANTS_ONLY \\
-        --dont-use-soft-clipped-bases true \\
+        --dont-use-soft-clipped-bases \\
         --disable-read-filter NotDuplicateReadFilter \\
         --dbsnp "${known_sites_vcf}" \\
-        --verbosity INFO
+        --verbosity INFO \\
+		${interval_command}
 
     # Check output
-    if [ ! -s "output_${bam.baseName}.vcf.gz" ]; then
+    if [ ! -s "output_${sample_id}_split_${interval.baseName}.vcf.gz" ]; then
         echo "Error: VCF file not generated!" >&2
         exit 1
     fi

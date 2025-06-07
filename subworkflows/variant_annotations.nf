@@ -45,7 +45,7 @@ workflow ANNOTATE {
 	
 	annotated_vcfs = annotated_vcfs.mix(VARIANT_ANNOTATION.out.final_annotated_variants)
 	uncompressed_vcf = uncompressed_vcf.mix(VARIANT_ANNOTATION.out.annotated_variants)
-    annotation_reports = annotation_reports.mix(VARIANT_ANNOTATION.out.annotated_html)
+    annotation_reports = annotation_reports.mix(VARIANT_ANNOTATION.out.annotated_summary)
 	ch_versions = ch_versions.mix(VARIANT_ANNOTATION.out.versions)
 	
 	}
@@ -61,7 +61,7 @@ workflow ANNOTATE {
         )
         annotated_vcfs  = annotated_vcfs.mix( COMBINED_ANNOTATE.out.final_vep_annotated_vcf)
 		uncompressed_vcf = uncompressed_vcf.mix(COMBINED_ANNOTATE.out.annotated_variants)
-        annotation_reports  = annotation_reports.mix(COMBINED_ANNOTATE.out.annotated_html)
+        annotation_reports  = annotation_reports.mix(COMBINED_ANNOTATE.out.annotated_summary)
 		ch_versions = ch_versions.mix(COMBINED_ANNOTATE.out.versions)
 		
 		
@@ -78,7 +78,7 @@ workflow ANNOTATE {
     )
         annotated_vcfs  = annotated_vcfs.mix(VEP_ANNOTATION_WORKFLOW.out.final_vep_annotated_vcf)
 		uncompressed_vcf = uncompressed_vcf.mix(VEP_ANNOTATION_WORKFLOW.out.annotated_variants)
-        annotation_reports  = annotation_reports.mix(VEP_ANNOTATION_WORKFLOW.out.annotated_html)
+        annotation_reports  = annotation_reports.mix(VEP_ANNOTATION_WORKFLOW.out.annotated_summary)
 		ch_versions = ch_versions.mix(VEP_ANNOTATION_WORKFLOW.out.versions)
 		
         

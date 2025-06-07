@@ -27,6 +27,11 @@ process STAR_ALIGNMENT {
     def out_sam_attr = "--outSAMattrRGline ID:${sample_id} LB:library PL:${params.get('seq_platform', 'ILLUMINA')} PU:machine SM:${sample_id} CN:${params.get('seq_center', 'Unknown')}"
     def RAM_LIMIT = task.memory.toMega() * 1000000
     def strand_option = (strandedness == 'unstranded') ? "--outSAMstrandField intronMotif" : ""
+	def sjdb_overhang = params.read_length ? "--sjdbOverhang ${params.read_length - 1}" : ""
+	def gtf_flag = params.star_ignore_sjdbgtf ? "" : "--sjdbGTFfile ${gtf_file}"
+	def intron_min = "--alignIntronMin ${params.get('star_alignIntronMin', 20)}"
+	def intron_max = "--alignIntronMax ${params.get('star_alignIntronMax', 1000000)}"
+
 
     """
     echo "Running STAR Alignment with Automatic Two-Pass for Sample: ${sample_id}"
@@ -39,7 +44,10 @@ process STAR_ALIGNMENT {
          --readFilesCommand zcat \
          --runThreadN \$THREADS \
          --twopassMode Basic \
-         --sjdbGTFfile ${gtf_file} \
+		$sjdb_overhang \
+		$gtf_flag \
+		$intron_min \
+		$intron_max \
          --outFilterType BySJout \
          --alignSJoverhangMin ${params.get('star_alignSJoverhangMin', 8)} \
          --alignSJDBoverhangMin ${params.get('star_alignSJDBoverhangMin', 1)} \
@@ -47,6 +55,8 @@ process STAR_ALIGNMENT {
          --outFilterMatchNmin ${params.get('star_outFilterMatchNmin', 16)} \
          --outFilterMatchNminOverLread ${params.get('star_outFilterMatchNminOverLread', 0.3)} \
          --outFilterScoreMinOverLread ${params.get('star_outFilterScoreMinOverLread', 0.3)} \
+		 --outFilterMismatchNoverReadLmax ${params.get('star_mismatchNoverLmax', 0.04)} \
+		--outSAMmapqUnique ${params.get('star_outSAMmapqUnique', 60)} \
          --chimSegmentMin ${params.get('star_chimSegmentMin', 10)} \
          --chimJunctionOverhangMin ${params.get('star_chimJunctionOverhangMin', 10)} \
          --chimScoreJunctionNonGTAG ${params.get('star_chimScoreJunctionNonGTAG', -4)} \

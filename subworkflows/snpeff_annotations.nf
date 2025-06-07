@@ -22,8 +22,8 @@ workflow VARIANT_ANNOTATION {
 
    annotated_variants = ANNOTATE_VARIANTS(filtered_variants_ch, snpEffJar, snpEffConfig, snpEffDbDir, genomedb)
    annotated_variants_ch = ANNOTATE_VARIANTS.out.annotated_vcf
+   annotated_summary_ch = ANNOTATE_VARIANTS.out.summary
    annotated_html_ch = ANNOTATE_VARIANTS.out.summary_html
-   annotated_csv_ch = ANNOTATE_VARIANTS.out.annotation_csv
    ch_versions = ch_versions.mix(ANNOTATE_VARIANTS.out.versions) 
    
    compressed_variants = BGZIP_TABIX_ANNOTATIONS(annotated_variants_ch)
@@ -35,8 +35,8 @@ workflow VARIANT_ANNOTATION {
     // Emit Final Annotated Variants
     emit:
     annotated_variants = annotated_variants_ch
+	annotated_summary = annotated_summary_ch
 	annotated_html = annotated_html_ch
-	annotated_csv = annotated_csv_ch
 	final_annotated_variants = compressed_variants_ch
 	versions = ch_versions
 }

@@ -4,14 +4,15 @@ nextflow.enable.dsl = 2
 include { GATK_HAPLOTYPE_CALLER } from '../modules/gatk/haplotypecaller/main.nf'
 include { GATK_MERGEVCFS } from '../modules/gatk/merge/main.nf'
 include { BCFTOOLS_STATS } from '../modules/bcftools/stats/main.nf'
-include { GATK_VARIANT_FILTER } from '../modules/gatk/variant filter/main.nf'
+include { GATK_VARIANT_SELECT_FILTER } from '../modules/gatk/variant_select_filter/main.nf'
+include { BGZIP_TABIX_ANNOTATIONS as BGZIP_TABIX_VCF  } from '../modules/tabix/bziptabix/main.nf'
 include { BCFTOOLS_QUERY } from '../modules/bcftools/query/main.nf'
-include { SELECT_SNPs } from '../modules/gatk/select_variants/select_snps/main.nf'
-include { SELECT_INDELs } from '../modules/gatk/select_variants/select_indels/main.nf'
+
 
 workflow VARIANT_CALLING {
     take:
-    recalibrated_bams_ch  // Recalibrated BAM files from ApplyBQSR
+    recalibrated_bams_ch  
+	intervals_ch 
     reference_genome
 	reference_genome_index
 	reference_genome_dict
@@ -24,7 +25,16 @@ workflow VARIANT_CALLING {
 
     log.info " Starting Variant Calling Workflow..."
 	
-	GATK_variant_caller = GATK_HAPLOTYPE_CALLER(recalibrated_bams_ch,reference_genome, reference_genome_index, reference_genome_dict, known_variants, known_variants_index)
+	recalibrated_bams_ch
+	.map { tuple(it[0], it[1], it[2], it[3]) }
+    .combine(intervals_ch)
+    .map { sample_id, strandedness, bam, bai, interval -> 
+        tuple(sample_id, strandedness, bam, bai, interval)
+    }
+    .set { ch_haplotypecaller_input }
+
+	
+	GATK_variant_caller = GATK_HAPLOTYPE_CALLER(ch_haplotypecaller_input,reference_genome, reference_genome_index, reference_genome_dict, known_variants, known_variants_index)
 	
 	ch_GATK_variant_caller = GATK_HAPLOTYPE_CALLER.out.vcf_output 
 	ch_versions = ch_versions.mix(GATK_HAPLOTYPE_CALLER.out.versions.first())
@@ -71,41 +81,28 @@ workflow VARIANT_CALLING {
 	ch_merged_vcfs.view { it -> "Merged_vcf_output: $it" }
 
 
-	variant_filter = GATK_VARIANT_FILTER(ch_merged_vcfs, reference_genome, reference_genome_index, reference_genome_dict)
+	variant_filter = GATK_VARIANT_SELECT_FILTER(ch_merged_vcfs, reference_genome, reference_genome_index, reference_genome_dict)
 	
-	ch_variant_filter = GATK_VARIANT_FILTER.out.filtered_vcf
-	ch_versions = ch_versions.mix(GATK_VARIANT_FILTER.out.versions.first())
+	ch_variant_filter = GATK_VARIANT_SELECT_FILTER.out.filtered_vcf
+	ch_versions = ch_versions.mix(GATK_VARIANT_SELECT_FILTER.out.versions.first())
 	
         
 	ch_variant_filter.view {"Filtered_vcf: $it"}
 	
-
-	bcftools_query = BCFTOOLS_QUERY(ch_variant_filter)
+	compressed_vcf = BGZIP_TABIX_VCF(ch_variant_filter)
+	
+	ch_compressed_vcf = BGZIP_TABIX_VCF.out.compressed_indexed
+	ch_versions = ch_versions.mix(BGZIP_TABIX_VCF.out.versions.first())
+	
+	bcftools_query = BCFTOOLS_QUERY(ch_compressed_vcf)
 	
 	bcftools_query_ch = BCFTOOLS_QUERY.out.query_output
 	ch_versions = ch_versions.mix(BCFTOOLS_QUERY.out.versions.first())
 	
-	
 
-
-	if (params.select_variants) {
-		selected_snps = SELECT_SNPs(ch_variant_filter, reference_genome, reference_genome_index, reference_genome_dict)
-		selected_snps_ch = SELECT_SNPs.out.selected_snps
-		selected_snps_ch.view {"SNPs output: $it"}
-		selected_indels = SELECT_INDELs(ch_variant_filter, reference_genome, reference_genome_index, reference_genome_dict)
-		selected_indels_ch = SELECT_INDELs.out.selected_indels
-		selected_indels_ch.view {"INDELS output: $it"}
-		
-	 // Combine SNPs & INDELs before annotation
-        ch_selected_variants = selected_snps_ch.join(selected_indels_ch, by: 0)
-        
-    }
 
     emit:
-    final_variants = ch_variant_filter
-    selected_snps = selected_snps_ch ?: Channel.empty()
-    selected_indels = selected_indels_ch ?: Channel.empty()
-    selected_variants = ch_selected_variants
+    final_variants = ch_compressed_vcf
 	bcftools_stats = bcftools_stats_ch
 	bcftools_query = bcftools_query_ch
 	versions  = ch_versions
