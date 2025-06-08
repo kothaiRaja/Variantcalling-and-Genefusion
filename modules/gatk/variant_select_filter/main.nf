@@ -55,7 +55,7 @@ if (task.memory) {
         -V ${sample_id}_indels.vcf \\
         -O ${sample_id}_indels_filtered.vcf \\
         --filter-name "FAIL_INDEL" \\
-        --filter-expression "QD < 2.0 || FS > 30.0 || ReadPosRankSum < -20.0"
+        --filter-expression "QD < 2.0 || FS > 200.0 || ReadPosRankSum < -20.0"
 
     # 5. Merge both filtered VCFs
     gatk --java-options "-Xmx${avail_mem}g" MergeVcfs \\

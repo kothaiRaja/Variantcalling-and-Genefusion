@@ -38,14 +38,13 @@ if (task.memory) {
     # Run HaplotypeCaller with RNA-seq optimizations
     gatk --java-options "-Xmx${avail_mem}g" HaplotypeCaller \\
 		--native-pair-hmm-threads \${THREADS} \\
-        --reference "${genome}" \\
+        --R "${genome}" \\
         --output "output_${sample_id}_split_${interval.baseName}.vcf.gz" \\
         -I "${bam}" \\
-        --standard-min-confidence-threshold-for-calling 10.0 \\
-        --min-base-quality-score 10 \\
+        --standard-min-confidence-threshold-for-calling 30.0 \\
         --output-mode EMIT_VARIANTS_ONLY \\
         --dont-use-soft-clipped-bases \\
-        --disable-read-filter NotDuplicateReadFilter \\
+		--create-output-variant-index true \\
         --dbsnp "${known_sites_vcf}" \\
         --verbosity INFO \\
 		${interval_command}
