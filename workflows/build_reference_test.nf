@@ -599,6 +599,33 @@ vep_cache_ch.view { vep_cache_path ->
 }
 
 
+// ========================== VEP Plugins Handling ========================== //
+def vep_plugins_ch
+
+if (params.vep_plugins_dir_path && file("${params.vep_plugins_dir_path}").exists()) {
+    println " VEP plugins found in the server directory."
+    vep_plugins_ch = Channel.of(file("${params.vep_plugins_dir_path}"))
+
+} else if (file("${params.main_data_dir}/Tools/VEP/plugins").exists()) {
+    println " VEP plugins found in the publish directory."
+    vep_plugins_ch = Channel.of(file("${params.main_data_dir}/Tools/VEP/plugins"))
+
+} else {
+    println " VEP plugins not found. Downloading..."
+    def result = DOWNLOAD_VEP_PLUGINS()
+    vep_plugins_ch = result.vep_plugins
+}
+
+// ========================== Capture VEP Plugins Path ========================== //
+vep_plugins_ch.view { vep_plugins_path ->  
+    if (vep_plugins_path.toString().contains('/work/')) {
+        vepPluginsPath = "${params.main_data_dir}/Tools/VEP/plugins"
+    } else {
+        vepPluginsPath = vep_plugins_path.toString()
+    }
+    println " VEP Plugins path set to: ${vepPluginsPath}"
+}
+
 
 
 

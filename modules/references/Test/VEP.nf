@@ -19,3 +19,25 @@ process DOWNLOAD_VEP_CACHE {
     """
 }
 
+process DOWNLOAD_VEP_PLUGINS {
+    tag "Download VEP Plugins"
+    label 'process_high'
+    publishDir "${params.test_data_dir}/Tools/VEP/plugins", mode: 'copy'
+    container null
+
+    output:
+    path "plugins", emit: vep_plugins
+
+    when:
+    !file("${params.test_data_dir}/Tools/VEP/plugins/Condel.pm") 
+
+    script:
+    """
+    mkdir -p plugins
+    echo "Cloning VEP plugins from Ensembl GitHub..."
+    
+    git clone https://github.com/Ensembl/VEP_plugins.git plugins
+
+    
+    """
+}

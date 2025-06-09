@@ -63,7 +63,7 @@ fi
 process DOWNLOAD_ARRIBA {
     tag "Download Arriba v${params.arriba_version}"
     container null
-    publishDir "${params.actual_data_dir}/Tools/ARRIBA", mode: 'copy'
+    publishDir "${params.main_data_dir}/Tools/ARRIBA", mode: 'copy'
 
     output:
     path "arriba_v${params.arriba_version}", emit: arriba_dir
