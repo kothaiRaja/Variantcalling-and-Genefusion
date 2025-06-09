@@ -485,27 +485,28 @@ merged_vcf_index_ch.view { merged_vcf_index_path ->
 	
 	// ========================== SnpEff Database Handling ========================== //
 
-	def snpeff_db_ch  // Channel to handle the database path dynamically
+	def snpeff_db_ch
 
-if (params.snpeff_db_dir && file("${params.snpeff_db_dir_path}/${params.genomedb}").exists()) {
-    println " SnpEff database for ${params.genomedb} found in the server directory. Skipping download."
-
+// Step 1: Use user-provided directory if valid
+if (params.snpeff_db_dir_path && file("${params.snpeff_db_dir_path}/${params.genomedb}").exists()) {
+    println " SnpEff DB found in provided path: ${params.snpeff_db_dir_path}"
     snpeff_db_ch = Channel.of(file("${params.snpeff_db_dir_path}/${params.genomedb}"))
     snpEffDbPath = "${params.snpeff_db_dir_path}/${params.genomedb}"
 
-} else if (file("${params.main_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}").exists()) {
-    println " SnpEff database found in the publish directory. Skipping download."
+// Step 2: Check if DB exists in expected publishDir path
+} else if (file("${params.snpeff_db_dir}/${params.genomedb}").exists()) {
+    println " SnpEff DB found in default directory: ${params.snpeff_db_dir}"
+    snpeff_db_ch = Channel.of(file("${params.snpeff_db_dir}/${params.genomedb}"))
+    snpEffDbPath = "${params.snpeff_db_dir}/${params.genomedb}"
 
-    snpeff_db_ch = Channel.of(file("${params.main_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"))
-    snpEffDbPath = "${params.main_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"
-
+// Step 3: Download if missing
 } else {
-    println " SnpEff database not found. Downloading..."
+    println " SnpEff DB not found. Downloading to: ${params.snpeff_db_dir}"
     def result = DOWNLOAD_SNPEFF_DB(params.genomedb, snpeff_jar_ch)
-
     snpeff_db_ch = result
-    snpEffDbPath = "${params.main_data_dir}/Tools/snpEff/snpEff/data/${params.genomedb}"
+    snpEffDbPath = "${params.snpeff_db_dir}/${params.genomedb}"
 }
+
 
 // ========================== Capture SnpEff Database Path ========================== //
 

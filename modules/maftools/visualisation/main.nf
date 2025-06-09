@@ -11,7 +11,7 @@ process MAF_VISUALIZATION {
     path r_script
 
     output:
-    path "*.pdf", emit: maf_plots
+    path "plots_${sample_id}", emit: maf_plots
     path "versions.yml", emit: versions
 
     script:

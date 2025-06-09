@@ -59,7 +59,9 @@ fi
 }
 
 
+
 process DOWNLOAD_ARRIBA {
+    tag "Download Arriba v${params.arriba_version}"
     container null
     publishDir "${params.actual_data_dir}/Tools/ARRIBA", mode: 'copy'
 
@@ -71,12 +73,22 @@ process DOWNLOAD_ARRIBA {
 
     script:
     """
+    set -euo pipefail
+
     URL="https://github.com/suhrig/arriba/releases/download/v${params.arriba_version}/arriba_v${params.arriba_version}.tar.gz"
     TARGET_DIR="arriba_v${params.arriba_version}"
 
-    wget -O arriba.tar.gz \$URL
-    mkdir -p \$TARGET_DIR
-    tar -xzvf arriba.tar.gz -C \$TARGET_DIR --strip-components=1
+    echo "Downloading Arriba from \$URL..."
+    wget -q -O arriba.tar.gz "\$URL"
+
+    echo "Extracting Arriba..."
+    mkdir -p "\$TARGET_DIR"
+    tar -xzf arriba.tar.gz -C "\$TARGET_DIR" --strip-components=1
+
+    echo "Cleaning up..."
     rm arriba.tar.gz
+
+    echo "Arriba v${params.arriba_version} setup completed."
     """
 }
+

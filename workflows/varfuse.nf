@@ -249,6 +249,25 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	table_ch 			= GATK_VCF_TO_TABLE.out.vcf_table
 	ch_versions        = ch_versions.mix(GATK_VCF_TO_TABLE.out.versions)
 	
+	//=====================Maftools Visualisation======================//
+	
+	if (params.maftools) {
+        log.info "Running MAF_ANALYSIS Subworkflow..."
+
+        MAF_ANALYSIS(
+            uncompressed_annotated_vcf,
+            params.reference_genome,
+            params.vep_cache_dir,
+            params.rscript
+        )
+
+        // Capture outputs
+        maf_reports_ch = MAF_ANALYSIS.out.maf_plots
+        ch_versions = ch_versions.mix(MAF_ANALYSIS.out.versions)
+    } else {
+        log.info "Skipping MAF_ANALYSIS Subworkflow (params.maftools = false)"
+        maf_reports_ch = Channel.empty()
+    }
 	
 	
 	
