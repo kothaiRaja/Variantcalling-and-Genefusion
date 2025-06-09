@@ -11,17 +11,18 @@ include { GENERATEEXONS_BED } from '../modules/references/Main/exons_bed.nf'
 include { CREATE_STAR_INDEX } from '../modules/references/Main/STAR_index.nf'
 include { CHECK_OR_DOWNLOAD_DENYLIST } from '../modules/references/Main/denylist.nf'
 include { CHECK_OR_DOWNLOAD_VARIANTS_SNP } from '../modules/references/Main/snp.nf'
-include { DOWNLOAD_VARIANTS_SNP_INDEX } from '../modules/references/Main/snp.nf'
+include { CHECK_OR_DOWNLOAD_VARIANTS_SNP_INDEX } from '../modules/references/Main/snp.nf'
 include { INDEX_SNP_VCF } from '../modules/references/Main/snp.nf'
 include { CHECK_OR_DOWNLOAD_VARIANTS_INDELS } from '../modules/references/Main/indels.nf'
 include { INDEX_INDEL_VCF } from '../modules/references/Main/indels.nf'
-include { DOWNLOAD_VARIANTS_INDELS_INDEX } from '../modules/references/Main/indels.nf'
+include { CHECK_OR_DOWNLOAD_VARIANTS_INDELS_INDEX } from '../modules/references/Main/indels.nf'
 include { FILTER_AND_MERGE_VCF } from '../modules/references/Main/prepare_vcfs.nf'
 include { CHECK_JAVA } from '../modules/references/check_java.nf'
 include { DOWNLOAD_SNPEFF_TOOL } from '../modules/references/Main/Tools.nf'
 include { DOWNLOAD_SNPEFF_DB } from '../modules/references/Main/Tools.nf'
 include { DOWNLOAD_ARRIBA } from '../modules/references/Main/Tools.nf'
 include { DOWNLOAD_VEP_CACHE } from '../modules/references/Main/VEP.nf'
+include { DOWNLOAD_VEP_PLUGINS } from '../modules/references/Main/VEP.nf'
 
 
 
@@ -42,6 +43,8 @@ def mergedVcfIndexPath = ''
 def known_fusions_path = ''
 def blacklist_path = ''
 def arribaPath = ''
+def vepPluginsPath = ''
+
 
 
 
@@ -598,6 +601,32 @@ vep_cache_ch.view { vep_cache_path ->
     println " VEP Cache path set to: ${vepCachePath}"
 }
 
+// ========================== VEP Plugins Handling ========================== //
+def vep_plugins_ch
+
+if (params.vep_plugins_dir_path && file("${params.vep_plugins_dir_path}").exists()) {
+    println " VEP plugins found in the server directory."
+    vep_plugins_ch = Channel.of(file("${params.vep_plugins_dir_path}"))
+
+} else if (file("${params.main_data_dir}/Tools/VEP/plugins").exists()) {
+    println " VEP plugins found in the publish directory."
+    vep_plugins_ch = Channel.of(file("${params.main_data_dir}/Tools/VEP/plugins"))
+
+} else {
+    println " VEP plugins not found. Downloading..."
+    def result = DOWNLOAD_VEP_PLUGINS()
+    vep_plugins_ch = result.vep_plugins
+}
+
+// ========================== Capture VEP Plugins Path ========================== //
+vep_plugins_ch.view { vep_plugins_path ->  
+    if (vep_plugins_path.toString().contains('/work/')) {
+        vepPluginsPath = "${params.main_data_dir}/Tools/VEP/plugins"
+    } else {
+        vepPluginsPath = vep_plugins_path.toString()
+    }
+    println " VEP Plugins path set to: ${vepPluginsPath}"
+}
 
 
 
@@ -640,6 +669,8 @@ vep_cache_ch.view { vep_cache_path ->
 			params.protein_domains = '${protein_domainsPath ?: 'NOT_FOUND'}'
 			params.cytobands = '${cytobandsPath ?: 'NOT_FOUND'}'
 			params.vep_cache_dir = '${vepCachePath ?: 'NOT_FOUND'}'
+			params.vep_plugins_dir = '${vepPluginsPath ?: 'NOT_FOUND'}'
+
 			
             """
 

@@ -11,7 +11,7 @@ process DOWNLOAD_SNPEFF_TOOL {
     """
     mkdir -p ${params.snpeff_jar_dir}
     wget -q -O snpEff_latest_core.zip https://snpeff.blob.core.windows.net/versions/snpEff_latest_core.zip
-    unzip -j snpEff_latest_core.zip -d ${params.snpeff_jar_dir}
+    unzip -o -j snpEff_latest_core.zip -d ${params.snpeff_jar_dir}
     rm snpEff_latest_core.zip
     """
 }
@@ -61,28 +61,22 @@ fi
 
 process DOWNLOAD_ARRIBA {
     container null
-	publishDir "${params.actual_data_dir}/Tools/ARRIBA", mode: 'copy' 
-    
-	output:
-    path 'arriba_v2.4.0', emit: 'arriba_dir'
-	
-	script:
+    publishDir "${params.actual_data_dir}/Tools/ARRIBA", mode: 'copy'
+
+    output:
+    path "arriba_v${params.arriba_version}", emit: arriba_dir
+
+    when:
+    !file("${params.actual_data_dir}/Tools/ARRIBA/arriba_v${params.arriba_version}").exists()
+
+    script:
     """
-    # Define the Arriba download URL and target directory
-    URL="https://github.com/suhrig/arriba/releases/download/v2.4.0/arriba_v2.4.0.tar.gz"
-    TARGET_DIR="arriba_v2.4.0"
+    URL="https://github.com/suhrig/arriba/releases/download/v${params.arriba_version}/arriba_v${params.arriba_version}.tar.gz"
+    TARGET_DIR="arriba_v${params.arriba_version}"
 
-    # Download Arriba tarball
     wget -O arriba.tar.gz \$URL
-
-    # Create the target directory and extract the tarball
     mkdir -p \$TARGET_DIR
     tar -xzvf arriba.tar.gz -C \$TARGET_DIR --strip-components=1
-
-    # Clean up the downloaded tarball
     rm arriba.tar.gz
-
-    # Output the extracted directory
-    echo "Arriba tool extracted to: \$TARGET_DIR"
     """
 }

@@ -1,4 +1,3 @@
-// ========================== Download Reference Genome and Index ========================== //
 process CHECK_OR_DOWNLOAD_REF_GENOME {
     tag "Check or Download Reference Genome"
     container null
@@ -12,6 +11,7 @@ process CHECK_OR_DOWNLOAD_REF_GENOME {
 
     script:
     """
+    echo "Downloading reference genome..."
     wget -q -O genome.fa.gz ${params.genome_download_url}
 
     if file genome.fa.gz | grep -q 'gzip'; then
@@ -20,18 +20,16 @@ process CHECK_OR_DOWNLOAD_REF_GENOME {
         mv genome.fa.gz genome.fa
     fi
 
-    echo "Checking Chromosome Naming Format in genome.fa..."
+    echo "Checking chromosome naming format..."
+    FIRST_CHR=\$(grep -m1 '^>' genome.fa | sed 's/^>//')
 
-    # Extract first chromosome name
-    FIRST_CHR=\$(grep '^>' genome.fa | head -1 | sed 's/>//')
-
-    if [[ "\$FIRST_CHR" == chr* ]]; then
+    if [[ "\$FIRST_CHR" =~ ^chr ]]; then
         echo "Detected 'chr' prefix. Converting to numeric format..."
-        sed -i 's/>chr/>/g' genome.fa   
-        sed -i 's/\\bchr//g' genome.fa  
-        echo "Genome chromosome names converted to numeric format."
+        sed -i 's/^>chr/>/g' genome.fa
     else
-        echo "Genome chromosome names are already in numeric format. No changes needed."
+        echo "Chromosome names are already in numeric format."
     fi
+
+    md5sum genome.fa > genome.fa.md5
     """
 }

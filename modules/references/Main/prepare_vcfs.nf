@@ -23,8 +23,16 @@ process FILTER_AND_MERGE_VCF {
     # Number of threads for bcftools
     THREADS=${task.cpus}
 
-    # Extract the denylist file path from the tuple
-    DENYLIST_FILE=${denylist}
+    # Extract denylist path
+	DENYLIST_FILE="${denylist}"
+
+	# Ensure denylist exists
+	if [[ ! -s "\$DENYLIST_FILE" ]]; then
+		echo "ERROR: Denylist file not found or empty at \$DENYLIST_FILE" >&2
+		exit 1
+	fi
+
+
 
     echo "Filtering SNP variants..."
     bcftools view -T ^\$DENYLIST_FILE ${variants_snp} -Oz -o filtered_snps.vcf.gz --threads \$THREADS
@@ -40,19 +48,24 @@ process FILTER_AND_MERGE_VCF {
 
     echo "Fixing chromosome naming..."
     # Generate a temporary chromosome rename file
-    zcat merged.filtered.recode.vcf.gz | grep -v "^#" | cut -f1 | sort -u | grep "^chr" | awk '{print \$1"\t"substr(\$1,4)}' > rename_chr.txt
+	echo "Fixing chromosome naming..."
 
+	# Use a fixed name for the rename file
+	RENAME_FILE="rename_chr.tmp.txt"
 
-    # Apply renaming
-    bcftools annotate --rename-chrs rename_chr.txt -Oz -o fixed_merged.filtered.recode.vcf.gz merged.filtered.recode.vcf.gz --threads \$THREADS
+	zcat merged.filtered.recode.vcf.gz | grep -v "^#" | cut -f1 | sort -u | grep "^chr" | awk '{print \$1"\t"substr(\$1,4)}' > "\$RENAME_FILE"
 
-    tabix -p vcf fixed_merged.filtered.recode.vcf.gz
+	bcftools annotate --rename-chrs "\$RENAME_FILE" \
+    -Oz -o fixed_merged.filtered.recode.vcf.gz merged.filtered.recode.vcf.gz --threads \$THREADS
 
-    echo "Replacing original merged VCF with corrected version..."
-    mv fixed_merged.filtered.recode.vcf.gz merged.filtered.recode.vcf.gz
-    mv fixed_merged.filtered.recode.vcf.gz.tbi merged.filtered.recode.vcf.gz.tbi
+	tabix -p vcf fixed_merged.filtered.recode.vcf.gz
 
-    # Cleanup temporary rename file
-    rm rename_chr.txt
+	echo "Replacing original merged VCF with corrected version..."
+	mv fixed_merged.filtered.recode.vcf.gz merged.filtered.recode.vcf.gz
+	mv fixed_merged.filtered.recode.vcf.gz.tbi merged.filtered.recode.vcf.gz.tbi
+
+	# Cleanup
+	rm "\$RENAME_FILE"
+
     """
 }
