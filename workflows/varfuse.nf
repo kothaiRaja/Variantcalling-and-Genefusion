@@ -110,13 +110,26 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 
     } else {
         log.info " Skipping STAR alignment as per user request."
+		
+		def aligned_bam_folder = params.aligned_bam_folder ? file(params.aligned_bam_folder) : null
+
+    if (!aligned_bam_folder) {
+        error "You must set 'aligned_bam_folder' when skipping STAR alignment."
+    }
+
+    filtered_bams_ch = Channel
+        .fromPath("${aligned_bam_folder}/*.bam")
+        .map { bam_file ->
+            def sample_id = bam_file.baseName.replaceAll(/\.bam$/, "")
+            tuple(sample_id, bam_file)
+        }
 
         star_bam_ch        = Channel.empty()
         chimeric_reads_ch  = Channel.empty()
         flagstats_ch       = Channel.empty()
         align_stats_ch     = Channel.empty()
         star_logs_ch       = Channel.empty()
-        filtered_bams_ch   = Channel.empty()
+        
     }
 
 
