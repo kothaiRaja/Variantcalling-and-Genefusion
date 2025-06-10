@@ -22,6 +22,7 @@ include { DOWNLOAD_SNPEFF_TOOL } from '../modules/references/Test/Tools.nf'
 include { DOWNLOAD_SNPEFF_DB } from '../modules/references/Test/Tools.nf'
 include { DOWNLOAD_ARRIBA } from '../modules/references/Test/Tools.nf'
 include { DOWNLOAD_VEP_CACHE } from '../modules/references/Test/VEP.nf'
+include { DOWNLOAD_VEP_PLUGINS } from '../modules/references/Test/VEP.nf'
 
 
 
@@ -42,6 +43,7 @@ def mergedVcfIndexPath = ''
 def known_fusions_path = ''
 def blacklist_path = ''
 def arribaPath = ''
+def vepPluginsPath = ''
 
 
 
@@ -606,9 +608,9 @@ if (params.vep_plugins_dir_path && file("${params.vep_plugins_dir_path}").exists
     println " VEP plugins found in the server directory."
     vep_plugins_ch = Channel.of(file("${params.vep_plugins_dir_path}"))
 
-} else if (file("${params.main_data_dir}/Tools/VEP/plugins").exists()) {
+} else if (file("${params.test_data_dir}/Tools/VEP/plugins").exists()) {
     println " VEP plugins found in the publish directory."
-    vep_plugins_ch = Channel.of(file("${params.main_data_dir}/Tools/VEP/plugins"))
+    vep_plugins_ch = Channel.of(file("${params.test_data_dir}/Tools/VEP/plugins"))
 
 } else {
     println " VEP plugins not found. Downloading..."
@@ -619,7 +621,7 @@ if (params.vep_plugins_dir_path && file("${params.vep_plugins_dir_path}").exists
 // ========================== Capture VEP Plugins Path ========================== //
 vep_plugins_ch.view { vep_plugins_path ->  
     if (vep_plugins_path.toString().contains('/work/')) {
-        vepPluginsPath = "${params.main_data_dir}/Tools/VEP/plugins"
+        vepPluginsPath = "${params.test_data_dir}/Tools/VEP/plugins"
     } else {
         vepPluginsPath = vep_plugins_path.toString()
     }
@@ -667,6 +669,7 @@ vep_plugins_ch.view { vep_plugins_path ->
 			params.protein_domains = '${protein_domainsPath ?: 'NOT_FOUND'}'
 			params.cytobands = '${cytobandsPath ?: 'NOT_FOUND'}'
 			params.vep_cache_dir = '${vepCachePath ?: 'NOT_FOUND'}'
+			params.vep_plugins_dir = '${vepPluginsPath ?: 'NOT_FOUND'}'
 			
             """
 

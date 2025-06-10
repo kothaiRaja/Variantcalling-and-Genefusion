@@ -1,7 +1,7 @@
 process DOWNLOAD_SNPEFF_TOOL {
     tag "Download SnpEff Tool"
     publishDir "${params.test_data_dir}/Tools", mode: 'copy'
-    container null  // No container needed, using wget and unzip
+    container null  
 
     output:
     path "${params.snpeff_jar_dir}/snpEff.jar", emit: snpeff_jar
@@ -69,7 +69,7 @@ process DOWNLOAD_ARRIBA {
     path "arriba_v${params.arriba_version}", emit: arriba_dir
 
     when:
-    !file("${params.actual_data_dir}/Tools/ARRIBA/arriba_v${params.arriba_version}").exists()
+    !file("${params.test_data_dir}/Tools/ARRIBA/arriba_v${params.arriba_version}").exists()
 
     script:
     """

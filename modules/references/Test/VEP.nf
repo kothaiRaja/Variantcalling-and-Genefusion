@@ -28,8 +28,7 @@ process DOWNLOAD_VEP_PLUGINS {
     output:
     path "plugins", emit: vep_plugins
 
-    when:
-    !file("${params.test_data_dir}/Tools/VEP/plugins/Condel.pm") 
+   
 
     script:
     """
