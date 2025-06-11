@@ -9,7 +9,6 @@ process ANNOTATEVARIANTS_VEP {
     input:
     tuple val(sample_id), path(input_vcf), path(input_vcf_tbi)
     path vep_cache 
-	path vep_plugins
     val genome_assembly
     val cache_version
     val species
@@ -44,11 +43,6 @@ if (task.memory) {
   --stats_file "vep_annotated_${sample_id}.vep.html" \
   --cache \
   --dir_cache "${vep_cache}" \
-  --dir_plugins "${vep_plugins}" \
-  --plugin LoF \
-  --plugin PolyPhen_SIFT \
-  --plugin CADD \
-  --plugin REVEL \
   --species "${species}" \
   --assembly "${genome_assembly}" \
   --cache_version ${cache_version} \

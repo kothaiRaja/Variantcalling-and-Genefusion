@@ -18,7 +18,6 @@ workflow ANNOTATE {
     species
     vep_version
     vep_cache
-	vep_plugin
 	
 	
 	main:
@@ -56,7 +55,6 @@ workflow ANNOTATE {
         COMBINED_ANNOTATE (
             vcf_ann_for_merge,
             vep_cache,
-			vep_plugin, 
 			genome_assembly,
 			vep_version,
 			species
@@ -73,7 +71,6 @@ workflow ANNOTATE {
         VEP_ANNOTATION_WORKFLOW(
         vcf,
 		vep_cache,
-		vep_plugin, 
         genome_assembly,
 		vep_version,
 		species

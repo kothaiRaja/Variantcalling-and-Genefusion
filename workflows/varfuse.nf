@@ -243,8 +243,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
         params.genome_assembly,
         params.species,
         params.cache_version,
-        params.vep_cache_dir,
-		params.vep_plugins
+        params.vep_cache_dir
 		
     )
 

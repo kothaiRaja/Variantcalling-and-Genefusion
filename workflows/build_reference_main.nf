@@ -622,7 +622,7 @@ if (params.vep_plugins_dir_path && file("${params.vep_plugins_dir_path}").exists
 // ========================== Capture VEP Plugins Path ========================== //
 vep_plugins_ch.view { vep_plugins_path ->  
     if (vep_plugins_path.toString().contains('/work/')) {
-        vepPluginsPath = "${params.main_data_dir}/Tools/VEP/plugins"
+        vepPluginsPath = "${params.main_data_dir}/Tools/VEP/plugins/plugins"
     } else {
         vepPluginsPath = vep_plugins_path.toString()
     }
