@@ -1,11 +1,10 @@
 process FILTER_AND_MERGE_VCF {
-    tag "Filter and Merge VCF Files"
+    
     container "https://depot.galaxyproject.org/singularity/bcftools%3A1.15.1--h0ea216a_0"
     publishDir "${params.test_data_dir}/reference", mode: 'copy'
-	
-    cpus params.get('filter_merge_vcf_cpus', 12)
-    memory params.get('filter_merge_vcf_memory', '32 GB')
-    time params.get('filter_merge_vcf_time', '6h')
+
+    tag "Filter and Merge VCF Files"
+	label 'process_high'
 
     input: 
     path variants_snp
@@ -20,10 +19,7 @@ process FILTER_AND_MERGE_VCF {
 
     script:
     """
-    # Number of threads for bcftools
     THREADS=${task.cpus}
-
-    # Extract the denylist file path from the tuple
     DENYLIST_FILE=${denylist}
 
     echo "Filtering SNP variants..."
@@ -38,21 +34,9 @@ process FILTER_AND_MERGE_VCF {
     bcftools merge filtered_snps.vcf.gz filtered_indels.vcf.gz -Oz -o merged.filtered.recode.vcf.gz --threads \$THREADS
     tabix -p vcf merged.filtered.recode.vcf.gz  
 
-    echo "Fixing chromosome naming..."
-    # Generate a temporary chromosome rename file
-    zcat merged.filtered.recode.vcf.gz | grep -v "^#" | cut -f1 | sort -u | grep "^chr" | awk '{print \$1"\t"substr(\$1,4)}' > rename_chr.txt
+    echo "Checking Chromosome Naming in merged VCF..."
+    zgrep -v '^#' merged.filtered.recode.vcf.gz | cut -f1 | sort -u | head -1 | awk '{ print "  → Detected contig in merged VCF: " \$1 }'
 
-
-    # Apply renaming
-    bcftools annotate --rename-chrs rename_chr.txt -Oz -o fixed_merged.filtered.recode.vcf.gz merged.filtered.recode.vcf.gz --threads \$THREADS
-
-    tabix -p vcf fixed_merged.filtered.recode.vcf.gz
-
-    echo "Replacing original merged VCF with corrected version..."
-    mv fixed_merged.filtered.recode.vcf.gz merged.filtered.recode.vcf.gz
-    mv fixed_merged.filtered.recode.vcf.gz.tbi merged.filtered.recode.vcf.gz.tbi
-
-    # Cleanup temporary rename file
-    rm rename_chr.txt
+    
     """
 }

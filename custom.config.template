@@ -1,0 +1,150 @@
+// ========================== User Custom Configuration Template ========================== //
+// Copy this file to `custom.config`, adjust the paths and parameters, and run with:
+
+// nextflow run main.nf -c nextflow_main.config -c custom.config -profile singularity
+
+params {
+    // --- Base Directories ---
+    outdir = "./output"
+    resultsdir = "./results"
+    base_dir = "./"
+
+    // --- Build Reference Flags ---
+    build_references = false
+    build_references_test = false
+
+    // --- Input Data ---
+    samplesheet = "path/to/your/samplesheet.csv"
+    reads = ""
+    strandedness_map = []
+
+    // --- Reference File URLs (for automatic download if needed) ---
+    genome_download_url = "ftp://ftp.ensembl.org/pub/release-104/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz"
+    gtf_download_url = "ftp://ftp.ensembl.org/pub/release-104/gtf/homo_sapiens/Homo_sapiens.GRCh38.104.gtf.gz"
+    denylist_download_url = "https://github.com/Boyle-Lab/Blacklist/raw/master/lists/hg38-blacklist.v2.bed.gz"
+    variants_snp_download_url = "ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/dbsnp_146.hg38.vcf.gz"
+    variants_snp_index_download_url = "ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/dbsnp_146.hg38.vcf.gz.tbi"
+    variants_indels_download_url = "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz"
+    variants_indels_index_download_url = "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi"
+
+    // --- Local Reference Files (optional overrides) ---
+    reference_genome_path = ""
+    reference_genome_index_path = ""
+    reference_genome_dict_path = ""
+    reference_genome_gtf = ""
+    reference_denylist_path = ""
+
+    variants_snp_path = ""
+    variants_snp_index_path = ""
+    variants_indels_path = ""
+    variants_indels_index_path = ""
+    star_genome_index_path = ""
+
+    // --- Tool Paths ---
+    snpeff_jar_dir_path = ""
+    snpeff_jar_path = "${params.snpeff_jar_dir_path}/snpEff.jar"
+    snpeff_config_path = "${params.snpeff_jar_dir_path}/snpEff.config"
+    snpeff_db_dir_path = ""
+
+    arriba_tool_dir_path = ""
+    arriba_known_fusions = "sample_ARRIBA/known_fusions_chr22.tsv"
+    arriba_blacklist = "sample_ARRIBA/blacklist_chr22.tsv"
+    arriba_version = '2.4.0'
+
+    vep_cache_dir_path = ""
+    vep_plugins_dir_path = ""
+
+    ensembl_release = "113"
+    genome_assembly = "GRCh38"
+    species = "homo_sapiens"
+
+    // --- Behavior Flags ---
+    concatenate = false
+    only_qc = false
+    only_star = false
+    skip_star = false
+    run_fusion = true
+    maftools = true
+
+    // --- Fastp Parameters ---
+    fastp_extra = "--detect_adapter_for_pe --length_required 50"
+
+    // --- STAR Alignment Config ---
+    aligned_bam_samplesheet = null
+    aligned_bam_folder = null
+	
+	
+    
+    read_length = 101
+    star_ignore_sjdbgtf = false
+    seq_platform = 'ILLUMINA'
+    seq_center = 'RBCT'
+
+    star_alignIntronMin = 20
+    star_alignIntronMax = 1000000
+    star_alignSJoverhangMin = 8
+    star_alignSJDBoverhangMin = 1
+    star_outFilterMismatchNmax = 999
+    star_outFilterMatchNmin = 16
+    star_outFilterMatchNminOverLread = 0.3
+    star_outFilterScoreMinOverLread = 0.3
+    star_mismatchNoverLmax = 0.04
+    star_outSAMmapqUnique = 60
+    star_chimSegmentMin = 10
+    star_chimJunctionOverhangMin = 10
+    star_chimScoreJunctionNonGTAG = -4
+    star_chimScoreMin = 1
+    star_chimScoreDropMax = 50
+    star_chimScoreSeparation = 10
+    star_extra_args = ''
+
+    // --- Interval List ---
+    scatterintervals = true
+    scatter_count = 3
+
+    // --- MarkDuplicates ---
+    remove_duplicates = false
+    validation_stringency = "STRICT"
+
+    // --- Annotation ---
+    genomedb = 'GRCh38.105'
+    annotation_tools = ['combine']
+
+    // --- Arriba Visualisation ---
+    protein_domains = ""
+    cytobands = ""
+}
+
+// --- Resource Configuration (can be tuned if needed) ---
+process {
+    withLabel: 'process_low' {
+        cpus = 2
+        memory = '8GB'
+        time = '4h'
+    }
+    withLabel: 'process_medium' {
+        cpus = 6
+        memory = '36GB'
+        time = '8h'
+    }
+    withLabel: 'process_high' {
+        cpus = 12
+        memory = '40GB'
+        time = '16h'
+    }
+    withLabel: 'process_very_high' {
+        cpus = 12
+        memory = '40GB'
+        time = '24h'
+    }
+}
+
+// --- Optional extra parameters for tools ---
+process {
+    withName: 'ANNOTATEVARIANTS_VEP' {
+        ext.args = [
+            '--fork 4',
+            '--everything'
+        ].join(' ').trim()
+    }
+}

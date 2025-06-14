@@ -1,4 +1,5 @@
 // ========================== Download SNP Variants VCF ========================== //
+
 process CHECK_OR_DOWNLOAD_VARIANTS_SNP {
     tag "Check or Download SNP Variants"
     container null
@@ -12,9 +13,26 @@ process CHECK_OR_DOWNLOAD_VARIANTS_SNP {
 
     script:
     """
+    echo "Downloading SNP variants VCF from: ${params.variants_snp_download_url}"
     wget -q -O variants_snp.vcf.gz ${params.variants_snp_download_url}
+
+    echo "Checking Chromosome Naming Format in VCF header..."
+    zgrep -m1 '^#CHROM' variants_snp.vcf.gz > /dev/null || true
+    CONTIG_LINE=\$(zgrep -m1 '^#' variants_snp.vcf.gz | grep -E '^##contig|^#CHROM' || true)
+
+    if [[ ! -z "\$CONTIG_LINE" ]]; then
+        FIRST_CHR=\$(echo "\$CONTIG_LINE" | grep -oE 'chr[0-9XYM]+' | head -1)
+        if [[ -z "\$FIRST_CHR" ]]; then
+            FIRST_CHR=\$(echo "\$CONTIG_LINE" | grep -oE '[0-9XYM]+' | head -1)
+        fi
+        echo "  → Detected contig name in VCF: '\$FIRST_CHR'"
+    else
+        echo "  → Could not determine contig name from VCF headers."
+    fi
     """
 }
+
+
 
 // ========================== Download SNP Variants Index ========================== //
 process DOWNLOAD_VARIANTS_SNP_INDEX {

@@ -2,6 +2,29 @@
 
 nextflow.enable.dsl = 2
 
+// ========================== Custom Config Check ========================== //
+def customConfigPath = file("custom.config")
+
+if (customConfigPath.exists()) {
+    println "[INFO] ✅ 'custom.config' found and may be in use (if passed via -c)."
+} else {
+    println "[WARN] ⚠️  'custom.config' not found in the current directory."
+
+    if (!params.reference_genome) {
+        println """
+[ERROR] ❌ Missing required parameter: 'reference_genome'.
+
+It seems 'custom.config' was not passed or does not contain this required value.
+
+💡 To fix this, either:
+   • Create a config file:    cp custom.config.template custom.config
+   • Or run the pipeline with:
+     nextflow run main.nf -c nextflow_main.config -c custom.config -profile singularity
+        """.stripIndent()
+        exit 1
+    }
+}
+
 
 
 

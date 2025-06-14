@@ -1,5 +1,6 @@
 process DOWNLOAD_VEP_CACHE {
     tag "Download VEP Cache ${params.species} Ensembl ${params.ensembl_release} ${params.genome_assembly}"
+	label 'process_high'
     publishDir "${params.test_data_dir}/Tools/VEP", mode: 'copy'
     container null
 
@@ -33,9 +34,10 @@ process DOWNLOAD_VEP_PLUGINS {
     script:
     """
     mkdir -p plugins
+	cd plugins
     echo "Cloning VEP plugins from Ensembl GitHub..."
     
-    git clone https://github.com/Ensembl/VEP_plugins.git plugins
+    git clone https://github.com/Ensembl/VEP_plugins.git 
 
     
     """

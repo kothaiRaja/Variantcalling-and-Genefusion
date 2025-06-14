@@ -267,7 +267,8 @@ denylist_ch.view { denylist_path ->
 
 
 // ========================== SNP VCF Handling ========================== //
-    snp_vcf_ch = 
+    
+	snp_vcf_ch = 
         params.variants_snp_path && file(params.variants_snp_path).exists() ? 
             Channel.of(file(params.variants_snp_path)) :
         file("${params.test_data_dir}/reference/variants_snp.vcf.gz").exists() ?

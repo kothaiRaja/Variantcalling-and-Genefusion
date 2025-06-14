@@ -319,9 +319,14 @@ report_ch = reports_ch.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.ifEmpty([]))
  
  //=====================================Multiqc================================//
  
- collected_reports_ch = reports_ch
-	.collect()
-multiqc_quality = MultiQC(collected_reports_ch)
+ // Step 1: Collect all report files *after* annotation is guaranteed to finish
+final_reports_ch = report_ch
+    .mix(ANNOTATE.out.reports_html.ifEmpty([]))
+    .collect()
+
+// Step 2: Run MultiQC only after all reports are available
+multiqc_quality = MultiQC(final_reports_ch)
+
 
 
 	
