@@ -12,6 +12,7 @@ workflow VEP_ANNOTATION_WORKFLOW {
 	genome_assembly
 	vep_version
 	species
+	vep_plugins
 	
     main:
     log.info "Starting Ensembl VEP annotation..."
@@ -24,7 +25,8 @@ workflow VEP_ANNOTATION_WORKFLOW {
 		vep_cache,
         genome_assembly,
 		vep_version,
-		species
+		species,
+		vep_plugins
        
     )
 	

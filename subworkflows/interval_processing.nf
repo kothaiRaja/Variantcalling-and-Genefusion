@@ -31,7 +31,7 @@ workflow INTERVAL_PROCESSING {
         log.info " Scattering intervals for parallel execution..." 
 		scattered_intervals = SCATTER_INTERVAL_LIST(interval_list_ch, params.reference_genome_dict)
 		scattered_intervals_ch = SCATTER_INTERVAL_LIST.out.scattered_intervals
-								.map { meta, file -> file }  // Remove tuple, keep only file paths
+								.map { meta, file -> file }  
 								.flatten()
         
         scattered_intervals_ch.view { file -> " Scattered interval: $file" }

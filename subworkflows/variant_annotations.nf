@@ -18,6 +18,7 @@ workflow ANNOTATE {
     species
     vep_version
     vep_cache
+	vep_plugins
 	
 	
 	main:
@@ -57,7 +58,8 @@ workflow ANNOTATE {
             vep_cache,
 			genome_assembly,
 			vep_version,
-			species
+			species,
+			vep_plugins
         )
         annotated_vcfs  = annotated_vcfs.mix( COMBINED_ANNOTATE.out.final_vep_annotated_vcf)
 		uncompressed_vcf = uncompressed_vcf.mix(COMBINED_ANNOTATE.out.annotated_variants)
@@ -73,7 +75,8 @@ workflow ANNOTATE {
 		vep_cache,
         genome_assembly,
 		vep_version,
-		species
+		species,
+		vep_plugins
        
     )
         annotated_vcfs  = annotated_vcfs.mix(VEP_ANNOTATION_WORKFLOW.out.final_vep_annotated_vcf)

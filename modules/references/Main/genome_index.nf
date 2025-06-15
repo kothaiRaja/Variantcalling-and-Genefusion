@@ -10,17 +10,10 @@ process DOWNLOAD_GENOME_INDEX {
     """
     echo "Downloading genome index from provided URL..."
     wget -q -O genome.fa.fai ${params.genome_index_download_url}
-    
-    echo "Checking Chromosome Naming Format in genome index..."
+
+    echo "Checking Chromosome Naming Format in genome.fa.fai..."
     FIRST_CHR=\$(awk '{print \$1; exit}' genome.fa.fai)
-    
-    if [[ "\$FIRST_CHR" == chr* ]]; then
-        echo "Detected 'chr' prefix in genome index. Converting to numeric format..."
-        sed -i 's/^chr//' genome.fa.fai
-        echo "Genome index chromosome names converted to numeric format."
-    else
-        echo "Genome index chromosome names are already in numeric format. No changes needed."
-    fi
+    echo "  → Detected contig name in index: '\$FIRST_CHR'"
     """
 }
 
@@ -42,6 +35,19 @@ process CREATE_GENOME_INDEX {
     script:
     """
     echo "Creating genome index using samtools..."
-    samtools faidx $genome_fa
+
+    if [[ "${genome_fa}" == *.gz ]]; then
+        echo "Input is gzipped. Unzipping..."
+        gunzip -c ${genome_fa} > genome.fa
+    else
+        cp ${genome_fa} genome.fa
+    fi
+
+    samtools faidx genome.fa
+
+    echo "Checking Chromosome Naming Format in genome.fa.fai..."
+    FIRST_CHR=\$(awk '{print \$1; exit}' genome.fa.fai)
+    echo "  → Detected contig name in index: '\$FIRST_CHR'"
+    
     """
 }

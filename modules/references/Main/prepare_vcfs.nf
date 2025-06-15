@@ -20,19 +20,8 @@ process FILTER_AND_MERGE_VCF {
 
     script:
     """
-    # Number of threads for bcftools
     THREADS=${task.cpus}
-
-    # Extract denylist path
-	DENYLIST_FILE="${denylist}"
-
-	# Ensure denylist exists
-	if [[ ! -s "\$DENYLIST_FILE" ]]; then
-		echo "ERROR: Denylist file not found or empty at \$DENYLIST_FILE" >&2
-		exit 1
-	fi
-
-
+    DENYLIST_FILE=${denylist}
 
     echo "Filtering SNP variants..."
     bcftools view -T ^\$DENYLIST_FILE ${variants_snp} -Oz -o filtered_snps.vcf.gz --threads \$THREADS
@@ -46,26 +35,8 @@ process FILTER_AND_MERGE_VCF {
     bcftools merge filtered_snps.vcf.gz filtered_indels.vcf.gz -Oz -o merged.filtered.recode.vcf.gz --threads \$THREADS
     tabix -p vcf merged.filtered.recode.vcf.gz  
 
-    echo "Fixing chromosome naming..."
-    # Generate a temporary chromosome rename file
-	echo "Fixing chromosome naming..."
-
-	# Use a fixed name for the rename file
-	RENAME_FILE="rename_chr.tmp.txt"
-
-	zcat merged.filtered.recode.vcf.gz | grep -v "^#" | cut -f1 | sort -u | grep "^chr" | awk '{print \$1"\t"substr(\$1,4)}' > "\$RENAME_FILE"
-
-	bcftools annotate --rename-chrs "\$RENAME_FILE" \
-    -Oz -o fixed_merged.filtered.recode.vcf.gz merged.filtered.recode.vcf.gz --threads \$THREADS
-
-	tabix -p vcf fixed_merged.filtered.recode.vcf.gz
-
-	echo "Replacing original merged VCF with corrected version..."
-	mv fixed_merged.filtered.recode.vcf.gz merged.filtered.recode.vcf.gz
-	mv fixed_merged.filtered.recode.vcf.gz.tbi merged.filtered.recode.vcf.gz.tbi
-
-	# Cleanup
-	rm "\$RENAME_FILE"
+    echo "Checking Chromosome Naming in merged VCF..."
+    zgrep -v '^#' merged.filtered.recode.vcf.gz | cut -f1 | sort -u | head -1 | awk '{ print "  → Detected contig in merged VCF: " \$1 }'
 
     """
 }

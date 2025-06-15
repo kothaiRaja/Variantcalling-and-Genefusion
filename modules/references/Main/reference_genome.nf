@@ -11,25 +11,18 @@ process CHECK_OR_DOWNLOAD_REF_GENOME {
 
     script:
     """
-    echo "Downloading reference genome..."
+    echo "Downloading reference genome from: ${params.genome_download_url}"
     wget -q -O genome.fa.gz ${params.genome_download_url}
 
+    echo "Unzipping reference genome..."
     if file genome.fa.gz | grep -q 'gzip'; then
         gunzip genome.fa.gz
     else
         mv genome.fa.gz genome.fa
     fi
 
-    echo "Checking chromosome naming format..."
-    FIRST_CHR=\$(grep -m1 '^>' genome.fa | sed 's/^>//')
-
-    if [[ "\$FIRST_CHR" =~ ^chr ]]; then
-        echo "Detected 'chr' prefix. Converting to numeric format..."
-        sed -i 's/^>chr/>/g' genome.fa
-    else
-        echo "Chromosome names are already in numeric format."
-    fi
-
-    md5sum genome.fa > genome.fa.md5
+    echo "Checking Chromosome Naming Format in genome.fa..."
+    FIRST_CHR=\$(grep '^>' genome.fa | head -1 | sed 's/^>//' | awk '{print \$1}')
+    echo "  → Detected contig name: '\$FIRST_CHR'"
     """
 }

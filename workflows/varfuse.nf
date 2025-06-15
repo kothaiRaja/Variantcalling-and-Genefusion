@@ -243,7 +243,8 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
         params.genome_assembly,
         params.species,
         params.cache_version,
-        params.vep_cache_dir
+        params.vep_cache_dir,
+		params.vep_plugins_dir
 		
     )
 
@@ -317,15 +318,22 @@ if (params.run_fusion && !params.skip_star) {
 report_ch = reports_ch.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.ifEmpty([]))
 
  
- //=====================================Multiqc================================//
- 
- // Step 1: Collect all report files *after* annotation is guaranteed to finish
-final_reports_ch = report_ch
+ // ======================= Final Report Collection for MultiQC ======================= //
+
+// Collect everything
+final_reports_ch = Channel
+    .empty()
+    .mix(reports_ch)
     .mix(ANNOTATE.out.reports_html.ifEmpty([]))
+    .mix(maf_reports_ch.ifEmpty([]))
+    .mix(GENE_FUSION.out.fusion_visualizations.collect { it[1] }.ifEmpty([]))
+    .mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.ifEmpty([]))
+    .unique { it.name }   
     .collect()
 
-// Step 2: Run MultiQC only after all reports are available
+// Run MultiQC
 multiqc_quality = MultiQC(final_reports_ch)
+
 
 
 

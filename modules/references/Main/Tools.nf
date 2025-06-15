@@ -1,7 +1,7 @@
 process DOWNLOAD_SNPEFF_TOOL {
     tag "Download SnpEff Tool"
     publishDir "${params.main_data_dir}/Tools", mode: 'copy'
-    container null  // No container needed, using wget and unzip
+    container null  
 
     output:
     path "${params.snpeff_jar_dir}/snpEff.jar", emit: snpeff_jar
@@ -89,6 +89,7 @@ process DOWNLOAD_ARRIBA {
     rm arriba.tar.gz
 
     echo "Arriba v${params.arriba_version} setup completed."
-    """
+	"""
+	
 }
 

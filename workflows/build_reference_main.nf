@@ -296,7 +296,7 @@ denylist_ch.view { denylist_path ->
     file("${params.main_data_dir}/reference/variants_snp.vcf.gz.tbi").exists() ? 
         Channel.of(file("${params.main_data_dir}/reference/variants_snp.vcf.gz.tbi")) :
     params.variants_snp_index_download_url ? 
-        DOWNLOAD_VARIANTS_SNP_INDEX() :
+        CHECK_OR_DOWNLOAD_VARIANTS_SNP_INDEX() :
         INDEX_SNP_VCF(snp_vcf_ch)
 			
 	snp_index_ch.view { snp_index_path ->  
@@ -339,7 +339,7 @@ denylist_ch.view { denylist_path ->
     file("${params.main_data_dir}/reference/variants_indels.vcf.gz.tbi").exists() ? 
         Channel.of(file("${params.main_data_dir}/reference/variants_indels.vcf.gz.tbi")) :
     params.variants_indels_index_download_url ? 
-        DOWNLOAD_VARIANTS_INDELS_INDEX() :
+        CHECK_OR_DOWNLOAD_VARIANTS_INDELS_INDEX() :
         INDEX_INDEL_VCF(indels_vcf_ch).indels_index
 		
 	indels_index_ch.view { indels_index_path ->  

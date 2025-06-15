@@ -1,158 +1,209 @@
-# **RNA-Seq Variant Calling & Fusion Detection Pipeline**  
+# RNA-Seq Variant Calling & Fusion Detection Pipeline
 
-**A scalable, reproducible, and modular Nextflow pipeline for RNA-seq variant calling and fusion detection.**  
+**A scalable, reproducible, and modular Nextflow pipeline for RNA-seq variant calling and fusion detection.**
 
-**GitHub Repository:** [Variantcalling-and-Genefusion](https://github.com/kothaiRaja/Variantcalling-and-Genefusion.git) 
- 
+**GitHub Repository:** [Variantcalling-and-Genefusion](https://github.com/kothaiRaja/Variantcalling-and-Genefusion.git)
+
+---
+
 ## RNA-seq Variant Calling and Gene Fusion Workflow
 
 This flowchart represents the RNA-seq analysis workflow, including variant calling and gene fusion detection.
 
-
-![RNA-seq Workflow](Documentation/rna_seq_workflow_fusion_bold.png)
-
+![RNA-seq Pipeline Workflow](Documentation/workflow.png)
 
 ---
 
-## **Overview**  
+## Overview
 
-This pipeline processes RNA-seq data to:  
-**Identify genetic variants (SNPs & Indels)** from transcriptomic data.  
-**Detect RNA fusion events** critical in cancer research.  
-**Perform quality control, alignment, annotation, and reporting** in an automated workflow.  
+This pipeline processes RNA-seq data to:
 
-**Built With:**  
-- **Nextflow DSL2** for modularity & scalability.  
-- **Singularity** for containerized execution.  
-- **FastQC, STAR, GATK, SnpEff, VEP, Arriba** for high-accuracy analysis.  
+* **Identify genetic variants (SNPs & Indels)** from transcriptomic data
+* **Detect RNA fusion events** critical in cancer research
+* **Perform quality control, alignment, annotation, and reporting** in an automated workflow
 
-**Key Features:**  
-**Preprocessing**: FASTQ quality control and trimming (FastQC, Fastp).  
-**Variant Calling**: STAR alignment, GATK HaplotypeCaller, and variant annotation.  
-**Fusion Detection**: STAR + Arriba for RNA fusion detection.  
-**MultiQC Reports**: Aggregated QC statistics for easy review.  
-**Automated Reference Preparation**: Downloads and indexes necessary reference files.  
+### Built With
 
----
+* **Nextflow DSL2** for modular, scalable design
+* **Singularity** for containerized, reproducible runs
+* Tools: **FastQC**, **Fastp**, **STAR**, **GATK**, **SnpEff**, **VEP**, **Arriba**, **vcf2maf**, **maftools**, **MultiQC**
 
-## **Workflow Overview**  
+### Key Features
 
-### **1️⃣ Preprocessing**  
-FASTQ **concatenation, quality control (FastQC), and trimming (Fastp)**.  
-Generates **MultiQC reports** for aggregated quality analysis.  
-
-### **2️⃣ Variant Calling**  
-**STAR alignment** → **BAM processing (sorting, marking duplicates)**.  
-**GATK HaplotypeCaller** for SNP & Indel detection.  
-**Variant annotation** using **SnpEff & VEP**.  
-Outputs **annotated VCF files and structured CSV reports**.  
-
-### **3️⃣ RNA Fusion Detection**  
-**STAR fusion mode** aligns reads for fusion detection.  
-**Arriba** identifies gene fusions and generates **visualization reports**.  
-
-### **4️⃣ Automated Reference Setup**  
-Downloads and processes **reference genomes, annotation files, and known variant databases, respected Tools**. 
-
-### ** Easy User defined Parameters**
-Users are able to easily define the path to the reference files(if available). 
-Even if the reference files are unavailable, the pipeline fetched all the reference files by executing the processes. 
-Running the build_reference_main.nf pipeline, the paths to all the required reference files are written to config file which is used for main.nl pipeline execution.  
+*  Preprocessing: FastQC, Fastp, MultiQC
+*  Variant Calling: STAR, GATK HaplotypeCaller, filtering, annotation with SnpEff & VEP
+*  Fusion Detection: Arriba + visualization
+*  Reference Setup: Automatic download/indexing of genome, annotation, known variants, and tool resources
+*  VCF Post-processing: bgzip, tabix, vcf2maf, maftools
+*  Modular Design: Easy extension and reuse of workflows and subworkflows
 
 ---
 
-# **Installation & Setup**  
+## **Workflow Structure**
 
-## **1️⃣ Install Nextflow & Dependencies**  
+### **1. Build Reference (Optional or Precomputed)**
+
+- Checks for user-provided reference files — or downloads if missing  
+- Prepares the following:
+  - **Reference genome** (FASTA + index + dict)
+  - **Gene annotations** (GTF, BED, interval list)
+  - **Known variants** (dbSNP, Mills/1000G, blacklist)
+  - **Tool resources**: SnpEff DB, VEP cache + plugins, Arriba package
+- Outputs a unified config file with resolved reference paths
+
+---
+
+### **2. Preprocessing**
+
+- **FastQC & Fastp**: Raw read quality check and trimming  
+- **MultiQC**: Aggregates QC metrics for an overview
+
+---
+
+### **3. STAR Alignment**
+
+- **Two-pass STAR alignment** with splice junctions  
+- Filters orphan reads and computes **alignment statistics**
+
+---
+
+### **4. BAM Processing**
+
+- **Sorting**, **marking duplicates**, and **SplitNCigarReads**  
+- **Merge BAMs** (if split by intervals)  
+- Reset read groups and run **samtools calmd** for MD/NR tags
+
+---
+
+### **5. Base Recalibration**
+
+- **GATK BaseRecalibrator** on known variants  
+- **ApplyBQSR** to adjust base quality scores
+
+---
+
+### **6. Variant Calling**
+
+- **GATK HaplotypeCaller** across scattered intervals  
+- Merge VCFs and filter for high-confidence SNPs/Indels  
+- Compress, index, and generate variant statistics
+
+---
+
+### **7. Variant Annotation**
+
+- **SnpEff** and/or **VEP** (with plugins: LoF, CADD, REVEL, etc.)  
+- Convert VCFs to **MAF** using `vcf2maf`  
+- Generate mutation summary plots via **maftools**
+
+---
+
+### **8. Fusion Detection (Optional)**
+
+- **Arriba** identifies gene fusions from STAR-aligned BAMs  
+- Automatically produces **visual plots** of fusions
+
+---
+
+### **9. Reports**
+
+- **MultiQC** for preprocessing and alignment metrics  
+- **Arriba fusion plots** and **MAF visualizations**  
+- Software versions and logs for reproducibility
+
+---
+
+## Installation & Setup
+
+### 1. Install Nextflow & Dependencies
+
 ```bash
 curl -s https://get.nextflow.io | bash
 chmod +x nextflow
-mv nextflow /usr/local/bin/
+sudo mv nextflow /usr/local/bin/
 ```
-Ensure **Singularity** is installed for containerized execution.  
 
-## **2️⃣ Clone the Repository**  
+Make sure **Singularity** or **Docker** is installed.
+
+### 2. Clone the Repository
+
 ```bash
 git clone https://github.com/kothaiRaja/Variantcalling-and-Genefusion.git
 cd Variantcalling-and-Genefusion
 ```
 
 ---
+---
 
-# **How to Run the Pipeline**  
+##  Configuration Setup (Must Read Before Execution)
 
-## **Step 1️⃣: Test Pipeline with Default Datasets**  
+Before running the pipeline, **you must create and customize a configuration file** (e.g., `custom.config`) that includes:
 
-Before running the pipeline on actual data, test it with the provided test dataset to ensure proper setup.  
+-  Paths to **reference files**, or leave them empty to allow auto-download via the `--build_references` flag.
+-  Pipeline **execution behavior flags** (e.g., `run_fusion`, `skip_star`, etc.)
+-  **Tool configurations**, such as memory, CPUs, annotation options, and plugin support.
+-  Directory paths for **input/output**, **logs**, and **tool resources**.
 
-### **A. Prepare References (for Test Data)**  
+>  **This configuration file is mandatory** and must be passed to the pipeline using the `-c` flag.
+
+
+
+## Running the Pipeline
+
+### Step 1: Run with Test Data
+
 ```bash
-nextflow run main.nf -c nextflow_ref_test.config --build_references_test -profile singularity
-```
-
-### **B. Run the Test Pipeline**  
-```bash
+nextflow run main.nf -c nextflow_ref_test.config --build_references_test true -profile singularity
 nextflow run main.nf -c nextflow_main_test.config -profile singularity
 ```
-**If the test run is successful**, proceed to the main pipeline.  
 
----
+### Step 2: Run with Real Data
 
-## **Step 2️⃣: Run the Pipeline with Actual Data**  
-
-Once validated, run the pipeline on actual datasets.  
-
-### **A. Prepare References (for Actual Data)**  
 ```bash
-nextflow run main.nf -c nextflow_ref_main.config --build_references -profile singularity
-
-```
-
-### **B. Run the Full Pipeline on Actual Data**  
-```bash
-nextflow run main.nf -c nextflow_main.config -profile singularity
+nextflow run main.nf -c nextflow_ref_main.config -c path/to/custom.config --build_references  -profile singularity
+nextflow run main.nf -c nextflow_main.config -c path/to/custom.config -profile singularity
 ```
 
 ---
 
+## Input Format: Sample Sheet
 
-# **Input: Sample Sheet Format**  
+Prepare a `samplesheet.csv`:
 
-The pipeline requires a **CSV file** (`samplesheet.csv`) with sample metadata.  
-
-| sample_id  | fastq_1                        | fastq_2                        | strandedness  |  
-|------------|--------------------------------|--------------------------------|--------------|  
-| Sample_01  | /path/to/sample_1_R1.fastq.gz | /path/to/sample_1_R2.fastq.gz | forward      |  
-| Sample_02  | /path/to/sample_2_R1.fastq.gz | /path/to/sample_2_R2.fastq.gz | reverse      |  
-
----
-
-# **Pipeline Outputs**  
-
-**MultiQC Reports**: Summarizes quality control and variant statistics.  
-**Annotated VCF Files**: Identified genetic variants.    
-**Fusion Detection Results**: Lists fusion genes with graphical representation.  
+| sample\_id | fastq\_1                     | fastq\_2                     | strandedness |
+| ---------- | ---------------------------- | ---------------------------- | ------------ |
+| Sample\_01 | /data/sample\_1\_R1.fastq.gz | /data/sample\_1\_R2.fastq.gz | forward      |
+| Sample\_02 | /data/sample\_2\_R1.fastq.gz | /data/sample\_2\_R2.fastq.gz | reverse      |
 
 ---
 
----
+## Output Summary
 
-# **Pipeline Behavior**
-
-Set the following flags in your `.config` files to control the pipeline execution. These parameters allow selective execution of specific steps and are especially useful for testing or partial runs.
-
-| **Parameter**     | **Description**                                                                 |
-|-------------------|---------------------------------------------------------------------------------|
-| `concatenate`     | **If true**, merges all FASTQ files belonging to the same sample before processing. Useful when reads are split across lanes or runs. |
-| `only_qc`         | **If true**, runs only **quality control** steps (FastQC & MultiQC) and exits.  |
-| `only_star`       | **If true**, runs only **STAR alignment** and stops without downstream steps.   |
-| `skip_star`       | **If true**, skips STAR alignment. Assumes **pre-aligned BAM** files are provided. |
-| `run_fusion`      | **If true**, runs **Arriba** for gene fusion detection and generates visualization plots. |
-
->  **Tip:** Use these flags to isolate specific workflow components, reduce runtime, or debug step-by-step execution.
+* `results/multiqc_input/`: FastQC, Fastp, MultiQC outputs
+* `results/multiqc_input/`: STAR BAMs, stats
+* `results/multiqc_input/: VCFs, GATK logs
+* `results/multiqc_input/`: SnpEff, VEP, MAF
+* `results/arriba/`: Fusion results + plots
+* `results/maftools/`: MAF summary visualizations
+* `results/multiqc_quality/: contains html of multiqc report
+* `output/: contains all the intermediate files for debugging
 
 ---
 
+## Configuration Parameters
 
----
+Override in `.config` files:
+
+| Parameter       | Description                                                  |
+| --------------- | ------------------------------------------------------------ |
+| `outdir`        | Output directory                                             |
+| `resultsdir`    | Directory for result summaries and final outputs             |
+| `samplesheet`   | Path to CSV with sample information                          |
+| `run_fusion`    | Run Arriba fusion detection along with variant calling       |
+| `only_star`     | Run STAR alignment only (preprocessing and STAR)             |
+| `skip_star`     | Skip STAR if pre-aligned BAMs provided                       |
+| `concatenate`   | Concatenate FASTQ lanes per sample                           |
+| `only_qc`       | Run only QC steps (FastQC, Fastp, MultiQC)                   |
+
+
 

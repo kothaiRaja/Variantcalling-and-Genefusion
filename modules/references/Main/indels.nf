@@ -26,8 +26,7 @@ process CHECK_OR_DOWNLOAD_VARIANTS_INDELS_INDEX {
     output:
     path "variants_indels.vcf.gz.tbi", emit: indels_index
 
-    when:
-    !file("${params.main_data_dir}/reference/variants_indels.vcf.gz.tbi").exists() && !params.force_reindex_indels
+    
 
     script:
     """

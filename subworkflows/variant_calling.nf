@@ -5,6 +5,7 @@ include { GATK_HAPLOTYPE_CALLER } from '../modules/gatk/haplotypecaller/main.nf'
 include { GATK_MERGEVCFS } from '../modules/gatk/merge/main.nf'
 include { BCFTOOLS_STATS } from '../modules/bcftools/stats/main.nf'
 include { GATK_VARIANT_SELECT_FILTER } from '../modules/gatk/variant_select_filter/main.nf'
+include { GATK_VARIANT_FILTER } from '../modules/gatk/variant filter/main.nf'
 include { BGZIP_TABIX_ANNOTATIONS as BGZIP_TABIX_VCF  } from '../modules/tabix/bziptabix/main.nf'
 include { BCFTOOLS_QUERY } from '../modules/bcftools/query/main.nf'
 
@@ -81,10 +82,21 @@ workflow VARIANT_CALLING {
 	ch_merged_vcfs.view { it -> "Merged_vcf_output: $it" }
 
 
-	variant_filter = GATK_VARIANT_SELECT_FILTER(ch_merged_vcfs, reference_genome, reference_genome_index, reference_genome_dict)
-	
-	ch_variant_filter = GATK_VARIANT_SELECT_FILTER.out.filtered_vcf
-	ch_versions = ch_versions.mix(GATK_VARIANT_SELECT_FILTER.out.versions.first())
+	// Choose filtering mode dynamically
+if (params.variant_filter_mode == "select") {
+    variant_filter = GATK_VARIANT_SELECT_FILTER(ch_merged_vcfs, reference_genome, reference_genome_index, reference_genome_dict)
+    ch_variant_filter = GATK_VARIANT_SELECT_FILTER.out.filtered_vcf
+    ch_versions = ch_versions.mix(GATK_VARIANT_SELECT_FILTER.out.versions.first())
+    
+} else if (params.variant_filter_mode == "global") {
+    variant_filter = GATK_VARIANT_FILTER(ch_merged_vcfs, reference_genome, reference_genome_index, reference_genome_dict)
+    ch_variant_filter = GATK_VARIANT_FILTER.out.filtered_vcf
+    ch_versions = ch_versions.mix(GATK_VARIANT_FILTER.out.versions.first())
+    
+} else {
+    error "Invalid variant_filter_mode: ${params.variant_filter_mode}. Use 'select' or 'global'."
+}
+
 	
         
 	ch_variant_filter.view {"Filtered_vcf: $it"}

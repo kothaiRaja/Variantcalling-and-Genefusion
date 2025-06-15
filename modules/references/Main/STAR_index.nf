@@ -13,12 +13,12 @@ process CREATE_STAR_INDEX {
     path "STAR_index", emit: star_index
 
     script:
-    def sjdbOverhang = params.read_length ? params.read_length.toInteger() - 1 : 99
+    def sjdbOverhang = params.read_length ? params.read_length.toInteger() - 1 : 100
 
     """
     mkdir -p STAR_index
 
-    echo "Running STAR genomeGenerate..."
+    
     STAR --runMode genomeGenerate \\
          --genomeDir STAR_index \\
          --genomeFastaFiles ${genome_fasta} \\
