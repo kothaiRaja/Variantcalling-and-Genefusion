@@ -69,7 +69,7 @@ process DOWNLOAD_ARRIBA {
     path "arriba_v${params.arriba_version}", emit: arriba_dir
 
     when:
-    !file("${params.actual_data_dir}/Tools/ARRIBA/arriba_v${params.arriba_version}").exists()
+    !file("${params.main_data_dir}/Tools/ARRIBA/arriba_v${params.arriba_version}").exists()
 
     script:
     """
