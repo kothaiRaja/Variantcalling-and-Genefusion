@@ -160,8 +160,22 @@ nextflow run main.nf -c nextflow_main_test.config -profile singularity
 ### Step 2: Run with Real Data
 
 ```bash
-nextflow run main.nf -c nextflow_ref_main.config -c path/to/custom.config --build_references  -profile singularity
-nextflow run main.nf -c nextflow_main.config -c path/to/custom.config -profile singularity
+nextflow run main.nf \
+  -c path/to/nextflow_ref_main.config \    
+  -c path/to/custom.config \               
+  --build_references \                     
+  -profile singularity                     
+
+
+nextflow run main.nf \
+  -c path/to/nextflow_main.config \                
+  -c path/to/custom.config \                       
+  --samplesheet path/to/sample_sheet.csv \         
+  --outdir path/to/output_directory \              
+  --resultsdir path/to/final_results_directory \   
+  --scatter_count 3 \                              
+  -profile singularity                             
+
 ```
 
 ---

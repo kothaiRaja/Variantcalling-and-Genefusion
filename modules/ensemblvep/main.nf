@@ -20,6 +20,7 @@ process ANNOTATEVARIANTS_VEP {
 
     script:
     def plugin_flags = params.vep_plugin_flags ?: ''
+	def extra_flags  = params.vep_extra ?: ''
 
     def avail_mem = task.memory?.giga ?: 3
     def buffer_size = (avail_mem < 8) ? 100 : (avail_mem < 20 ? 200 : 500)
@@ -40,6 +41,7 @@ process ANNOTATEVARIANTS_VEP {
         --dir_cache "${vep_cache}" \\
         --dir_plugins "${vep_plugins}" \\
         ${plugin_flags} \\
+		${extra_flags} \\
         --species "${species}" \\
         --assembly "${genome_assembly}" \\
         --cache_version ${cache_version} \\
@@ -51,9 +53,9 @@ process ANNOTATEVARIANTS_VEP {
         --offline \\
         --force_overwrite
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-      ensemblvep: \$(vep --help 2>&1 | grep -oP 'ensembl-vep\\s*:\\s*\\K[^ ]+')
-    END_VERSIONS
+cat <<-END_VERSIONS > versions.yml
+"${task.process}":
+  ensemblvep: \$(vep --help 2>&1 | grep -oP 'ensembl-vep\\s*:\\s*\\K[^ ]+')
+END_VERSIONS
     """
 }

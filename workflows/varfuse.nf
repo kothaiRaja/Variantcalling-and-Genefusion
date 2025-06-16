@@ -325,9 +325,6 @@ final_reports_ch = Channel
     .empty()
     .mix(reports_ch)
     .mix(ANNOTATE.out.reports_html.ifEmpty([]))
-    .mix(maf_reports_ch.ifEmpty([]))
-    .mix(GENE_FUSION.out.fusion_visualizations.collect { it[1] }.ifEmpty([]))
-    .mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.ifEmpty([]))
     .unique { it.name }   
     .collect()
 

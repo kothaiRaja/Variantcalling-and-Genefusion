@@ -4,7 +4,7 @@ Here is a **template version** of your config file with **one-line descriptions*
 
 ###  Markdown-Formatted for Readability
 
-```groovy
+
 // ========================== CHROMOSOME NAMING NOTE ========================== //
 // Ensure consistent naming format (e.g., "22", not "chr22") across all files:
 // Applies to: FASTA, GTF, VCF, BED, Interval Lists, etc.
@@ -14,23 +14,6 @@ Here is a **template version** of your config file with **one-line descriptions*
 // ========================== USER CONFIGURATION PARAMETERS ========================== //
 
 params {
-
-    // ----- Base output directories -----
-    outdir = "$baseDir/output"            // Folder for pipeline output files
-    resultsdir = "$baseDir/results"       // Folder for final results
-
-    // ----- Input -----
-    samplesheet = "path/to/sample_sheet.csv" // CSV listing sample IDs and FASTQ paths
-
-    // ----- Reference download URLs (can be changed if differnt URL is available) -----
-    genome_download_url = "ftp://ftp.ensembl.org/pub/release-104/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz"
-    genome_index_download_url = ""
-    gtf_download_url = "ftp://ftp.ensembl.org/pub/release-104/gtf/homo_sapiens/Homo_sapiens.GRCh38.104.gtf.gz"
-    denylist_download_url = "https://github.com/Boyle-Lab/Blacklist/raw/master/lists/hg38-blacklist.v2.bed.gz"
-    variants_snp_download_url = "ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/dbsnp_146.hg38.vcf.gz"
-    variants_snp_index_download_url = "ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/dbsnp_146.hg38.vcf.gz.tbi"
-    variants_indels_download_url = "ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz"
-    variants_indels_index_download_url = "ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi"
 
     // ----- Reference file paths (override if files already exist) -----
     reference_genome_path             = ""    // Local path to genome FASTA
@@ -46,143 +29,30 @@ params {
 
     star_genome_index_path            = ""    // STAR index directory (optional)
 
-    // ----- Tool Resources -----
+    // ----- Tool Resources -----//
     snpeff_jar_dir_path               = ""    // Path where snpEff.jar + config are stored
     snpeff_jar_path                   = "${params.snpeff_jar_dir_path}/snpEff.jar"
     snpeff_config_path                = "${params.snpeff_jar_dir_path}/snpEff.config"
     snpeff_db_dir_path                = ""    // Directory where snpEff DB is downloaded
 
     arriba_tool_dir_path              = ""    // Folder with Arriba binary
-//    arriba_known_fusions              = "ARRIBA known fusions TSV (chr22 test)"
-//    arriba_blacklist                  = "ARRIBA blacklist TSV" (chr 22 test)
     arriba_version                    = '2.4.0'
 
     vep_cache_dir_path                = ""    // Directory where VEP cache is stored (Recommended to download locally the latest version and give the path)
     vep_plugins_dir_path              = ""    // Directory with VEP plugins
 
-    // ----- VEP Info -----
-    ensembl_release                   = "113"     // Ensembl release version
+    // ----- VEP Info -----//
+    ensembl_release                   = "114"     // Ensembl release version
     genome_assembly                   = "GRCh38"  // Assembly name
     species                           = "homo_sapiens" // Species for VEP/SnpEff
-
-    // ----- Pipeline Behavior -----
-    concatenate = false     // Merge all FASTQ files per sample
-    only_qc = false         // Run only FastQC + MultiQC
-    only_star = false       // Run up to STAR and stop
-    skip_star = false       // Skip STAR if pre-aligned BAMs are provided
-    run_fusion = true       // Run Arriba fusion detection
-    maftools = false        // Run MAF visualization (vcf2maf + maftools)
-
-    // ========================== Fastp Trimming Options ========================== //
-	// Additional arguments passed to fastp for read trimming.
-	//
-	// Commonly used options:
-	//   --detect_adapter_for_pe   → Automatically detect adapter sequences for paired-end reads
-	//   --length_required <int>   → Minimum read length to retain after trimming (e.g., 50)
-	//   --cut_front               → Trim low-quality bases from the front
-	//   --cut_tail                → Trim low-quality bases from the tail
-	//   --cut_window_size <int>   → Sliding window size for quality trimming
-	//   --cut_mean_quality <int>  → Minimum average quality per window to keep
-	//   --thread <int>            → Number of threads to use (automatically handled by Nextflow)
-	//   --html <file>             → HTML report (automatically handled)
-
-	fastp_extra = "--detect_adapter_for_pe --length_required 50"
-
-
-    // ----- STAR Settings -----
-    aligned_bam_samplesheet = null
-    aligned_bam_folder      = null
 	
-    read_length             = 101        // Read length of input data; used for setting --sjdbOverhang = read_length - 1
-	star_ignore_sjdbgtf     = false      // If true, skip using the GTF file for splice junctions
-	seq_platform            = 'ILLUMINA' // Sequencing platform (used in SAM header: PL tag)
-	seq_center              = 'RBCT'     // Sequencing center name (used in SAM header: CN tag)
-
-	// --- Intron alignment parameters ---
-	star_alignIntronMin              = 20         // Minimum intron size for alignment
-	star_alignIntronMax              = 1000000    // Maximum intron size for alignment
-
-	// --- Splice junction settings ---
-	star_alignSJoverhangMin          = 8          // Minimum overhang for a splice junction
-	star_alignSJDBoverhangMin        = 1          // Minimum overhang when using annotated junctions from GTF
-
-	// --- Mismatch and alignment filtering ---
-	star_outFilterMismatchNmax       = 999        // Maximum number of mismatches (set high to rely on other filters)
-	star_outFilterMatchNmin          = 16         // Minimum number of matched bases
-	star_outFilterMatchNminOverLread = 0.3        // Minimum matched bases as a fraction of read length
-	star_outFilterScoreMinOverLread  = 0.3        // Minimum alignment score as a fraction of read length
-	star_mismatchNoverLmax           = 0.04       // Max mismatches per read length (useful for error rate filtering)
-	star_outSAMmapqUnique            = 60         // MAPQ score to assign to uniquely mapped reads
-
-	// --- Chimeric read detection (for fusion genes) ---
-	star_chimSegmentMin            = 10         // Minimum length of a chimeric segment
-	star_chimJunctionOverhangMin  = 10         // Minimum overhang at chimeric junction
-	star_chimScoreJunctionNonGTAG = -4         // Penalty for non-GTAG junctions in chimera
-	star_chimScoreMin             = 1          // Minimum total chimeric alignment score
-	star_chimScoreDropMax         = 50         // Max drop in score to keep alternative chimeric alignment
-	star_chimScoreSeparation      = 10         // Minimum score difference between top chimeric alignments
-
-	// ----- Scattered Intervals -----
-	// Enables splitting large tasks into parallel intervals (recommended by GATK)
-	// For human genome, GATK recommends scatter_count ≈ 30–50 depending on compute
-	scatterintervals = true 
-	scatter_count    = 30      // Recommended: 30 for human genome (e.g., hg38)
- 
-
-    // ----- MarkDuplicates -----
-	// Do NOT set `remove_duplicates = true` unless you have a specific reason (e.g., ChIP-seq).
-	// For RNA-seq, **duplicate reads often represent true biological signal** and should be retained.
-	remove_duplicates      = false  
-
-	// GATK Validation Stringency:
-	// STRICT  = aborts on any format issues (default, recommended for clean inputs)
-	// LENIENT = logs warnings but continues (use if your BAMs have known minor format issues)
-	// SILENT  = skips all checks (not recommended)
-	validation_stringency  = "STRICT"
-
-
-    // ----- Variant Filtering -----
-	// Controls how variant filtering is applied. Two modes:
-	// "select" = use VariantFiltration followed by SelectVariants (recommended)
-	// "global" = uses VariantFiltration directly on final VCF (less flexible)
-	variant_filter_mode = "select"  // Options: "select", "global"
-
-	// Recommended hard-filter thresholds from GATK Best Practices for RNA-seq:
-	gatk_vf_qual_filter       = 30.0   // QUAL < 30 → low confidence variant
-	gatk_vf_qd_filter         = 2.0    // QD < 2.0 → low quality normalized by depth
-	gatk_vf_fs_filter         = 60.0   // FS > 60 → high strand bias (FisherStrand test)
-	gatk_vf_mq_filter         = 40.0   // MQ < 40 → poor mapping quality
-	gatk_vf_sor_filter        = 3.0    // SOR > 3 → strong strand bias (Symmetric Odds Ratio)
-	gatk_vf_read_pos_filter   = -8.0   // ReadPosRankSum < -8 → alt allele near read ends
-	gatk_vf_baseq_filter      = -6.0   // BaseQRankSum < -6 → alt allele has low base quality
-
-
-
-
-    // ========================== snpEff Configuration ========================== //
+	 // ========================== snpEff Configuration ========================== //
 	// Genome database version used by snpEff for annotation.
 	// Format: <GenomeName>.<DatabaseVersion>
 	genomedb = 'GRCh38.105'  // Example: GRCh38.105 for Ensembl release 105
 
-	// ========================== Annotation Tools ========================== //
-	// Choose the variant annotation tool(s) to run.
-	// Options:
-	//   ['snpeff']  → Use only snpEff
-	//   ['vep']     → Use only Ensembl VEP
-	//   ['combine'] → Use both snpEff and VEP (recommended for comprehensive annotation)
-	annotation_tools = ['combine']
 
-	// Optional VEP plugin flags
-	// Provide desired plugins (space-separated). Requires corresponding cache/plugins installed.
-	// Examples:
-	//   --plugin LoF             → Predict loss-of-function impact
-	//   --plugin CADD            → Combined annotation score from CADD
-	//   --plugin PolyPhen_SIFT   → Predict deleterious effects using SIFT and PolyPhen
-	//   --plugin REVEL           → Rare Exome Variant Ensemble Learner
-	vep_plugin_flags = "--plugin LoF --plugin PolyPhen_SIFT --plugin CADD --plugin REVEL"
-
-
-    // ========================== ARRIBA Visualization ========================== //
+// ========================== ARRIBA Visualization ========================== //
 	// Optional inputs for enhancing gene fusion visualization output from Arriba.
 
 	// Protein domain annotations (optional)
@@ -222,15 +92,6 @@ process {
     }
 }
 
-// ========================== PROCESS EXTENSIONS ========================== //
-process {
-    withName: 'ANNOTATEVARIANTS_VEP' {
-        ext.args = [
-            '--fork 4',
-            '--everything'
-        ].join(' ').trim()
-    }
-}
-```
+
 
 
