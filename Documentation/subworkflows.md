@@ -1223,8 +1223,3 @@ PDF output includes:
 
 ---
 
-## Summary
-
-The `GENE_FUSION` subworkflow delivers accurate and interpretable fusion gene detection for transcriptomic datasets. It wraps state-of-the-art fusion discovery (ARRIBA) with polished visual summaries, aiding both automated pipelines and human review in clinical or cancer research.
-
----
