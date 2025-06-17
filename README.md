@@ -163,6 +163,7 @@ Before running the pipeline, **you must create and customize a configuration fil
 ```
 ### Run the main pipeline
 
+```bash
 nextflow run main.nf \
   -c configs/test.config \
   -c path/to/reference_paths.config \
@@ -171,6 +172,7 @@ nextflow run main.nf \
   --cachedir path/to/cache/files \
   -profile test,singularity \
   --run_fusion false
+ ```
 
 ### Step 2: Run with Real Data
 
@@ -180,8 +182,10 @@ nextflow run main.nf \
      -profile singularity \  
 	--build_references \  
 	--ref_base path/specified/by/user  
+```
 
-
+### Run the main pipeline
+```bash
 nextflow run main.nf \
    -c path/to/custom.config \   
 	-c path/to/reference_paths.config \     
