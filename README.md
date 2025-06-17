@@ -152,28 +152,42 @@ Before running the pipeline, **you must create and customize a configuration fil
 
 ### Step 1: Run with Test Data
 
+### To build the reference files with small test data
+
 ```bash
-nextflow run main.nf -c nextflow_ref_test.config --build_references_test true -profile singularity
-nextflow run main.nf -c nextflow_main_test.config -profile singularity
+	nextflow run main.nf \
+  -c configs/test.config \
+  -profile test,singularity \
+  --build_references \
+  --ref_base path/specified/by/user
 ```
+### Run the main pipeline
+
+nextflow run main.nf \
+  -c configs/test.config \
+  -c path/to/reference_paths.config \
+  --samplesheet https://github.com/kothaiRaja/test_data/raw/refs/heads/master/sample_sheet_new.csv \
+  --resultsdir path/to/results \
+  --cachedir path/to/cache/files \
+  -profile test,singularity \
+  --run_fusion false
 
 ### Step 2: Run with Real Data
 
 ```bash
 nextflow run main.nf \
-  -c path/to/nextflow_ref_main.config \    
-  -c path/to/custom.config \               
-  --build_references \                     
-  -profile singularity                     
+  -c path/to/custom/config \    
+     -profile singularity \  
+	--build_references \  
+	--ref_base path/specified/by/user  
 
 
 nextflow run main.nf \
-  -c path/to/nextflow_main.config \                
-  -c path/to/custom.config \                       
-  --samplesheet path/to/sample_sheet.csv \         
-  --outdir path/to/output_directory \              
-  --resultsdir path/to/final_results_directory \   
-  --scatter_count 3 \                              
+   -c path/to/custom.config \   
+	-c path/to/reference_paths.config \     
+   --samplesheet path/to/sample_sheet.csv \         
+   --outdir path/to/output_directory \              
+   --resultsdir path/to/final_results_directory \                           
   -profile singularity                             
 
 ```
