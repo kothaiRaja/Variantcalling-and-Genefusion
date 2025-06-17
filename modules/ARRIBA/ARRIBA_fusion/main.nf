@@ -11,32 +11,34 @@ process ARRIBA {
     path gtf
     path blacklist
     path known_fusions
+    path cytobands
+    path protein_domains
 
     output:
-  
     tuple val(sample_id), path("*.fusions.tsv"), emit: fusions
     tuple val(sample_id), path("*.fusions.discarded.tsv"), emit: fusions_discarded
-	path("versions.yml"), emit: versions
+    path("versions.yml"), emit: versions
 
     script:
+    """
+    echo "Running Arriba for Sample: ${sample_id}"
 
-"""
-echo "Running Arriba for Sample: ${sample_id}"
+    arriba \\
+         -x "${bam}" \\
+         -a "${fasta}" \\
+         -g "${gtf}" \\
+         -b "${blacklist}" \\
+         -k "${known_fusions}" \\
+         -p "${protein_domains}" \\
+         -c "${cytobands}" \\
+         -o "${sample_id}.fusions.tsv" \\
+         -O "${sample_id}.fusions.discarded.tsv"
 
-arriba \\
-     -x "${bam}" \\
-     -a "${fasta}" \\
-     -g "${gtf}" \\
-     -b "${blacklist}" \\
-     -k "${known_fusions}" \\
-     -o "${sample_id}.fusions.tsv" \\
-     -O "${sample_id}.fusions.discarded.tsv"
-
-echo "Arriba finished for Sample: ${sample_id}"
+    echo "Arriba finished for Sample: ${sample_id}"
 
 cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-  arriba: \$(arriba -h | grep 'Version:' 2>&1 |  sed 's/Version:\\s//')
+ "${task.process}":
+arriba: \$(arriba -h | grep 'Version:' 2>&1 | sed 's/Version:\\s//')
 END_VERSIONS
-"""
+    """
 }

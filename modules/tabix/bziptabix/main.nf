@@ -3,7 +3,7 @@ process BGZIP_TABIX_ANNOTATIONS {
 
 
     container "https://depot.galaxyproject.org/singularity/tabix:1.11--hdfd78af_0"
-    publishDir "${params.outdir}/compressed_annotations", mode: 'copy'
+    publishDir "${params.cachedir}/compressed_annotations", mode: 'copy'
 
     input:
     tuple val(sample_id), path(annotated_vcf)

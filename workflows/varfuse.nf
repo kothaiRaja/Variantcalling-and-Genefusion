@@ -294,7 +294,10 @@ if (params.run_fusion && !params.skip_star) {
         params.reference_genome,
         params.gtf_annotation,
         params.arriba_blacklist,
-        params.arriba_known_fusions
+        params.arriba_known_fusions,
+		params.cytobands,
+		params.protein_domains
+		
     )
 
     ARRIBA_fusion_ch = GENE_FUSION.out.fusion_results

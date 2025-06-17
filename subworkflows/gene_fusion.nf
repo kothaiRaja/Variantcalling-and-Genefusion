@@ -12,6 +12,8 @@ workflow GENE_FUSION {
         gtf_annotation
         arriba_blacklist
         arriba_known_fusions
+		cytobands
+		protein_domains
 
     main:
 
@@ -32,7 +34,9 @@ workflow GENE_FUSION {
             reference_genome,
             gtf_annotation,
             arriba_blacklist,
-            arriba_known_fusions
+            arriba_known_fusions,
+			cytobands,
+			protein_domains
         )
 
         ch_versions = ch_versions.mix(ARRIBA.out.versions.first())
