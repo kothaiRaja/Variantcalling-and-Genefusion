@@ -16,7 +16,7 @@ workflow BASE_RECALIBRATION {
     main:
     ch_versions = Channel.empty()
 
-    log.info "▶ Starting Base Recalibration Workflow (per interval)..."
+    log.info " Starting Base Recalibration Workflow (per interval)..."
 
     // STEP 1: Run GATK BaseRecalibrator once per sample (not per interval)
     ch_recal_input = bam_input_ch.map { sample_id, strandedness, bam, bai -> 
@@ -35,7 +35,7 @@ workflow BASE_RECALIBRATION {
     ch_recal_tables = GATK_BASERECALIBRATOR.out.recal_table
     ch_versions     = ch_versions.mix(GATK_BASERECALIBRATOR.out.versions)
 
-    ch_recal_tables.view { "📝 Recalibration Table: $it" }
+    ch_recal_tables.view { " Recalibration Table: $it" }
 
     // STEP 2: Combine BAM input with intervals
     ch_bam_interval = bam_input_ch
@@ -57,7 +57,7 @@ workflow BASE_RECALIBRATION {
             tuple(sample_id, strandedness, bam, bai, recal_table, interval)
         }
 
-    ch_apply_input.view { "▶ ApplyBQSR Input: $it" }
+    ch_apply_input.view { " ApplyBQSR Input: $it" }
 
     // STEP 5: Run ApplyBQSR for each BAM+interval+recal_table
     GATK_APPLYBQSR_RESULT = GATK_APPLYBQSR(
@@ -70,7 +70,7 @@ workflow BASE_RECALIBRATION {
     bams_base_recalibrated_ch = GATK_APPLYBQSR.out.recalibrated_bam
     ch_versions               = ch_versions.mix(GATK_APPLYBQSR.out.versions)
 
-    bams_base_recalibrated_ch.view { "✅ Final BQSR Bams: $it" }
+    bams_base_recalibrated_ch.view { " Final BQSR Bams: $it" }
 
     emit:
     recalibrated_bams = bams_base_recalibrated_ch

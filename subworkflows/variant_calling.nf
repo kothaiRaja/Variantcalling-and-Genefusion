@@ -85,26 +85,29 @@ workflow VARIANT_CALLING {
 	// Choose filtering mode dynamically
 if (params.variant_filter_mode == "select") {
     variant_filter = GATK_VARIANT_SELECT_FILTER(ch_merged_vcfs, reference_genome, reference_genome_index, reference_genome_dict)
-    ch_variant_filter = GATK_VARIANT_SELECT_FILTER.out.filtered_vcf
+    ch_variant_filter_uncompressed = GATK_VARIANT_SELECT_FILTER.out.filtered_vcf
     ch_versions = ch_versions.mix(GATK_VARIANT_SELECT_FILTER.out.versions.first())
-    
+
+    // Compress and index (bgzip + tabix)
+    compressed_vcf = BGZIP_TABIX_VCF(
+        ch_variant_filter_uncompressed.map { sample_id, vcf -> tuple(sample_id, vcf) }
+    )
+    ch_compressed_vcf = compressed_vcf.out.compressed_indexed
+    ch_versions = ch_versions.mix(BGZIP_TABIX_VCF.out.versions.first())
+
 } else if (params.variant_filter_mode == "global") {
     variant_filter = GATK_VARIANT_FILTER(ch_merged_vcfs, reference_genome, reference_genome_index, reference_genome_dict)
-    ch_variant_filter = GATK_VARIANT_FILTER.out.filtered_vcf
+    ch_compressed_vcf = GATK_VARIANT_FILTER.out.filtered_vcf
     ch_versions = ch_versions.mix(GATK_VARIANT_FILTER.out.versions.first())
-    
-} else {
-    error "Invalid variant_filter_mode: ${params.variant_filter_mode}. Use 'select' or 'global'."
 }
+
 
 	
         
-	ch_variant_filter.view {"Filtered_vcf: $it"}
+	ch_compressed_vcf.view { "Filtered VCF (compressed & indexed): $it" }
+
 	
-	compressed_vcf = BGZIP_TABIX_VCF(ch_variant_filter)
-	
-	ch_compressed_vcf = BGZIP_TABIX_VCF.out.compressed_indexed
-	ch_versions = ch_versions.mix(BGZIP_TABIX_VCF.out.versions.first())
+
 	
 	bcftools_query = BCFTOOLS_QUERY(ch_compressed_vcf)
 	

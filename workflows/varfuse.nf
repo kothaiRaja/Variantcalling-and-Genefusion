@@ -144,7 +144,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
         .view { meta, file -> println "  Exons BED Tuple: ${meta}, File: ${file}" }
 		
 	log.info "Starting Interval Processing..."
-    INTERVAL_PROCESSING(ch_exon_bed, params.reference_genome, params.reference_genome_dict)
+    INTERVAL_PROCESSING(ch_exon_bed, params.reference_genome, params.reference_genome_index, params.reference_genome_dict)
 
     // Capture Outputs from Interval Processing
     intervals_ch = INTERVAL_PROCESSING.out.intervals

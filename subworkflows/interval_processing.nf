@@ -8,6 +8,7 @@ workflow INTERVAL_PROCESSING {
     take:
     bed_file_ch
 	reference_genome
+	reference_genome_index
 	reference_genome_dict
 	
 	 main:
@@ -29,7 +30,7 @@ workflow INTERVAL_PROCESSING {
 
     if (params.scatterintervals) {
         log.info " Scattering intervals for parallel execution..." 
-		scattered_intervals = SCATTER_INTERVAL_LIST(interval_list_ch, params.reference_genome_dict)
+		scattered_intervals = SCATTER_INTERVAL_LIST(interval_list_ch, reference_genome, reference_genome_index, reference_genome_dict)
 		scattered_intervals_ch = SCATTER_INTERVAL_LIST.out.scattered_intervals
 								.map { meta, file -> file }  
 								.flatten()
