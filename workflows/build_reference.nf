@@ -574,33 +574,37 @@ arriba_dir_ch.view { arriba_dir_path ->
 
 
 // ========================== VEP Cache Handling ========================== //
-    def vep_cache_ch
+def vep_cache_ch
 
-    if (params.vep_cache_dir_path && file("${params.vep_cache_dir_path}").exists()) {
-        println " VEP cache found in the server directory."
-        vep_cache_ch = Channel.of(file("${params.vep_cache_dir_path}"))
+if (!params.enable_vep_cache) {
+    println "  VEP cache download skipped (params.enable_vep_cache = false)"
+    vep_cache_ch = Channel.empty()
+    vepCachePath = 'NOT_USED'
 
-    } else if (file("${params.ref_base}/Tools/VEP").exists()) {
-        println " VEP cache found in the publish directory."
-        vep_cache_ch = Channel.of(file("${params.ref_base}/Tools/VEP"))
+} else if (params.vep_cache_dir_path && file("${params.vep_cache_dir_path}").exists()) {
+    println " VEP cache found in the server directory."
+    vep_cache_ch = Channel.of(file("${params.vep_cache_dir_path}"))
 
-    } else {
-        println " VEP cache not found. Downloading..."
-        def result = DOWNLOAD_VEP_CACHE()
-        vep_cache_ch = result.vep_cache
-    }
+} else if (file("${params.ref_base}/Tools/VEP").exists()) {
+    println " VEP cache found in the publish directory."
+    vep_cache_ch = Channel.of(file("${params.ref_base}/Tools/VEP"))
 
-    // ========================== Capture VEP Cache Path ========================== //
+} else {
+    println "️  VEP cache not found. Downloading..."
+    def result = DOWNLOAD_VEP_CACHE()
+    vep_cache_ch = result.vep_cache
+}
+
+// ========================== Capture VEP Cache Path ========================== //
 vep_cache_ch.view { vep_cache_path ->  
     if (vep_cache_path.toString().contains('/work/')) {
-        // Redirect to the published directory
         vepCachePath = "${params.ref_base}/Tools/VEP"
     } else {
-        // Keep the original path if it's from the server or already published
         vepCachePath = vep_cache_path.toString()
     }
     println " VEP Cache path set to: ${vepCachePath}"
 }
+
 
 // ========================== VEP Plugins Handling ========================== //
 def vep_plugins_ch
