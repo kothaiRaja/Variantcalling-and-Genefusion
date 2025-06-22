@@ -10,7 +10,8 @@
 
 This flowchart represents the RNA-seq analysis workflow, including variant calling and gene fusion detection.
 
-![RNA-seq Pipeline Workflow](Documentation/complete pipeline.png)
+![RNA-seq Pipeline Workflow](Documentation/complete%20pipeline.png)
+
 
 ---
 
