@@ -92,7 +92,7 @@ if (params.variant_filter_mode == "select") {
     compressed_vcf = BGZIP_TABIX_VCF(
         ch_variant_filter_uncompressed.map { sample_id, vcf -> tuple(sample_id, vcf) }
     )
-    ch_compressed_vcf = compressed_vcf.out.compressed_indexed
+    ch_compressed_vcf = BGZIP_TABIX_VCF.out.compressed_indexed
     ch_versions = ch_versions.mix(BGZIP_TABIX_VCF.out.versions.first())
 
 } else if (params.variant_filter_mode == "global") {

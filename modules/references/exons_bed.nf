@@ -11,6 +11,9 @@ process GENERATEEXONS_BED {
     output:
     path("exons.bed"), emit: exons_bed
 
+    when:
+    !params.exons_bed && !file("${params.ref_base}/reference/exons.bed").exists()
+
     script:
     """
     echo "Extracting exon regions from GTF file to BED format..."

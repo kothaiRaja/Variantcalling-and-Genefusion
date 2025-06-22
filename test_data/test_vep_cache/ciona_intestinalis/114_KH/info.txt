@@ -1,0 +1,8 @@
+species	ciona_intestinalis
+assembly	KH
+sift	
+polyphen	
+source_genebuild	2012-03
+source_assembly	KH
+variation_cols	chr,variation_name,failed,somatic,start,end,allele_string,strand,clin_sig,phenotype_or_disease,clin_sig_allele,pubmed,var_synonyms
+var_type	tabix

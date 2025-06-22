@@ -11,8 +11,7 @@ process ARRIBA {
     path gtf
     path blacklist
     path known_fusions
-    path cytobands
-    path protein_domains
+    
 
     output:
     tuple val(sample_id), path("*.fusions.tsv"), emit: fusions
@@ -29,8 +28,6 @@ process ARRIBA {
          -g "${gtf}" \\
          -b "${blacklist}" \\
          -k "${known_fusions}" \\
-         -p "${protein_domains}" \\
-         -c "${cytobands}" \\
          -o "${sample_id}.fusions.tsv" \\
          -O "${sample_id}.fusions.discarded.tsv"
 

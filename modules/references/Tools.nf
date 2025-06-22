@@ -1,20 +1,33 @@
 process DOWNLOAD_SNPEFF_TOOL {
     tag "Download SnpEff Tool"
-    publishDir "${params.ref_base}/Tools", mode: 'copy'
-    container null  
+    publishDir "${params.ref_base}/Tools/snpEff", mode: 'copy'
+    container null
+    label 'process_medium'
 
     output:
-    path "${params.snpeff_jar_dir}/snpEff.jar", emit: snpeff_jar
-    path "${params.snpeff_jar_dir}/snpEff.config", emit: snpeff_config
+    path "snpEff.jar", emit: snpeff_jar
+    path "snpEff.config", emit: snpeff_config
+ 
 
     script:
     """
-    mkdir -p ${params.snpeff_jar_dir}
-    wget -q -O snpEff_latest_core.zip https://snpeff.blob.core.windows.net/versions/snpEff_latest_core.zip
-    unzip -o -j snpEff_latest_core.zip -d ${params.snpeff_jar_dir}
-    rm snpEff_latest_core.zip
+    
+   
+    echo "Downloading SnpEff..."
+    wget -q -O snpEff.zip https://sourceforge.net/projects/snpeff/files/snpEff_latest_core.zip/download
+
+    echo "Extracting snpEff.jar and snpEff.config..."
+    unzip -o -j snpEff.zip 'snpEff/snpEff.jar' 'snpEff/snpEff.config' -d .
+
+
+    echo "Cleanup..."
+    rm snpEff.zip
+
+    echo "SnpEff tool downloaded and extracted to \$(pwd)"
     """
 }
+
+
 
 process DOWNLOAD_SNPEFF_DB {
     tag "Download SnpEff Database"
@@ -23,41 +36,39 @@ process DOWNLOAD_SNPEFF_DB {
 
     input:
     val genome
-    path snpeff_jar_path
+    path(snpeff_jar) 
+	path(snpeff_config)
 
     output:
-    path "${params.snpeff_db_dir}/${genome}"
+    path "${params.snpeff_db_dir}/${genome}", emit: snpeff_db_dir
 
     script:
 """
 mkdir -p ${params.snpeff_db_dir}
 data_dir=\$(realpath ${params.snpeff_db_dir})
 
-# Correct config path based on jar location
-config_file=\$(dirname ${snpeff_jar_path})/snpEff.config
+# Correct config path based on actual snpeff_config
+config_file=${snpeff_config}
 
 # Patch config if missing genome entry
 if ! grep -q "^${genome}.genome" \$config_file; then
     echo "${genome}.genome : Homo_sapiens" >> \$config_file
 fi
 
-# Also ensure repository line exists
+# Ensure repository line exists
 if ! grep -q "^database.repository" \$config_file; then
     echo "database.repository : https://snpeff.blob.core.windows.net/databases/" >> \$config_file
 fi
 
-# Download the database if not present
+# Download database if not already present
 if [ ! -d "\$data_dir/${genome}" ]; then
     echo "Downloading SnpEff database for ${genome}..."
-    java -Xmx4g -Xms2g -jar ${snpeff_jar_path} download ${genome} -dataDir \$data_dir -c \$config_file -v
+    java -Xmx4g -Xms2g -jar ${snpeff_jar} download ${genome} -dataDir \$data_dir -c ${snpeff_config} -v
 else
     echo "SnpEff database for ${genome} already exists. Skipping download."
 fi
 """
-
-    
 }
-
 
 
 process DOWNLOAD_ARRIBA {
@@ -67,9 +78,7 @@ process DOWNLOAD_ARRIBA {
 
     output:
     path "arriba_v${params.arriba_version}", emit: arriba_dir
-
-    when:
-    !file("${params.ref_base}/Tools/ARRIBA/arriba_v${params.arriba_version}").exists()
+    
 
     script:
     """
@@ -89,7 +98,6 @@ process DOWNLOAD_ARRIBA {
     rm arriba.tar.gz
 
     echo "Arriba v${params.arriba_version} setup completed."
-	"""
-	
+    """
 }
 

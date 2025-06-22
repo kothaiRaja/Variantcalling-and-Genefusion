@@ -2,7 +2,7 @@ process MultiQC {
   tag "MultiQC"
   label 'process_low'
 
-  publishDir params.multiqc_qualtiy_outdir, mode: "copy"
+  publishDir params.multiqc_quality_outdir, mode: "copy"
   container params.multiqc_quality_container
 
   input:
@@ -16,7 +16,8 @@ process MultiQC {
   """
   echo "Running MultiQC on quality control reports..."
 
-  multiqc ${report_files} -o .
+  multiqc ${report_files} -o . 
+
 
 
 # Capture MultiQC version

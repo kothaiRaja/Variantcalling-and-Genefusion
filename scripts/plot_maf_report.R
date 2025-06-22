@@ -39,14 +39,14 @@ if (nrow(maf@data) == 0 || nrow(getGeneSummary(maf)) == 0) {
   cat("⚠️ No mutations found in MAF file. Creating empty placeholder plots.\n")
   outdir <- paste0("plots_", sample_id)
   dir.create(outdir, showWarnings = FALSE)
-  
+
   # Create blank PDFs as placeholders
   pdf(file.path(outdir, "maf_summary_plot.pdf")); plot.new(); title("No mutations found"); dev.off()
   pdf(file.path(outdir, "oncoplot_top10.pdf")); plot.new(); title("No mutations found"); dev.off()
   pdf(file.path(outdir, "titv_plot.pdf")); plot.new(); title("No mutations found"); dev.off()
   pdf(file.path(outdir, "rainfall_plot.pdf")); plot.new(); title("No mutations found"); dev.off()
   pdf(file.path(outdir, "lollipop_plot_placeholder.pdf")); plot.new(); title("No mutations found"); dev.off()
-  
+
   cat(" Placeholder plots generated in:", outdir, "\n")
   quit(status = 0)
 }
@@ -89,10 +89,18 @@ dev.off()
 # 7. Lollipop Plot (Gene-Level)
 # ─────────────────────────────────────────────────────
 genes <- getGeneSummary(maf)$Hugo_Symbol[1:1]  # Top mutated gene
+
 for (g in genes) {
+  cat("Processing gene:", g, "\n")
   pdf(file.path(outdir, paste0("lollipop_plot_", g, ".pdf")), width = 10, height = 4)
-  lollipopPlot(maf = maf, gene = g)
+
+  tryCatch({
+    lollipopPlot(maf = maf, gene = g)
+  }, error = function(e) {
+    cat("⚠️ Skipping gene", g, "- no structure found or other issue:", conditionMessage(e), "\n")
+    plot.new()
+    title(paste("Lollipop plot not available for", g))
+  })
+
   dev.off()
 }
-
-cat("Plots saved in:", outdir, "\n")

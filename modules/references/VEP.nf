@@ -3,6 +3,8 @@ process DOWNLOAD_VEP_CACHE {
     label 'process_high'
     publishDir "${params.ref_base}/Tools/VEP", mode: 'copy'
     container null
+	
+
 
     
     output:
@@ -16,11 +18,12 @@ process DOWNLOAD_VEP_CACHE {
     wget -q -O vep_cache.tar.gz https://ftp.ensembl.org/pub/release-${params.ensembl_release}/variation/indexed_vep_cache/${params.species}_vep_${params.ensembl_release}_${params.genome_assembly}.tar.gz
 
 
-    tar -xzvf vep_cache.tar.gz -C vep_cache --strip-components=1
+    tar -xzvf vep_cache.tar.gz -C vep_cache 
     rm vep_cache.tar.gz
     """
     
 }
+
 
 process DOWNLOAD_VEP_PLUGINS {
     tag "Download VEP Plugins"

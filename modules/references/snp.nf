@@ -24,10 +24,8 @@ process CHECK_OR_DOWNLOAD_VARIANTS_SNP_INDEX {
     publishDir "${params.ref_base}/reference", mode: 'copy'
 
     output:
-    path "variants_snp.vcf.gz.tbi", emit: snp_index
+    path "variants_snp.vcf.gz.tbi", emit: vcf_snp_index
 
-    when:
-    !file("${params.ref_base}/reference/variants_snp.vcf.gz.tbi").exists()
 
     script:
     """

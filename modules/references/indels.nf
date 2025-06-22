@@ -7,8 +7,6 @@ process CHECK_OR_DOWNLOAD_VARIANTS_INDELS {
     output:
     path "variants_indels.vcf.gz", emit: variants_indels
 
-    when:
-    !file("${params.ref_base}/reference/variants_indels.vcf.gz").exists()
 
     script:
     """
@@ -24,7 +22,7 @@ process CHECK_OR_DOWNLOAD_VARIANTS_INDELS_INDEX {
     publishDir "${params.ref_base}/reference", mode: 'copy'
 
     output:
-    path "variants_indels.vcf.gz.tbi", emit: indels_index
+    path "variants_indels.vcf.gz.tbi", emit: vcf_indel_index
 
     
 
@@ -48,8 +46,6 @@ process INDEX_INDEL_VCF {
     output:
     path "*.tbi", emit: indels_index
 
-    when:
-    !file("${params.ref_base}/reference/variants_indels.vcf.gz.tbi").exists() || params.force_reindex_indels
 
     script:
     """

@@ -1,0 +1,2 @@
+sample_id,fastq_1,fastq_2,strandedness
+SRR891268,https://github.com/kothaiRaja/test_data/raw/refs/heads/master/reads/SRR891268_chr22_enriched_R1.fastq.gz,https://github.com/kothaiRaja/test_data/raw/refs/heads/master/reads/SRR891268_chr22_enriched_R2.fastq.gz,unstranded

@@ -1,4 +1,21 @@
 nextflow.enable.dsl = 2
+// Import subworkflows for reference files 
+
+include { DOWNLOAD_REFERENCE_GENOME } from '../subworkflows/download_genome.nf'
+include { DOWNLOAD_GTF_ANNOTATION } from '../subworkflows/download_gtf.nf'
+include { DOWNLOAD_AND_PREPARE_VARIANT_VCFS } from '../subworkflows/prepare_vcf.nf'
+include { BUILD_STAR_INDEX } from '../subworkflows/star_index.nf'
+include { SNPEFF_SETUP } from '../subworkflows/snpeff_setup.nf'
+include { ARRIBA_SETUP} from '../subworkflows/arriba.nf'
+include { VEP_SETUP } from '../subworkflows/VEP_setup.nf'
+
+
+
+
+
+
+
+
 
 // Import subworkflows
 include { PREPROCESSING } from '../subworkflows/preprocessing.nf'
@@ -30,9 +47,52 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 
     ch_versions = Channel.empty()
 	reports_ch = Channel.empty()
+	
+	// ============================ DOWNLOAD OR USE GENOME + GTF ============================
+   
+    genome_refs = DOWNLOAD_REFERENCE_GENOME()
+    reference_genome_ch       = genome_refs.genome
+    reference_genome_index_ch = genome_refs.genome_index
+    reference_genome_dict_ch  = genome_refs.genome_dict
+	
+	// ============================ DOWNLOAD OR USE GTF + EXONS BED ============================
+
+	gtf_outputs = DOWNLOAD_GTF_ANNOTATION()
+	gtf_ch        = gtf_outputs.gtf
+	exons_bed_ch  = gtf_outputs.exons_bed
+	
+	//=========================PREPARING KNOWN_VCFs=====================
+	
+	prepare_variants_output = DOWNLOAD_AND_PREPARE_VARIANT_VCFS()
+	known_variants_ch = prepare_variants_output.merged_vcf 
+	known_variants_index = prepare_variants_output.merged_vcf_index
+	
+	//========================Creating STAR index=========================
+	BUILD_STAR_INDEX(reference_genome_ch, gtf_ch)
+	
+	star_index_ch = BUILD_STAR_INDEX.out.star_index
+	
+	//======================SNPEFF TOOL===============================
+	
+	SNPEFF_SETUP(params.genomedb)
+
+	snpeff_jar_ch    = SNPEFF_SETUP.out.snpeff_jar
+	snpeff_config_ch = SNPEFF_SETUP.out.snpeff_config
+	snpeff_db_dir_ch = SNPEFF_SETUP.out.snpeff_db_dir
+	
+	//====================== Run the arriba setup
+	ARRIBA_SETUP()
 
 
-    // ============================ VALIDATION ============================
+	arriba_dir_ch = ARRIBA_SETUP.out.arriba_dir
+	
+	//==================VEP_SETUP======================================
+	vep_outputs = VEP_SETUP()  
+
+	vep_cache_ch   = vep_outputs.vep_cache
+	vep_plugins_ch = vep_outputs.vep_plugins
+	
+	// ============================ VALIDATION ============================
     if (params.only_qc && params.only_star) {
         error " Cannot run both 'only_qc' and 'only_star'. Please set only one to true."
     }
@@ -50,27 +110,8 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
         log.info(" QC completed. Exiting pipeline.")
         return
     }
-
-    // ============================ ONLY STAR MODE ============================
-    if (params.only_star) {
-        log.info " Running ONLY STAR alignment..."
-
-        PREPROCESSING(params.samplesheet, params.dump_script)
-
-        STAR_ALIGN(
-            PREPROCESSING.out.trimmed_reads,
-            params.star_genome_index,
-            params.gtf_annotation,
-            null,
-            null
-        )
-
-        STAR_ALIGN.out.bam_sorted.view { " STAR sorted BAM: $it" }
-
-        return
-    }
-
-    // ============================ FULL PIPELINE MODE ============================
+	
+	// ============================ FULL PIPELINE MODE ============================
     log.info " Starting Preprocessing using sample sheet..."
 
     PREPROCESSING(params.samplesheet, params.dump_script)
@@ -83,22 +124,18 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
     ch_versions        = ch_versions.mix(PREPROCESSING.out.versions)
 
     // ========================== STAR ALIGNMENT LOGIC ==========================
-    if (!params.skip_star) {
         log.info " Running STAR Alignment..."
 
-        def aligned_bam_samplesheet = params.aligned_bam_samplesheet ? file(params.aligned_bam_samplesheet) : null
-        def aligned_bam_folder      = params.aligned_bam_folder      ? file(params.aligned_bam_folder) : null
-
+        
         STAR_ALIGN(
             trimmed_reads_ch, 
-            params.star_genome_index, 
-            params.gtf_annotation, 
-            aligned_bam_samplesheet, 
-            aligned_bam_folder
+            star_index_ch, 
+            gtf_ch
         )
 
         star_bam_ch        = STAR_ALIGN.out.bam_sorted
         chimeric_reads_ch  = STAR_ALIGN.out.chimeric_reads
+		chimeric_junction_ch = STAR_ALIGN.out.chimeric_junction
         filtered_bams_ch   = STAR_ALIGN.out.filtered_bams
 		flagstats_ch 	   = STAR_ALIGN.out.flagstats
 		align_stats_ch     = STAR_ALIGN.out.align_stats
@@ -107,52 +144,30 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 		reports_ch = reports_ch.mix(flagstats_ch.collect { it[2] }.ifEmpty([]))
 							.mix(align_stats_ch.collect { it[2] }.ifEmpty([]))
 							.mix(star_logs_ch.collect { it[2] }.ifEmpty([]))
-
-    } else {
-        log.info " Skipping STAR alignment as per user request."
+							
 		
-		def aligned_bam_folder = params.aligned_bam_folder ? file(params.aligned_bam_folder) : null
+							
+							
+	// ===================== Intervals Processing ===================== //
+		log.info "Starting Interval Processing..."
 
-    if (!aligned_bam_folder) {
-        error "You must set 'aligned_bam_folder' when skipping STAR alignment."
-    }
+	// Use exons_bed_ch that was generated earlier
+	ch_exon_bed = exons_bed_ch.map { file -> tuple(file.baseName, file) }
 
-    filtered_bams_ch = Channel
-        .fromPath("${aligned_bam_folder}/*.bam")
-        .map { bam_file ->
-            def sample_id = bam_file.baseName.replaceAll(/\.bam$/, "")
-            tuple(sample_id, bam_file)
-        }
+	INTERVAL_PROCESSING(
+		ch_exon_bed,
+		reference_genome_ch,
+		reference_genome_index_ch,
+		reference_genome_dict_ch
+	)
 
-        star_bam_ch        = Channel.empty()
-        chimeric_reads_ch  = Channel.empty()
-        flagstats_ch       = Channel.empty()
-        align_stats_ch     = Channel.empty()
-        star_logs_ch       = Channel.empty()
-        
-    }
+	// Capture Outputs from Interval Processing
+	intervals_ch = INTERVAL_PROCESSING.out.intervals
+	ch_versions  = ch_versions.mix(INTERVAL_PROCESSING.out.versions)
 
-
-
-	
-	//=====================================Intervals processing============================//
-	
-	// Step 1: Convert BED file to Channel
-    ch_exon_bed = Channel
-        .fromPath(params.exons_BED)
-        .map { file_path -> tuple(file_path.baseName, file_path) }
-        .view { meta, file -> println "  Exons BED Tuple: ${meta}, File: ${file}" }
+	// View the intervals to confirm output
+	intervals_ch.view { file -> "Generated Interval: ${file}" }
 		
-	log.info "Starting Interval Processing..."
-    INTERVAL_PROCESSING(ch_exon_bed, params.reference_genome, params.reference_genome_index, params.reference_genome_dict)
-
-    // Capture Outputs from Interval Processing
-    intervals_ch = INTERVAL_PROCESSING.out.intervals
-	ch_versions        = ch_versions.mix(INTERVAL_PROCESSING.out.versions)
-
-    // View the intervals to confirm output
-    intervals_ch.view { file -> "Generated Interval: ${file}" }
-	
 	//===================================Markduplicates==============================//
 	
 	log.info "Starting MarkDuplicates Processing..."
@@ -162,25 +177,23 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
     // Capture Outputs
     dedup_bam_ch = MARK_DUPLICATES.out.marked_bams_bai
 	reports_ch = reports_ch.mix(MARK_DUPLICATES.out.marked_bams_bai_metrics.ifEmpty([]))
-
 	
 	// ==================== SPLIT & MERGE BAMs ==================== //
 
 	log.info "Running Split & Merge BAMs..."
 
 	SPLIT_MERGE_BAMS(
-		dedup_bam_ch,        // BAMs after MarkDuplicates
-		intervals_ch,		// Scattered intervals from Interval Processing
-		params.reference_genome,
-		params.reference_genome_index,
-		params.reference_genome_dict
+		dedup_bam_ch,        
+		intervals_ch,		
+		reference_genome_ch,
+		reference_genome_index_ch,
+		reference_genome_dict_ch
 		
 	)
 
 	// Set the final BAMs channel
 	final_bams_ch 	   = SPLIT_MERGE_BAMS.out.merged_calmd_bams
 	ch_versions        = ch_versions.mix(SPLIT_MERGE_BAMS.out.versions)
-	
 	
 	//======================BASE_RECALIBRATION=========================//
 	
@@ -190,26 +203,25 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
     BASE_RECALIBRATION(
         final_bams_ch,    // BAMs after merging & CALMD
         intervals_ch,		// Scattered intervals from Interval Processing
-    	params.reference_genome,
-		params.reference_genome_index,
-		params.reference_genome_dict,
-		params.merged_vcf,
-		params.merged_vcf_index)
+    	reference_genome_ch,
+		reference_genome_index_ch,
+		reference_genome_dict_ch,
+		known_variants_ch,
+		known_variants_index)
 
     recalibrated_bams_ch = BASE_RECALIBRATION.out.recalibrated_bams
 	ch_versions        = ch_versions.mix(BASE_RECALIBRATION.out.versions)
-
 	
 	// =========== Step 6: Variant Calling =========== //
     log.info " Running Variant Calling..."
     VARIANT_CALLING(
         recalibrated_bams_ch,            // BAMs after splitting & merging
 		intervals_ch,
-        params.reference_genome,
-        params.reference_genome_index,
-        params.reference_genome_dict,
-        params.merged_vcf,
-        params.merged_vcf_index
+        reference_genome_ch,
+		reference_genome_index_ch,
+		reference_genome_dict_ch,
+		known_variants_ch,
+		known_variants_index
     )
 
     // Capture Variant Calling Outputs
@@ -236,15 +248,15 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	annotation_results = ANNOTATE(
         filtered_vcf_ch,
         params.annotation_tools,
-		params.snpeff_jar,
-        params.snpeff_db,
-		params.snpeff_config,
-        params.genomedb,
-        params.genome_assembly,
-        params.species,
-        params.cache_version,
-        params.vep_cache_dir,
-		params.vep_plugins_dir
+		snpeff_jar_ch,
+		snpeff_db_dir_ch,
+		snpeff_config_ch,
+		params.genomedb,
+		params.genome_assembly,
+		params.species,
+		params.cache_version,
+		vep_cache_ch,
+		vep_plugins_ch
 		
     )
 
@@ -269,8 +281,8 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 
         MAF_ANALYSIS(
             uncompressed_annotated_vcf,
-            params.reference_genome,
-            params.vep_cache_dir,
+            reference_genome_ch,
+            vep_cache_ch,
             params.rscript
         )
 
@@ -283,20 +295,18 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
     }
 	
 	
-	
-	//================== Step 8: Run Gene Fusion Analysis on STAR Chimeric Reads ================//
+	//================== Step 8: Run Gene Fusion Analysis Independently ================//
 
-if (params.run_fusion && !params.skip_star) {
+if (params.run_fusion) {
     log.info " Running Gene Fusion Analysis..."
 
     fusions = GENE_FUSION(
         star_bam_ch,  
-        params.reference_genome,
-        params.gtf_annotation,
+        reference_genome_ch,
+        gtf_ch,
         params.arriba_blacklist,
-        params.arriba_known_fusions,
-		params.cytobands,
-		params.protein_domains
+        params.arriba_known_fusions
+		
 		
     )
 
@@ -304,14 +314,12 @@ if (params.run_fusion && !params.skip_star) {
     reports_ch = report_ch.mix(GENE_FUSION.out.fusion_visualizations.collect { it[1] }.ifEmpty([]))
     ch_versions = ch_versions.mix(GENE_FUSION.out.versions)
 
-} else if (params.run_fusion && params.skip_star) {
-    log.warn " STAR alignment was skipped. Gene fusion analysis requires STAR chimeric reads."
+
 } else {
     log.info " Skipping gene fusion detection as per configuration (params.run_fusion = false)"
 }
 
-
- //=======================================Version collection==============================//
+//=======================================Version collection==============================//
  
  ch_version_yaml = Channel.empty()
  CUSTOM_DUMPSOFTWAREVERSIONS(
@@ -337,8 +345,21 @@ multiqc_quality = MultiQC(final_reports_ch)
 
 
 
+
 	
+
+    
 }
+
+
+
+
+
+
+	
+
+	
+
    
 	
 	

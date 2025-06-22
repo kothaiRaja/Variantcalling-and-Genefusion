@@ -13,19 +13,22 @@ process CREATE_STAR_INDEX {
     path "STAR_index", emit: star_index
 
     script:
-    def sjdbOverhang = params.read_length ? params.read_length.toInteger() - 1 : 100
+"""
+mkdir -p STAR_index
 
-    """
-    mkdir -p STAR_index
+# Determine sjdbOverhang
+OVERHANG=\$(( ${params.read_length ?: 101} - 1 ))
 
-    
-    STAR --runMode genomeGenerate \\
-         --genomeDir STAR_index \\
-         --genomeFastaFiles ${genome_fasta} \\
-         --sjdbGTFfile ${genome_gtf} \\
-         --sjdbOverhang ${sjdbOverhang} \\
-         --runThreadN ${task.cpus}
+# Run STAR genome generation
+STAR --runMode genomeGenerate \\
+     --genomeDir STAR_index \\
+     --genomeFastaFiles ${genome_fasta} \\
+     --sjdbGTFfile ${genome_gtf} \\
+     --sjdbOverhang \$OVERHANG \\
+     --runThreadN ${task.cpus}
 
-    STAR --version > STAR_index/STAR.version.txt
-    """
+# Save STAR version
+STAR --version > STAR_index/STAR.version.txt
+"""
+
 }

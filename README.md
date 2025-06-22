@@ -10,7 +10,7 @@
 
 This flowchart represents the RNA-seq analysis workflow, including variant calling and gene fusion detection.
 
-![RNA-seq Pipeline Workflow](Documentation/workflow.png)
+![RNA-seq Pipeline Workflow](Documentation/complete pipeline.png)
 
 ---
 
@@ -30,86 +30,60 @@ This pipeline processes RNA-seq data to:
 
 ### Key Features
 
-*  Preprocessing: FastQC, Fastp, MultiQC
-*  Variant Calling: STAR, GATK HaplotypeCaller, filtering, annotation with SnpEff & VEP
-*  Fusion Detection: Arriba + visualization
-*  Reference Setup: Automatic download/indexing of genome, annotation, known variants, and tool resources
-*  VCF Post-processing: bgzip, tabix, vcf2maf, maftools
-*  Modular Design: Easy extension and reuse of workflows and subworkflows
+* Preprocessing: FastQC, Fastp, MultiQC
+* Variant Calling: STAR, GATK HaplotypeCaller, filtering, annotation with SnpEff & VEP
+* Fusion Detection: Arriba + visualization
+* Modular Design: Easy extension and reuse of workflows and subworkflows
+* Optional MAF reporting via vcf2maf and maftools
+* Flexible configuration using custom and profile-based settings
 
 ---
 
-## **Workflow Structure**
+## Workflow Structure
 
-### **1. Build Reference (Optional or Precomputed)**
+### 1. Preprocessing
 
-- Checks for user-provided reference files — or downloads if missing  
-- Prepares the following:
-  - **Reference genome** (FASTA + index + dict)
-  - **Gene annotations** (GTF, BED, interval list)
-  - **Known variants** (dbSNP, Mills/1000G, blacklist)
-  - **Tool resources**: SnpEff DB, VEP cache + plugins, Arriba package
-- Outputs a unified config file with resolved reference paths
+* **FastQC & Fastp**: Raw read quality check and trimming
+* **MultiQC**: Aggregates QC metrics for an overview
 
----
+### 2. STAR Alignment
 
-### **2. Preprocessing**
+* **Two-pass STAR alignment** with splice junctions
+* Filters orphan reads and computes **alignment statistics**
 
-- **FastQC & Fastp**: Raw read quality check and trimming  
-- **MultiQC**: Aggregates QC metrics for an overview
+### 3. BAM Processing
 
----
+* **Sorting**, **marking duplicates**, and **SplitNCigarReads**
+* **Merge BAMs** (if split by intervals)
+* Reset read groups and run **samtools calmd** for MD/NR tags
 
-### **3. STAR Alignment**
+### 4. Base Recalibration
 
-- **Two-pass STAR alignment** with splice junctions  
-- Filters orphan reads and computes **alignment statistics**
+* **GATK BaseRecalibrator** on known variants
+* **ApplyBQSR** to adjust base quality scores
 
----
+### 5. Variant Calling
 
-### **4. BAM Processing**
+* **GATK HaplotypeCaller** across scattered intervals
+* Merge VCFs and filter for high-confidence SNPs/Indels
+* Compress, index, and generate variant statistics
 
-- **Sorting**, **marking duplicates**, and **SplitNCigarReads**  
-- **Merge BAMs** (if split by intervals)  
-- Reset read groups and run **samtools calmd** for MD/NR tags
+### 6. Variant Annotation
 
----
+* **SnpEff** and/or **VEP** (with plugins: LoF, CADD, REVEL, etc.)
+* Convert VCFs to **MAF** using `vcf2maf`
+* Generate mutation summary plots via **maftools**
 
-### **5. Base Recalibration**
+### 7. Fusion Detection (Optional)
 
-- **GATK BaseRecalibrator** on known variants  
-- **ApplyBQSR** to adjust base quality scores
+* **Arriba** identifies gene fusions from STAR-aligned BAMs
+* Automatically produces **visual plots** of fusions
 
----
+### 8. Reports
 
-### **6. Variant Calling**
-
-- **GATK HaplotypeCaller** across scattered intervals  
-- Merge VCFs and filter for high-confidence SNPs/Indels  
-- Compress, index, and generate variant statistics
-
----
-
-### **7. Variant Annotation**
-
-- **SnpEff** and/or **VEP** (with plugins: LoF, CADD, REVEL, etc.)  
-- Convert VCFs to **MAF** using `vcf2maf`  
-- Generate mutation summary plots via **maftools**
-
----
-
-### **8. Fusion Detection (Optional)**
-
-- **Arriba** identifies gene fusions from STAR-aligned BAMs  
-- Automatically produces **visual plots** of fusions
-
----
-
-### **9. Reports**
-
-- **MultiQC** for preprocessing and alignment metrics  
-- **Arriba fusion plots** and **MAF visualizations**  
-- Software versions and logs for reproducibility
+* **MultiQC** for preprocessing and alignment metrics
+* **Arriba fusion plots** and **MAF visualizations**
+* Software versions and logs for reproducibility
 
 ---
 
@@ -133,67 +107,45 @@ cd Variantcalling-and-Genefusion
 ```
 
 ---
----
-
-##  Configuration Setup (Must Read Before Execution)
-
-Before running the pipeline, **you must create and customize a configuration file** (e.g., `custom.config`) that includes:
-
--  Paths to **reference files**, or leave them empty to allow auto-download via the `--build_references` flag.
--  Pipeline **execution behavior flags** (e.g., `run_fusion`, `skip_star`, etc.)
--  **Tool configurations**, such as memory, CPUs, annotation options, and plugin support.
--  Directory paths for **input/output**, **logs**, and **tool resources**.
-
->  **This configuration file is mandatory** and must be passed to the pipeline using the `-c` flag.
-
-
 
 ## Running the Pipeline
 
-### Step 1: Run with Test Data
+### Step 1: Test Configuration(default)
 
-### To build the reference files with small test data
+ `test.config` inside the `test_data/` folder with parameters like:
 
-```bash
-	nextflow run main.nf \
-  -c configs/test.config \
-  -profile test,singularity \
-  --build_references \
-  --ref_base path/specified/by/user
-```
-### Run the main pipeline
-
-```bash
-nextflow run main.nf \
-  -c configs/test.config \
-  -c path/to/reference_paths.config \
-  --samplesheet https://github.com/kothaiRaja/test_data/raw/refs/heads/master/sample_sheet_new.csv \
-  --resultsdir path/to/results \
-  --cachedir path/to/cache/files \
-  -profile test,singularity \
-  --run_fusion false
- ```
-
-### Step 2: Run with Real Data
-
-```bash
-nextflow run main.nf \
-  -c path/to/custom/config \    
-     -profile singularity \  
-	--build_references \  
-	--ref_base path/specified/by/user  
+```groovy
+params {
+  vep_enable = false
+  annotation_tools = ['snpeff']
+  samplesheet = "${baseDir}/test_data/sample_sheet_new.csv"
+  arriba_input_dir = "${baseDir}/test_data/sample_ARRIBA"
+  run_fusion = true
+  maftools = false
+  ref_base = "${baseDir}/test_data/new_test"
+}
 ```
 
-### Run the main pipeline
+### Step 2: Run with Test Data
+
 ```bash
 nextflow run main.nf \
-   -c path/to/custom.config \   
-	-c path/to/reference_paths.config \     
-   --samplesheet path/to/sample_sheet.csv \         
-   --outdir path/to/output_directory \              
-   --resultsdir path/to/final_results_directory \                           
-  -profile singularity                             
+  -c test_data/test.config \
+  --ref_base /path/to/test_data/new_test \
+  --resultsdir /path/to/results \
+  --cache_dir /path/to/cache \
+  -profile test,singularity
+```
 
+### Step 3: Run with Real Data
+
+```bash
+nextflow run main.nf \
+  -c path/to/custom.config \
+  --samplesheet path/to/sample_sheet.csv \
+  --resultsdir path/to/final_results_directory \
+  --cache_dir /path/to/cache \
+  -profile singularity
 ```
 
 ---
@@ -202,40 +154,66 @@ nextflow run main.nf \
 
 Prepare a `samplesheet.csv`:
 
-| sample\_id | fastq\_1                     | fastq\_2                     | strandedness |
-| ---------- | ---------------------------- | ---------------------------- | ------------ |
-| Sample\_01 | /data/sample\_1\_R1.fastq.gz | /data/sample\_1\_R2.fastq.gz | forward      |
-| Sample\_02 | /data/sample\_2\_R1.fastq.gz | /data/sample\_2\_R2.fastq.gz | reverse      |
+| sample\_id | fastq\_1                        | fastq\_2                        | strandedness |
+| ---------- | ------------------------------- | ------------------------------- | ------------ |
+| Sample\_01 | /path/to/sample\_1\_R1.fastq.gz | /path/to/sample\_1\_R2.fastq.gz | forward      |
+| Sample\_02 | /path/to/sample\_2\_R1.fastq.gz | /path/to/sample\_2\_R2.fastq.gz | reverse      |
 
 ---
 
 ## Output Summary
 
-* `results/multiqc_input/`: FastQC, Fastp, MultiQC outputs
-* `results/multiqc_input/`: STAR BAMs, stats
-* `results/multiqc_input/: VCFs, GATK logs
-* `results/multiqc_input/`: SnpEff, VEP, MAF
-* `results/arriba/`: Fusion results + plots
-* `results/maftools/`: MAF summary visualizations
-* `results/multiqc_quality/: contains html of multiqc report
-* `output/: contains all the intermediate files for debugging
+Detailed output directories configured in `params.config`:
+
+### Quality Control
+
+* `results/multiqc_input/`: FastQC, Fastp, MultiQC inputs
+* `results/multiqc_quality/`: MultiQC summary HTML report
+
+### BAM Processing & Alignment
+
+* `cache/sorted_bam/`, `filtered_bam/`, `merged_bam/`, `split_ncigar/`, `calmd/`, `recalibrated_bams/`: intermediate BAM steps
+* `results/multiqc_input/`: STAR logs, flagstats, duplication metrics
+
+### Variant Calling
+
+* `cache/haplotype_caller/`, `merged_vcf/`, `variant_filter/`, `selected_variants*/`: VCF outputs
+* `results/multiqc_input/`: BCFtools stats/query
+* `results/vcf2table/`: Table of variants
+
+### Variant Annotation
+
+* `results/multiqc_input/`: Annotated VCFs (SnpEff and/or VEP)
+
+### Fusion Detection
+
+* `results/ARRIBA/`: Fusions TSV + discarded TSV
+* `results/ARRIBA_visualisation/`: Fusion gene plots
+
+### MAF Reporting
+
+* `results/maftools/vcf2maf/`: MAF conversion output
+* `results/maftools/visualisation/`: Mutation plot summary
+
+### Pipeline Reports
+
+* `results/timeline.html`, `dag.png`, `trace.txt`, `report.html`: Nextflow logs and runtime tracking
 
 ---
 
 ## Configuration Parameters
 
-Override in `.config` files:
+| Parameter          | Description                                            |
+| ------------------ | ------------------------------------------------------ |
+| `samplesheet`      | Path to CSV with sample information                    |
+| `resultsdir`       | Directory for result summaries and final outputs       |
+| `ref_base`         | Base path for data, cache, and reference lookup        |
+| `run_fusion`       | Run Arriba fusion detection along with variant calling |
+| `only_qc`          | Run only QC steps (FastQC, Fastp, MultiQC)             |
+| `maftools`         | Enable MAF visual reporting using vcf2maf + maftools   |
+| `vep_enable`       | Enable or skip VEP cache and annotation steps          |
+| `annotation_tools` | List of tools to use: \['snpeff'], \['vep'], or both   |
 
-| Parameter       | Description                                                  |
-| --------------- | ------------------------------------------------------------ |
-| `outdir`        | Output directory                                             |
-| `resultsdir`    | Directory for result summaries and final outputs             |
-| `samplesheet`   | Path to CSV with sample information                          |
-| `run_fusion`    | Run Arriba fusion detection along with variant calling       |
-| `only_star`     | Run STAR alignment only (preprocessing and STAR)             |
-| `skip_star`     | Skip STAR if pre-aligned BAMs provided                       |
-| `concatenate`   | Concatenate FASTQ lanes per sample                           |
-| `only_qc`       | Run only QC steps (FastQC, Fastp, MultiQC)                   |
-
+---
 
 

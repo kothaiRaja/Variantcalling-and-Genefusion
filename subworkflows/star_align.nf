@@ -15,8 +15,7 @@ workflow STAR_ALIGN {
     trimmed_reads_ch
     star_index
     gtf_file
-    aligned_bam_samplesheet // optional
-    aligned_bam_folder      // optional
+    
 
     main:
 
@@ -28,50 +27,22 @@ workflow STAR_ALIGN {
     star_logs_ch = Channel.empty()
     filtered_bams_ch = Channel.empty()
 	ch_versions = Channel.empty()
+	chimeric_junction_ch = Channel.empty()
 
     // CASE 1: Perform STAR alignment if no pre-aligned BAMs are provided
-    if (!aligned_bam_samplesheet && !aligned_bam_folder) {
-        log.info "Running STAR alignment..."
 
-        star_aligned_ch = STAR_ALIGNMENT(trimmed_reads_ch, star_index, gtf_file)
+        log.info "Running STAR alignment..."
+		star_aligned_ch = STAR_ALIGNMENT(trimmed_reads_ch, star_index, gtf_file)
         star_bam_ch      = star_bam_ch.mix(star_aligned_ch.bam)
         chimeric_reads_ch = chimeric_reads_ch.mix(star_aligned_ch.chimeric_sam)
         star_logs_ch      = star_logs_ch.mix(star_aligned_ch.log_final)
 		ch_versions = ch_versions.mix(STAR_ALIGNMENT.out.versions.first())
+		
+		
+	
 
-    } else {
-        log.info "Skipping STAR alignment. Using provided aligned BAMs."
-
-        if (aligned_bam_samplesheet) {
-            star_bam_ch = Channel.fromPath(aligned_bam_samplesheet)
-                            .splitCsv(header: true)
-                            .map { row -> tuple(row.sample_id, row.strandedness, file(row.bam)) }
-			// Logs and chimeric reads might not be present when using samplesheet
-			star_logs_ch = Channel.empty()
-			chimeric_reads_ch = Channel.empty()
-        } else {
-            star_bam_ch = Channel.fromPath("${aligned_bam_folder}/*.bam")
-                            .map { bam_file ->
-                                def sample_id = bam_file.baseName.replaceFirst('_Aligned\\.sortedByCoord\\.out$', '')
-                                tuple(sample_id, "unstranded" , bam_file)
-                            }
-			//  Log files for MultiQC
-			star_logs_ch = Channel.fromPath("${aligned_bam_folder}/*_Log.final.out")
-								.map { log_file ->
-								def sample_id = log_file.baseName.replaceFirst('_Log\\.final\\.out$', '')
-								tuple(sample_id, "unstranded", log_file)
-            }
-
-			//  Chimeric reads BAM (hardclipped)
-			chimeric_reads_ch = Channel.fromPath("${aligned_bam_folder}/*.bam")
-								.map { bam_file ->
-                                def sample_id = bam_file.baseName.replaceFirst('_Aligned\\.sortedByCoord\\.out$', '')
-                                tuple(sample_id, "unstranded" , bam_file)
-                             }
-        }
-
-        
-    }
+    
+	
 
     // STEP: Sort and index BAMs
     sorted_bams = SAMTOOLS_SORT_INDEX(star_bam_ch)
@@ -101,6 +72,7 @@ workflow STAR_ALIGN {
     emit:
     bam_sorted     = sorted_bams_ch
     chimeric_reads = chimeric_reads_ch
+	chimeric_junction = chimeric_junction_ch
     flagstats      = flagstats_ch
     align_stats    = align_stats_ch
     star_logs      = star_logs_ch
