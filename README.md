@@ -138,11 +138,23 @@ nextflow run main.nf \
   -profile test,singularity
 ```
 
+
+
 ### Step 3: Run with Real Data
 
 ```bash
 nextflow run main.nf \
   -c path/to/custom.config \
+  --samplesheet path/to/sample_sheet.csv \
+  --resultsdir path/to/final_results_directory \
+  --cache_dir /path/to/cache \
+  -profile singularity
+```
+### Step 3a: Run with Real Data with reference files saving  
+```bash
+nextflow run main.nf \
+  -c path/to/custom.config \
+  --ref_base /path/to/test_data/folder \
   --samplesheet path/to/sample_sheet.csv \
   --resultsdir path/to/final_results_directory \
   --cache_dir /path/to/cache \
