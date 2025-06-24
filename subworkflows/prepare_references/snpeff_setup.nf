@@ -22,14 +22,14 @@ workflow SNPEFF_SETUP {
     def jar_and_config_available = false
 
     if (params.snpeff_jar && params.snpeff_config &&
-        file(params.snpeff_jar).exists() && file(params.snpeff_config).exists()) {
+        file(params.snpEff_jar).exists() && file(params.snpEff_config).exists()) {
 
         println " Using snpEff jar and config from config:"
-        println "   JAR:    ${params.snpeff_jar}"
-        println "   CONFIG: ${params.snpeff_config}"
+        println "   JAR:    ${params.snpEff_jar}"
+        println "   CONFIG: ${params.snpEff_config}"
 
-        snpeff_jar_ch    = Channel.fromPath(params.snpeff_jar, checkIfExists: true).map { [it] }.collect()
-        snpeff_config_ch = Channel.fromPath(params.snpeff_config, checkIfExists: true).map { [it] }.collect()
+        snpeff_jar_ch    = Channel.fromPath(params.snpEff_jar, checkIfExists: true).map { [it] }.collect()
+        snpeff_config_ch = Channel.fromPath(params.snpEff_config, checkIfExists: true).map { [it] }.collect()
         jar_and_config_available = true
 
     } else if (file(local_jar).exists() && file(local_config).exists()) {
@@ -51,9 +51,9 @@ workflow SNPEFF_SETUP {
     }
 
     // ========== Step 2: Check for snpEff database ==========
-    if (params.snpeff_db_dir) {
-        println " Using snpEff DB from config: ${params.snpeff_db_dir}"
-        snpeff_db_ch = Channel.fromPath(params.snpeff_db_dir, checkIfExists: true).map { [it] }.collect()
+    if (params.snpEff_db_dir) {
+        println " Using snpEff DB from config: ${params.snpEff_db_dir}"
+        snpeff_db_ch = Channel.fromPath(params.snpEff_db_dir, checkIfExists: true).map { [it] }.collect()
 
     } else if (file(local_db).exists()) {
         println " Reusing local snpEff DB from ref_base: ${local_db}"
