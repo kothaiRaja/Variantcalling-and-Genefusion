@@ -16,7 +16,7 @@ process MultiQC {
   """
   echo "Running MultiQC on quality control reports..."
 
-  multiqc ${report_files} -o . 
+  multiqc ${report_files.join(' ')} -o . 
 
 
 

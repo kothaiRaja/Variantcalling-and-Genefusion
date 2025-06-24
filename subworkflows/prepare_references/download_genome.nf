@@ -1,7 +1,7 @@
-include { DOWNLOAD_REF_GENOME } from '../modules/reference_genome/main.nf'
-include { GUNZIP } from '../modules/gunzip/main.nf'
-include { CREATE_GENOME_INDEX        } from '../modules/references/genome_index.nf'
-include { CREATE_GENOME_DICT         } from '../modules/references/genome_dict.nf'
+include { DOWNLOAD_REF_GENOME } from '../../modules/reference_genome/main.nf'
+include { GUNZIP } from '../../modules/gunzip/main.nf'
+include { CREATE_GENOME_INDEX        } from '../../modules/references/genome_index.nf'
+include { CREATE_GENOME_DICT         } from '../../modules/references/genome_dict.nf'
 
 
 

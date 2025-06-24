@@ -1,4 +1,4 @@
-include { DOWNLOAD_ARRIBA } from '../modules/references/Tools.nf'
+include { DOWNLOAD_ARRIBA } from '../../modules/references/Tools.nf'
 
 workflow ARRIBA_SETUP {
 

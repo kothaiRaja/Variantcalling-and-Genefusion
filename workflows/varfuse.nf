@@ -1,15 +1,22 @@
 nextflow.enable.dsl = 2
+
+// Convert params to channels
+
+ch_genomedb                = params.genomedb                ? Channel.value(params.genomedb) : Channel.empty()
+ch_annotation_tools        = params.annotation_tools        ? Channel.value(params.annotation_tools) : Channel.empty()
+ch_rscript                 = params.rscript                 ? Channel.fromPath(params.rscript) : Channel.empty()
+ch_ver_script 			   = params.dump_script				? Channel.fromPath(params.dump_script) : Channel.empty()
+
+ch_arriba_blacklist        = params.arriba_blacklist        ? Channel.fromPath(params.arriba_blacklist) : Channel.empty()
+ch_arriba_known_fusions    = params.arriba_known_fusions    ? Channel.fromPath(params.arriba_known_fusions) : Channel.empty()
+
+ch_genome_assembly         = params.genome_assembly         ? Channel.value(params.genome_assembly) : Channel.empty()
+ch_species                 = params.species                 ? Channel.value(params.species) : Channel.empty()
+ch_cache_version           = params.cache_version           ? Channel.value(params.cache_version) : Channel.empty()
+
+
 // Import subworkflows for reference files 
-
-include { DOWNLOAD_REFERENCE_GENOME } from '../subworkflows/download_genome.nf'
-include { DOWNLOAD_GTF_ANNOTATION } from '../subworkflows/download_gtf.nf'
-include { DOWNLOAD_AND_PREPARE_VARIANT_VCFS } from '../subworkflows/prepare_vcf.nf'
-include { BUILD_STAR_INDEX } from '../subworkflows/star_index.nf'
-include { SNPEFF_SETUP } from '../subworkflows/snpeff_setup.nf'
-include { ARRIBA_SETUP} from '../subworkflows/arriba.nf'
-include { VEP_SETUP } from '../subworkflows/VEP_setup.nf'
-
-
+include { BUILD_REFERENCES } from '../subworkflows/build_references.nf'
 
 
 
@@ -48,80 +55,46 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
     ch_versions = Channel.empty()
 	reports_ch = Channel.empty()
 	
-	// ============================ DOWNLOAD OR USE GENOME + GTF ============================
-   
-    genome_refs = DOWNLOAD_REFERENCE_GENOME()
-    reference_genome_ch       = genome_refs.genome
-    reference_genome_index_ch = genome_refs.genome_index
-    reference_genome_dict_ch  = genome_refs.genome_dict
+	//===========================Building References======================
 	
-	// ============================ DOWNLOAD OR USE GTF + EXONS BED ============================
+	BUILD_REFERENCES(params.samplesheet, ch_genomedb)
+	
+	reference_genome_ch        = BUILD_REFERENCES.out.reference_genome
+	reference_genome_index_ch  = BUILD_REFERENCES.out.reference_genome_index
+	reference_genome_dict_ch   = BUILD_REFERENCES.out.reference_genome_dict
 
-	gtf_outputs = DOWNLOAD_GTF_ANNOTATION()
-	gtf_ch        = gtf_outputs.gtf
-	exons_bed_ch  = gtf_outputs.exons_bed
-	
-	//=========================PREPARING KNOWN_VCFs=====================
-	
-	prepare_variants_output = DOWNLOAD_AND_PREPARE_VARIANT_VCFS()
-	known_variants_ch = prepare_variants_output.merged_vcf 
-	known_variants_index = prepare_variants_output.merged_vcf_index
-	
-	//========================Creating STAR index=========================
-	BUILD_STAR_INDEX(reference_genome_ch, gtf_ch)
-	
-	star_index_ch = BUILD_STAR_INDEX.out.star_index
-	
-	//======================SNPEFF TOOL===============================
-	
-	SNPEFF_SETUP(params.genomedb)
+	gtf_ch        = BUILD_REFERENCES.out.gtf_annotation
+	exons_bed_ch  = BUILD_REFERENCES.out.exons_BED
 
-	snpeff_jar_ch    = SNPEFF_SETUP.out.snpeff_jar
-	snpeff_config_ch = SNPEFF_SETUP.out.snpeff_config
-	snpeff_db_dir_ch = SNPEFF_SETUP.out.snpeff_db_dir
+	star_index_ch = BUILD_REFERENCES.out.star_genome_index
+
+	snpeff_jar_ch    = BUILD_REFERENCES.out.snpeff_jar
+	snpeff_config_ch = BUILD_REFERENCES.out.snpeff_config
+	snpeff_db_dir_ch = BUILD_REFERENCES.out.snpeff_db_dir
+
+	arriba_dir_ch    = BUILD_REFERENCES.out.arriba_dir
+
+	vep_cache_ch     = BUILD_REFERENCES.out.vep_cache
+	vep_plugins_ch   = BUILD_REFERENCES.out.vep_plugins
+
+	known_variants_ch       = BUILD_REFERENCES.out.known_variants
+	known_variants_index_ch = BUILD_REFERENCES.out.known_variants_index
 	
-	//====================== Run the arriba setup
-	ARRIBA_SETUP()
+	validated_reads_ch = BUILD_REFERENCES.out.validated_reads
+	
+	
 
 
-	arriba_dir_ch = ARRIBA_SETUP.out.arriba_dir
-	
-	//==================VEP_SETUP======================================
-	vep_outputs = VEP_SETUP()  
-
-	vep_cache_ch   = vep_outputs.vep_cache
-	vep_plugins_ch = vep_outputs.vep_plugins
-	
-	// ============================ VALIDATION ============================
-    if (params.only_qc && params.only_star) {
-        error " Cannot run both 'only_qc' and 'only_star'. Please set only one to true."
-    }
-
-    // ============================ ONLY QC MODE ============================
-    if (params.only_qc) {
-        log.info " Running QC-only mode..."
-
-        PREPROCESSING(params.samplesheet, params.dump_script)
-
-        reports_ch       = PREPROCESSING.out.reports
-        multiqc_quality  = PREPROCESSING.out.multiqc
-        ch_versions      = ch_versions.mix(PREPROCESSING.out.versions)
-
-        log.info(" QC completed. Exiting pipeline.")
-        return
-    }
 	
 	// ============================ FULL PIPELINE MODE ============================
-    log.info " Starting Preprocessing using sample sheet..."
+   log.info " Starting Preprocessing using validated reads from build references..."
 
-    PREPROCESSING(params.samplesheet, params.dump_script)
+	PREPROCESSING(validated_reads_ch )
 
-    reports_ch 		= reports_ch.mix(PREPROCESSING.out.qc_results.collect { it[1] }.ifEmpty([]))
-	reports_ch    = reports_ch.mix(PREPROCESSING.out.fastp_reports.collect { it[1] }.ifEmpty([]))
-	trimmed_reads_ch = PREPROCESSING.out.trimmed_reads
-    QC_reports_ch       = PREPROCESSING.out.reports
-    multiqc_quality    = PREPROCESSING.out.multiqc
-    ch_versions        = ch_versions.mix(PREPROCESSING.out.versions)
+	reports_ch        = reports_ch.mix(PREPROCESSING.out.qc_results.collect { it[1] }.ifEmpty([]))
+	reports_ch        = reports_ch.mix(PREPROCESSING.out.fastp_reports.collect { it[1] }.ifEmpty([]))
+	trimmed_reads_ch  = PREPROCESSING.out.trimmed_reads
+	ch_versions       = ch_versions.mix(PREPROCESSING.out.versions)
 
     // ========================== STAR ALIGNMENT LOGIC ==========================
         log.info " Running STAR Alignment..."
@@ -207,7 +180,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 		reference_genome_index_ch,
 		reference_genome_dict_ch,
 		known_variants_ch,
-		known_variants_index)
+		known_variants_index_ch)
 
     recalibrated_bams_ch = BASE_RECALIBRATION.out.recalibrated_bams
 	ch_versions        = ch_versions.mix(BASE_RECALIBRATION.out.versions)
@@ -221,7 +194,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 		reference_genome_index_ch,
 		reference_genome_dict_ch,
 		known_variants_ch,
-		known_variants_index
+		known_variants_index_ch
     )
 
     // Capture Variant Calling Outputs
@@ -251,10 +224,10 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 		snpeff_jar_ch,
 		snpeff_db_dir_ch,
 		snpeff_config_ch,
-		params.genomedb,
-		params.genome_assembly,
-		params.species,
-		params.cache_version,
+		ch_genomedb,
+		ch_genome_assembly,
+		ch_species,
+		ch_cache_version,
 		vep_cache_ch,
 		vep_plugins_ch
 		
@@ -264,7 +237,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 
 	final_annotated_vcf = ANNOTATE.out.final_vcf_annotated
 	uncompressed_annotated_vcf = ANNOTATE.out.uncompressed_vcf_annotated
-	report_ch   		= reports_ch.mix(ANNOTATE.out.reports_html.ifEmpty([]))
+	reports_ch   		= reports_ch.mix(ANNOTATE.out.reports_html.ifEmpty([]))
 	ch_versions        = ch_versions.mix(ANNOTATE.out.versions)
 	
 	//=====================Create Table============================//
@@ -283,7 +256,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
             uncompressed_annotated_vcf,
             reference_genome_ch,
             vep_cache_ch,
-            params.rscript
+            ch_rscript
         )
 
         // Capture outputs
@@ -304,14 +277,14 @@ if (params.run_fusion) {
         star_bam_ch,  
         reference_genome_ch,
         gtf_ch,
-        params.arriba_blacklist,
-        params.arriba_known_fusions
+        ch_arriba_blacklist,
+        ch_arriba_known_fusions
 		
 		
     )
 
     ARRIBA_fusion_ch = GENE_FUSION.out.fusion_results
-    reports_ch = report_ch.mix(GENE_FUSION.out.fusion_visualizations.collect { it[1] }.ifEmpty([]))
+    reports_ch = reports_ch.mix(GENE_FUSION.out.fusion_visualizations.collect { it[1] }.ifEmpty([]))
     ch_versions = ch_versions.mix(GENE_FUSION.out.versions)
 
 
@@ -324,19 +297,18 @@ if (params.run_fusion) {
  ch_version_yaml = Channel.empty()
  CUSTOM_DUMPSOFTWAREVERSIONS(
 		ch_versions.unique().collectFile(name: "software_versions_input.yml"),
-		params.dump_script
+		ch_ver_script
 	)
-report_ch = reports_ch.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.ifEmpty([]))
+reports_ch = reports_ch.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.ifEmpty([]))
 
  
  // ======================= Final Report Collection for MultiQC ======================= //
 
 // Collect everything
-final_reports_ch = Channel
-    .empty()
+final_reports_ch = Channel.empty()
+final_reports_ch = final_reports_ch
     .mix(reports_ch)
-    .mix(ANNOTATE.out.reports_html.ifEmpty([]))
-    .unique { it.name }   
+    .unique()
     .collect()
 
 // Run MultiQC

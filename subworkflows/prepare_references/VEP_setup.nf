@@ -1,5 +1,5 @@
-include { DOWNLOAD_VEP_CACHE } from '../modules/references/VEP.nf'
-include { DOWNLOAD_VEP_PLUGINS } from '../modules/references/VEP.nf'
+include { DOWNLOAD_VEP_CACHE } from '../../modules/references/VEP.nf'
+include { DOWNLOAD_VEP_PLUGINS } from '../../modules/references/VEP.nf'
 
 workflow VEP_SETUP {
 

@@ -5,7 +5,7 @@ process CONCAT_FASTQ {
     publishDir "${params.outdir}/concatenated", mode: "copy"
 
     input:
-    tuple val(sample_id), path(reads), val(strandedness)
+    tuple val(sample_id), path(fastq1),path(fastq2), val(strandedness)
 
     output:
     tuple val(sample_id), path("${sample_id}_R1.merged.fastq.gz"), path("${sample_id}_R2.merged.fastq.gz"), val(strandedness), emit: merged_reads
