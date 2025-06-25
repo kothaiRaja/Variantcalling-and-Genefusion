@@ -45,9 +45,9 @@ process ARRIBA_VISUALIZATION {
 
     arriba_version=\$(arriba -h | grep 'Version:' 2>&1 | sed 's/Version:\\s//')
 
-cat <<EOF > versions.yml
+cat <<-END_VERSIONS > versions.yml
 "${task.process}":
-  arriba: "\${arriba_version}"
-EOF
+  arriba: "\$(arriba -h 2>&1 | grep 'Version:' | sed 's/Version: //')"
+END_VERSIONS
     """
 }

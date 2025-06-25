@@ -1,38 +1,53 @@
-process FILTER_AND_MERGE_VCF {
-    tag "Filter and Merge VCF Files"
+process SPLIT_AND_INDEX_VCF {
+    tag "Split SNPs and INDELs"
     label 'process_high'
 
     container "https://depot.galaxyproject.org/singularity/bcftools%3A1.15.1--h0ea216a_0"
     publishDir "${params.ref_base}/reference", mode: 'copy'
 
-    input: 
-    path variants_snp
-    path variants_snp_index 
-    path variants_indels
-    path variants_indels_index   
-    path denylist  
+    input:
+    path all_variants_vcf
 
     output:
-    path "merged.filtered.recode.vcf.gz", emit: merged_vcf
-    path "merged.filtered.recode.vcf.gz.tbi", emit: merged_vcf_tbi
+    path "known_snps.vcf.gz", emit: snps_vcf
+    path "known_snps.vcf.gz.tbi", emit: snps_index
+    path "known_indels.vcf.gz", emit: indels_vcf
+    path "known_indels.vcf.gz.tbi", emit: indels_index
 
     script:
     """
     THREADS=${task.cpus}
 
-    echo "Filtering SNP variants..."
-    bcftools view -T ^${denylist} ${variants_snp} -Oz -o filtered_snps.vcf.gz --threads \$THREADS
-    tabix -p vcf filtered_snps.vcf.gz  
+    echo "Extracting SNPs..."
+    bcftools view -v snps ${all_variants_vcf} -Oz -o known_snps.vcf.gz --threads \$THREADS
+    tabix -p vcf known_snps.vcf.gz
 
-    echo "Filtering INDEL variants..."
-    bcftools view -T ^${denylist} ${variants_indels} -Oz -o filtered_indels.vcf.gz --threads \$THREADS
-    tabix -p vcf filtered_indels.vcf.gz  
+    echo "Extracting INDELs..."
+    bcftools view -v indels ${all_variants_vcf} -Oz -o known_indels.vcf.gz --threads \$THREADS
+    tabix -p vcf known_indels.vcf.gz
+    """
+}
 
-    echo "Merging filtered SNPs and INDELs..."
-    bcftools merge filtered_snps.vcf.gz filtered_indels.vcf.gz -Oz -o merged.filtered.recode.vcf.gz --threads \$THREADS
-    tabix -p vcf merged.filtered.recode.vcf.gz  
+process INDEX_VCF {
+    tag "Index VCF if missing"
+    label 'process_light'
 
-    echo "Checking Chromosome Naming in merged VCF..."
-    zgrep -v '^#' merged.filtered.recode.vcf.gz | cut -f1 | sort -u | head -1 | awk '{ print "  → Detected contig in merged VCF: " \$1 }'
+    container "https://depot.galaxyproject.org/singularity/htslib%3A1.1--h60f3df9_6"
+    publishDir "${params.ref_base}/reference", mode: 'copy'
+
+    input:
+    path vcf_file
+    val type
+
+    output:
+    path "known_${type}.vcf.gz.tbi", emit: index
+
+    when:
+    !file("known_${type}.vcf.gz.tbi").exists()
+
+    script:
+    """
+    echo "Indexing known_${type}.vcf.gz ..."
+    tabix -p vcf ${vcf_file}
     """
 }

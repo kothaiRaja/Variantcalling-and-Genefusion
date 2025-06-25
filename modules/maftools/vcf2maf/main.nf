@@ -40,8 +40,8 @@ process VCF2MAF {
       $vep_data \\
       $args
 
-VCF2MAF_VERSION=\$(vcf2maf.pl --help 2>&1 | grep 'vcf2maf' | awk '{print \$NF}')
-VEP_VERSION=\$(vep --help 2>&1 | grep 'ensembl-vep' | awk '{print \$NF}')
+VCF2MAF_VERSION=\$(vcf2maf.pl --help 2>&1 | grep -i 'vcf2maf' | grep -oP 'v[0-9.]+' || echo "not_detected")
+VEP_VERSION=\$(vep --help 2>&1 | grep -i 'ensembl-vep' | grep -oP '[0-9.]+' || echo "not_detected")
 
 cat <<-END_VERSIONS > versions.yml
 "${task.process}":

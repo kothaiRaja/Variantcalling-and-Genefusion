@@ -31,44 +31,40 @@ process DOWNLOAD_SNPEFF_TOOL {
 
 process DOWNLOAD_SNPEFF_DB {
     tag "Download SnpEff Database"
-    publishDir "${params.ref_base}/Tools/snpEff", mode: 'copy'
+    publishDir "${params.ref_base}/Tools/snpEff/data", mode: 'copy'
     container null
+    label 'process_medium'
 
     input:
     val genome
-    path(snpeff_jar) 
-	path(snpeff_config)
+    path snpeff_jar
+    path snpeff_config
 
     output:
-    path "${params.snpeff_db_dir}/${genome}", emit: snpeff_db_dir
+    path "${genome}", emit: snpeff_db_dir
 
     script:
-"""
-mkdir -p ${params.snpeff_db_dir}
-data_dir=\$(realpath ${params.snpeff_db_dir})
+    """
+    echo "Preparing SnpEff database download for ${genome}..."
 
-# Correct config path based on actual snpeff_config
-config_file=${snpeff_config}
+    mkdir -p data
+    cp ${snpeff_config} data/snpeff.config
+    config_file="data/snpeff.config"
 
-# Patch config if missing genome entry
-if ! grep -q "^${genome}.genome" \$config_file; then
-    echo "${genome}.genome : Homo_sapiens" >> \$config_file
-fi
+    # Patch the config
+    if ! grep -q "^${genome}.genome" \$config_file; then
+        echo "${genome}.genome : Homo_sapiens" >> \$config_file
+    fi
 
-# Ensure repository line exists
-if ! grep -q "^database.repository" \$config_file; then
-    echo "database.repository : https://snpeff.blob.core.windows.net/databases/" >> \$config_file
-fi
+    if ! grep -q "^database.repository" \$config_file; then
+        echo "database.repository : https://snpeff.blob.core.windows.net/databases/" >> \$config_file
+    fi
 
-# Download database if not already present
-if [ ! -d "\$data_dir/${genome}" ]; then
-    echo "Downloading SnpEff database for ${genome}..."
-    java -Xmx4g -Xms2g -jar ${snpeff_jar} download ${genome} -dataDir \$data_dir -c ${snpeff_config} -v
-else
-    echo "SnpEff database for ${genome} already exists. Skipping download."
-fi
-"""
+    # Download database
+    java -Xmx4g -Xms2g -jar ${snpeff_jar} download ${genome} -dataDir ./ -c \$config_file -v
+    """
 }
+
 
 
 process DOWNLOAD_ARRIBA {

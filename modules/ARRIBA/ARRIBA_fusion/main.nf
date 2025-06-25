@@ -34,8 +34,8 @@ process ARRIBA {
     echo "Arriba finished for Sample: ${sample_id}"
 
 cat <<-END_VERSIONS > versions.yml
- "${task.process}":
-arriba: \$(arriba -h | grep 'Version:' 2>&1 | sed 's/Version:\\s//')
+"${task.process}":
+  arriba: "\$(arriba -h 2>&1 | grep 'Version:' | sed 's/Version: //')"
 END_VERSIONS
     """
 }

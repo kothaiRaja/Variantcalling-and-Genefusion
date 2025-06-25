@@ -9,14 +9,19 @@ process CREATE_GENOME_DICT {
     path genome_fasta
 
     output:
-    path("genome.dict"), emit: genome_dict
+    path("*.dict"), emit: genome_dict
 
     script:
     """
     echo "Creating genome dictionary using GATK (Picard)..."
 
-    # Create dict with GATK and rename to standard name
-    gatk CreateSequenceDictionary -R ${genome_fasta} -O temp.dict
-    mv temp.dict genome.dict
+    # Get the basename of the input FASTA
+    fasta_basename=\$(basename "${genome_fasta}")
+
+    # Strip .fa or .fasta to create the .dict name
+    dict_output=\$(echo "\$fasta_basename" | sed -E 's/\\.fa(sta)?\$/.dict/')
+
+    # Run GATK CreateSequenceDictionary
+    gatk CreateSequenceDictionary -R "${genome_fasta}" -O "\$dict_output"
     """
 }

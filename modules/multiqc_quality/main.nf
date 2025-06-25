@@ -6,7 +6,7 @@ process MultiQC {
   container params.multiqc_quality_container
 
   input:
-    path report_files
+    path report_dir
 
   output:
     path "multiqc_report.html", emit: report
@@ -14,17 +14,16 @@ process MultiQC {
 
   script:
   """
-  echo "Running MultiQC on quality control reports..."
+  echo "Running MultiQC in ${report_dir}"
+  ls -lh ${report_dir}
 
-  multiqc ${report_files.join(' ')} -o . 
+  multiqc ${report_dir} -o .
 
-
-
-# Capture MultiQC version
-multiqc_version=\$(multiqc --version 2>&1 | grep -oP '[0-9]+\\.[0-9]+(\\.[0-9]+)?')
+  # Capture MultiQC version
+multiqc_version=\$(multiqc --version | grep -oP '[0-9]+\\.[0-9]+(\\.[0-9]+)?')
 cat <<EOF > versions.yml
-"${task.process}":
-  multiqc: "\${multiqc_version}"
+ "${task.process}":
+multiqc: "\${multiqc_version}"
 EOF
   """
 }

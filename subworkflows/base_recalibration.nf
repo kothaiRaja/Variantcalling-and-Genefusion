@@ -10,8 +10,11 @@ workflow BASE_RECALIBRATION {
     reference_genome
     reference_genome_index
     reference_genome_dict
-    merged_vcf
-    merged_vcf_index
+    known_snps_vcf
+	known_snps_index
+	known_indels_vcf
+	known_indels_index
+	
 
     main:
     ch_versions = Channel.empty()
@@ -22,14 +25,24 @@ workflow BASE_RECALIBRATION {
     ch_recal_input = bam_input_ch.map { sample_id, strandedness, bam, bai -> 
         tuple(sample_id, strandedness, bam, bai)
     }
+	
+	// Combine VCF files for BaseRecalibrator
+ch_known_sites_vcf = known_snps_vcf.combine(known_indels_vcf)
+    .map { snp, indel -> [snp, indel].findAll { it != null } }
+
+ch_known_sites_index = known_snps_index.combine(known_indels_index)
+    .map { snp_tbi, indel_tbi -> [snp_tbi, indel_tbi].findAll { it != null } }
+
+
 
     GATK_BASERECALIBRATOR_RESULT = GATK_BASERECALIBRATOR(
         ch_recal_input,
         reference_genome,
         reference_genome_index,
         reference_genome_dict,
-        merged_vcf,
-        merged_vcf_index
+        ch_known_sites_vcf,
+		ch_known_sites_index
+		
     )
 
     ch_recal_tables = GATK_BASERECALIBRATOR.out.recal_table

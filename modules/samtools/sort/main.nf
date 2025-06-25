@@ -18,7 +18,8 @@ process SAMTOOLS_SORT_INDEX {
     echo "Sorting and indexing BAM for sample: ${sample_id}"
 
     # Sort the BAM file
-    samtools sort -o ${sample_id}_sorted.bam "${bam}"
+    samtools sort -@ ${task.cpus} -o ${sample_id}_sorted.bam "${bam}"
+
 
     # Index the sorted BAM file
     samtools index ${sample_id}_sorted.bam

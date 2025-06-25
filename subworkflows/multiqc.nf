@@ -1,39 +1,46 @@
-nextflow.enable.dsl = 2
+include { MultiQC } from '../modules/multiqc_quality/main.nf'
 
+workflow MULTIQC_WRAPPER {
 
+    take:
+        fastqc_results
+        fastp_reports
+        star_logs
+        samtools_flagstat
+        gatk_metrics
+        bcftools_stats
+        filtered_vcf_stats
+        annotation_reports
+        fusion_visuals
+        maf_reports
+        version_yamls
 
-process MULTIQC_REPORT {
-    container "https://depot.galaxyproject.org/singularity/multiqc%3A1.14--pyhdfd78af_0"
-    publishDir "${params.resultsdir}/multiqc", mode: "copy"
+    main:
+        all_reports = Channel.empty()
+            .mix(fastqc_results.ifEmpty([]))
+            .mix(fastp_reports.ifEmpty([]))
+            .mix(star_logs.ifEmpty([]))
+            .mix(samtools_flagstat.ifEmpty([]))
+            .mix(gatk_metrics.ifEmpty([]))
+            .mix(bcftools_stats.ifEmpty([]))
+            .mix(filtered_vcf_stats.ifEmpty([]))
+            .mix(annotation_reports.ifEmpty([]))
+            .mix(fusion_visuals.ifEmpty([]))
+            .mix(maf_reports.ifEmpty([]))
+            .mix(version_yamls.ifEmpty([]))
+            .collect()
+			
+			
 
-    input:
-    path fastqc_results
-    path fastp_reports
-    path star_logs
-    path samtools_flagstat
-    path gatk_metrics
-    path bcftools_stats
-	path filtered_vcf_stats
+       
 
-    output:
-    path "multiqc_report.html"
-    path "multiqc_data"
+        
+      reports_mqc = MultiQC(all_reports)
+	  reports_ch = MultiQC.out.report
+	  version_ch = MultiQC.out.versions
+	  
 
-    script:
-    """
-    mkdir -p multiqc_input
-
-    # Copy available input files if they exist
-    cp ${fastqc_results} multiqc_input/ || true
-    cp ${fastp_reports} multiqc_input/ || true
-    cp ${star_logs} multiqc_input/ || true
-    cp ${samtools_flagstat} multiqc_input/ || true
-    cp ${gatk_metrics} multiqc_input/ || true
-    cp ${bcftools_stats} multiqc_input/ || true
-	cp ${filtered_vcf_stats} multiqc_input/ || true
-
-    ls -lh multiqc_input/
-
-    multiqc multiqc_input -o .
-    """
+    emit:
+        reports = reports_ch
+		versions = version_ch
 }

@@ -14,6 +14,13 @@ ch_genome_assembly         = params.genome_assembly         ? Channel.value(para
 ch_species                 = params.species                 ? Channel.value(params.species) : Channel.empty()
 ch_cache_version           = params.cache_version           ? Channel.value(params.cache_version) : Channel.empty()
 
+ch_known_snps_vcf     	   = params.known_snps_vcf     ? Channel.fromPath(params.known_snps_vcf, checkIfExists: true) : Channel.empty()
+ch_known_snps_index   	   = params.known_snps_vcf_index     ? Channel.fromPath("${params.known_snps_vcf_index}", checkIfExists: true) : Channel.empty()
+
+ch_known_indels_vcf  	   = params.known_indels_vcf   ? Channel.fromPath(params.known_indels_vcf, checkIfExists: true) : Channel.empty()
+ch_known_indels_index 	   = params.known_indels_vcf_index   ? Channel.fromPath("${params.known_indels_vcf_index}", checkIfExists: true) : Channel.empty()
+
+
 
 // Import subworkflows for reference files 
 include { BUILD_REFERENCES } from '../subworkflows/build_references.nf'
@@ -35,7 +42,7 @@ include { VARIANT_CALLING } from '../subworkflows/variant_calling.nf'
 include { ANNOTATE } from '../subworkflows/variant_annotations.nf'
 include { GENE_FUSION } from '../subworkflows/gene_fusion.nf'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nfcore/software_versions/main.nf'
-include { MultiQC } from '../modules/multiqc_quality/main.nf'
+include { MULTIQC_WRAPPER } from '../subworkflows/multiqc.nf'
 include { GATK_VCF_TO_TABLE } from '../modules/gatk/vcf2table/main.nf'
 include { MAF_ANALYSIS } from '../subworkflows/maf_analysis.nf'
 
@@ -77,8 +84,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	vep_cache_ch     = BUILD_REFERENCES.out.vep_cache
 	vep_plugins_ch   = BUILD_REFERENCES.out.vep_plugins
 
-	known_variants_ch       = BUILD_REFERENCES.out.known_variants
-	known_variants_index_ch = BUILD_REFERENCES.out.known_variants_index
+
 	
 	validated_reads_ch = BUILD_REFERENCES.out.validated_reads
 	
@@ -173,14 +179,19 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	
     log.info "Running Base Recalibration..."
 
-    BASE_RECALIBRATION(
+    
+
+	BASE_RECALIBRATION(
         final_bams_ch,    // BAMs after merging & CALMD
         intervals_ch,		// Scattered intervals from Interval Processing
     	reference_genome_ch,
 		reference_genome_index_ch,
 		reference_genome_dict_ch,
-		known_variants_ch,
-		known_variants_index_ch)
+		ch_known_snps_vcf,
+		ch_known_snps_index,
+		ch_known_indels_vcf,
+		ch_known_indels_index
+		 )
 
     recalibrated_bams_ch = BASE_RECALIBRATION.out.recalibrated_bams
 	ch_versions        = ch_versions.mix(BASE_RECALIBRATION.out.versions)
@@ -193,8 +204,10 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
         reference_genome_ch,
 		reference_genome_index_ch,
 		reference_genome_dict_ch,
-		known_variants_ch,
-		known_variants_index_ch
+		ch_known_snps_vcf,
+		ch_known_snps_index
+		
+		
     )
 
     // Capture Variant Calling Outputs
@@ -305,14 +318,23 @@ reports_ch = reports_ch.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.ifEmpty([]))
  // ======================= Final Report Collection for MultiQC ======================= //
 
 // Collect everything
-final_reports_ch = Channel.empty()
-final_reports_ch = final_reports_ch
-    .mix(reports_ch)
-    .unique()
-    .collect()
 
-// Run MultiQC
-multiqc_quality = MultiQC(final_reports_ch)
+
+
+// Run MultiQC wrapper subworkflow
+multiqc_result = MULTIQC_WRAPPER(
+    PREPROCESSING.out.qc_results.collect { it[1] }.ifEmpty([]),
+    PREPROCESSING.out.fastp_reports.collect { it[1] }.ifEmpty([]),
+    STAR_ALIGN.out.star_logs.collect { it[2] }.ifEmpty([]),
+    STAR_ALIGN.out.flagstats.collect { it[2] }.ifEmpty([]),
+    MARK_DUPLICATES.out.marked_bams_bai_metrics.ifEmpty([]),
+    VARIANT_CALLING.out.bcftools_stats.collect { it[1] }.ifEmpty([]),
+    VARIANT_CALLING.out.bcftools_query.collect { it[1] }.ifEmpty([]),
+    ANNOTATE.out.reports_html.ifEmpty([]),
+    GENE_FUSION.out.fusion_visualizations.collect { it[1] }.ifEmpty([]),
+    maf_reports_ch.ifEmpty([]),
+    CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.ifEmpty([])
+)
 
 
 

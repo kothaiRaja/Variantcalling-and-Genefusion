@@ -43,12 +43,13 @@ if (params.reference_genome_index) {
         .map { file -> [ file ] }
         .collect()
 
-} else if (file("${params.ref_base}/reference/genome.fa.fai").exists()) {
-    println " Reference Index found locally: ${params.ref_base}/reference/genome.fa.fai"
+} else if (file("${params.reference_genome}.fai").exists()) {
+    println " Reference Index found: ${params.reference_genome}.fai"
     genome_index_ch = Channel
-        .fromPath("${params.ref_base}/reference/genome.fa.fai", checkIfExists: true)
+        .fromPath("${params.reference_genome}.fai", checkIfExists: true)
         .map { file -> [ file ] }
         .collect()
+
 
 } else {
     println "️ Creating genome index (.fai)..."
@@ -64,12 +65,14 @@ if (params.reference_genome_dict) {
         .map { file -> [ file ] }
         .collect()
 
-} else if (file("${params.ref_base}/reference/genome.dict").exists()) {
-    println " Reference Dict found locally: ${params.ref_base}/reference/genome.dict"
+} else if (file("${params.reference_genome}".replaceAll(/\.fa(sta)?$/, ".dict")).exists()) {
+    def dict_path = "${params.reference_genome}".replaceAll(/\.fa(sta)?$/, ".dict")
+    println " Reference Dict found: ${dict_path}"
     genome_dict_ch = Channel
-        .fromPath("${params.ref_base}/reference/genome.dict", checkIfExists: true)
+        .fromPath(dict_path, checkIfExists: true)
         .map { file -> [ file ] }
         .collect()
+
 
 } else {
     println "️ Creating genome dict (.dict)..."

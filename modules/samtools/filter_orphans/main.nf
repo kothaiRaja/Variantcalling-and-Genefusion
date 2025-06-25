@@ -15,7 +15,9 @@ process SAMTOOLS_FILTER_ORPHANS {
     script:
     """
     # Filter out orphan reads (retain properly paired reads)
-    samtools view -h -F 3844 ${sorted_bam} | samtools view -b - > ${sample_id}_filtered.bam
+    samtools view -@ ${task.cpus} -h -F 3844 ${sorted_bam} | \
+	samtools view -@ ${task.cpus} -b - > ${sample_id}_filtered.bam
+
 
 
 	# Index the filtered BAM file

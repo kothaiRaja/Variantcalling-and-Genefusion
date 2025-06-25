@@ -4,7 +4,6 @@
 
 include { DOWNLOAD_REFERENCE_GENOME }      from './prepare_references/download_genome.nf'
 include { DOWNLOAD_GTF_ANNOTATION }        from './prepare_references/download_gtf.nf'
-include { DOWNLOAD_AND_PREPARE_VARIANT_VCFS } from './prepare_references/prepare_vcf.nf'
 include { BUILD_STAR_INDEX }               from './prepare_references/star_index.nf'
 include { SNPEFF_SETUP }                   from './prepare_references/snpeff_setup.nf'
 include { ARRIBA_SETUP }                   from './prepare_references/arriba.nf'
@@ -20,8 +19,7 @@ workflow BUILD_REFERENCES {
 
     main:
 
-	// Step 1: Read and validate the samplesheet
-    samples_ch = Channel
+	samples_ch = Channel
         .fromPath(samplesheet, checkIfExists: true)
         .splitCsv(header: true)
         .map { row ->
@@ -31,6 +29,7 @@ workflow BUILD_REFERENCES {
             def strandedness = row.strandedness ?: "unstranded"
             tuple(row.sample_id, [file(row.fastq_1), file(row.fastq_2)], strandedness)
         }
+
 
 
 
@@ -48,10 +47,7 @@ workflow BUILD_REFERENCES {
     gtf_ch       = gtf_outputs.gtf
     exons_bed_ch = gtf_outputs.exons_bed
 
-    // Prepare known variants
-    prepare_variants_output = DOWNLOAD_AND_PREPARE_VARIANT_VCFS()
-    known_variants_ch       = prepare_variants_output.merged_vcf
-    known_variants_index_ch = prepare_variants_output.merged_vcf_index
+    
 
     // Build STAR index
     star_out = BUILD_STAR_INDEX(reference_genome_ch, gtf_ch)
@@ -78,8 +74,6 @@ workflow BUILD_REFERENCES {
     reference_genome_dict   = reference_genome_dict_ch
     gtf_annotation          = gtf_ch
     exons_BED               = exons_bed_ch
-    known_variants          = known_variants_ch
-    known_variants_index    = known_variants_index_ch
     star_genome_index       = star_index_ch
     snpeff_jar              = snpeff_jar_ch
     snpeff_config           = snpeff_config_ch

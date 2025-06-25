@@ -53,9 +53,13 @@ process ANNOTATEVARIANTS_VEP {
         --offline \\
         --force_overwrite
 
+vep_version=\$(vep --help 2>&1 | grep 'ensembl-vep' | awk '{print \$NF}')
+
 cat <<-END_VERSIONS > versions.yml
 "${task.process}":
-  ensemblvep: \$(vep --help 2>&1 | grep -oP 'ensembl-vep\\s*:\\s*\\K[^ ]+')
+  ensemblvep: "\${vep_version}"
 END_VERSIONS
+
+
     """
 }

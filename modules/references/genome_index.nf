@@ -29,21 +29,14 @@ process CREATE_GENOME_INDEX {
     path genome_fasta
 
     output:
-    path("genome.fa.fai"), emit: genome_index
+    path("*.fai"), emit: genome_index
 
     script:
     """
     echo "Received genome file: ${genome_fasta}"
 
-    # Only create symlink if not already present
-    if [ ! -e genome.fa ]; then
-        ln -s ${genome_fasta} genome.fa
-    fi
-
-    # Create index
-    samtools faidx genome.fa
-
-    # Rename output index explicitly
-    mv genome.fa.fai genome.fa.fai
+    # Generate the .fai index using the real FASTA name
+    samtools faidx ${genome_fasta}
     """
 }
+
