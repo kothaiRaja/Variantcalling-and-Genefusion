@@ -182,8 +182,8 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
     
 
 	BASE_RECALIBRATION(
-        final_bams_ch,    // BAMs after merging & CALMD
-        intervals_ch,		// Scattered intervals from Interval Processing
+        SPLIT_MERGE_BAMS.out.merged_calmd_bams,    
+        INTERVAL_PROCESSING.out.intervals,		
     	reference_genome_ch,
 		reference_genome_index_ch,
 		reference_genome_dict_ch,
@@ -199,7 +199,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	// =========== Step 6: Variant Calling =========== //
     log.info " Running Variant Calling..."
     VARIANT_CALLING(
-        recalibrated_bams_ch,            // BAMs after splitting & merging
+        recalibrated_bams_ch,            
 		intervals_ch,
         reference_genome_ch,
 		reference_genome_index_ch,

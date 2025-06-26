@@ -11,10 +11,9 @@ workflow BASE_RECALIBRATION {
     reference_genome_index
     reference_genome_dict
     known_snps_vcf
-	known_snps_index
-	known_indels_vcf
-	known_indels_index
-	
+    known_snps_index
+    known_indels_vcf
+    known_indels_index
 
     main:
     ch_versions = Channel.empty()
@@ -25,24 +24,22 @@ workflow BASE_RECALIBRATION {
     ch_recal_input = bam_input_ch.map { sample_id, strandedness, bam, bai -> 
         tuple(sample_id, strandedness, bam, bai)
     }
-	
-	// Combine VCF files for BaseRecalibrator
-ch_known_sites_vcf = known_snps_vcf.combine(known_indels_vcf)
-    .map { snp, indel -> [snp, indel].findAll { it != null } }
 
-ch_known_sites_index = known_snps_index.combine(known_indels_index)
-    .map { snp_tbi, indel_tbi -> [snp_tbi, indel_tbi].findAll { it != null } }
+    // Combine VCF files for BaseRecalibrator
+    ch_known_sites_vcf = known_snps_vcf.combine(known_indels_vcf)
+        .map { snp, indel -> [snp, indel].findAll { it != null } }
 
+    ch_known_sites_index = known_snps_index.combine(known_indels_index)
+        .map { snp_tbi, indel_tbi -> [snp_tbi, indel_tbi].findAll { it != null } }
 
-
+    // Run BaseRecalibrator
     GATK_BASERECALIBRATOR_RESULT = GATK_BASERECALIBRATOR(
         ch_recal_input,
         reference_genome,
         reference_genome_index,
         reference_genome_dict,
         ch_known_sites_vcf,
-		ch_known_sites_index
-		
+        ch_known_sites_index
     )
 
     ch_recal_tables = GATK_BASERECALIBRATOR.out.recal_table
@@ -54,19 +51,23 @@ ch_known_sites_index = known_snps_index.combine(known_indels_index)
     ch_bam_interval = bam_input_ch
         .combine(intervals_ch)
         .map { sample_id, strandedness, bam, bai, interval ->
-            tuple([sample_id], sample_id, strandedness, bam, bai, interval)
+            tuple(sample_id, sample_id, strandedness, bam, bai, interval)
         }
 
-    // STEP 3: Prepare recal table keyed by [sample_id]
+    ch_bam_interval.view { " BAM + Interval: $it" }
+
+    // STEP 3: Recal tables keyed by sample_id
     ch_recal_keyed = ch_recal_tables
         .map { sample_id, strandedness, recal_table ->
-            tuple([sample_id], recal_table)
+            tuple(sample_id, recal_table)
         }
 
-    // STEP 4: Join BAMs+intervals with recal tables
+    ch_recal_keyed.view { " Recal Table (Keyed): $it" }
+
+    // STEP 4: Join and scatter by interval
     ch_apply_input = ch_bam_interval
         .join(ch_recal_keyed)
-        .map { key, sample_id, strandedness, bam, bai, interval, recal_table ->
+        .map { sample_id, sample_id2, strandedness, bam, bai, interval, recal_table ->
             tuple(sample_id, strandedness, bam, bai, recal_table, interval)
         }
 
