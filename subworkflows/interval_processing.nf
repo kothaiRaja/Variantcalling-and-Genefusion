@@ -39,7 +39,8 @@ workflow INTERVAL_PROCESSING {
         ch_versions = ch_versions.mix(SCATTER_INTERVAL_LIST.out.versions.first())
     } else {
         log.info " Using full interval list without scattering..."
-        scattered_intervals_ch = interval_list_ch
+        scattered_intervals_ch = interval_list_ch.map { _, file -> file }  
+
     }
 
 	
