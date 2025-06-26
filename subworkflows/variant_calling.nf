@@ -1,3 +1,4 @@
+
 nextflow.enable.dsl = 2
 
 // Import variant calling & filtering modules
@@ -25,14 +26,16 @@ workflow VARIANT_CALLING {
 	ch_versions = Channel.empty()
 
     log.info " Starting Variant Calling Workflow..."
-	
-	recalibrated_bams_ch
-	.map { tuple(it[0], it[1], it[2], it[3]) }
+
+recalibrated_bams_ch
+    .map { tuple(it[0], it[1], it[2], it[3]) }
     .combine(intervals_ch)
     .map { sample_id, strandedness, bam, bai, interval -> 
         tuple(sample_id, strandedness, bam, bai, interval)
     }
     .set { ch_haplotypecaller_input }
+
+
 
 	
 	GATK_variant_caller = GATK_HAPLOTYPE_CALLER(ch_haplotypecaller_input,reference_genome, reference_genome_index, reference_genome_dict, known_variants, known_variants_index)

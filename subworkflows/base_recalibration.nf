@@ -5,8 +5,8 @@ include { GATK_APPLYBQSR }       from '../modules/gatk/applybsqr/main.nf'
 
 workflow BASE_RECALIBRATION {
     take:
-    bam_input_ch           // (sample_id, strandedness, bam, bai)
-    intervals_ch           // One interval file per entry (scattered intervals)
+    bam_input_ch           
+    intervals_ch           
     reference_genome
     reference_genome_index
     reference_genome_dict
@@ -18,21 +18,19 @@ workflow BASE_RECALIBRATION {
     main:
     ch_versions = Channel.empty()
 
-    log.info " Starting Base Recalibration Workflow (per interval)..."
+    log.info "Starting Base Recalibration Workflow..."
 
-    // STEP 1: Run GATK BaseRecalibrator once per sample (not per interval)
-    ch_recal_input = bam_input_ch.map { sample_id, strandedness, bam, bai -> 
+    // STEP 1: Run GATK BaseRecalibrator once per sample
+    ch_recal_input = bam_input_ch.map { sample_id, strandedness, bam, bai ->
         tuple(sample_id, strandedness, bam, bai)
     }
 
-    // Combine VCF files for BaseRecalibrator
     ch_known_sites_vcf = known_snps_vcf.combine(known_indels_vcf)
         .map { snp, indel -> [snp, indel].findAll { it != null } }
 
     ch_known_sites_index = known_snps_index.combine(known_indels_index)
         .map { snp_tbi, indel_tbi -> [snp_tbi, indel_tbi].findAll { it != null } }
 
-    // Run BaseRecalibrator
     GATK_BASERECALIBRATOR_RESULT = GATK_BASERECALIBRATOR(
         ch_recal_input,
         reference_genome,
@@ -45,35 +43,20 @@ workflow BASE_RECALIBRATION {
     ch_recal_tables = GATK_BASERECALIBRATOR.out.recal_table
     ch_versions     = ch_versions.mix(GATK_BASERECALIBRATOR.out.versions)
 
-    ch_recal_tables.view { " Recalibration Table: $it" }
+    // STEP 2: Join recal table with BAM (1 per sample)
+    ch_bam_with_recal = bam_input_ch.join(
+        ch_recal_tables.map { sample_id, strandedness, recal_table -> tuple(sample_id, recal_table) }
+    )
+    // => (sample_id, strandedness, bam, bai, recal_table)
 
-    // STEP 2: Combine BAM input with intervals
-    ch_bam_interval = bam_input_ch
-        .combine(intervals_ch)
-        .map { sample_id, strandedness, bam, bai, interval ->
-            tuple(sample_id, sample_id, strandedness, bam, bai, interval)
-        }
+    // STEP 3: ApplyBQSR once per sample (no intervals!)
+    ch_apply_input = ch_bam_with_recal.map {
+        sample_id, strandedness, bam, bai, recal_table ->
+        tuple(sample_id, strandedness, bam, bai, recal_table)
+    }
 
-    ch_bam_interval.view { " BAM + Interval: $it" }
+    ch_apply_input.view { "ApplyBQSR (one run per sample): $it" }
 
-    // STEP 3: Recal tables keyed by sample_id
-    ch_recal_keyed = ch_recal_tables
-        .map { sample_id, strandedness, recal_table ->
-            tuple(sample_id, recal_table)
-        }
-
-    ch_recal_keyed.view { " Recal Table (Keyed): $it" }
-
-    // STEP 4: Join and scatter by interval
-    ch_apply_input = ch_bam_interval
-        .join(ch_recal_keyed)
-        .map { sample_id, sample_id2, strandedness, bam, bai, interval, recal_table ->
-            tuple(sample_id, strandedness, bam, bai, recal_table, interval)
-        }
-
-    ch_apply_input.view { " ApplyBQSR Input: $it" }
-
-    // STEP 5: Run ApplyBQSR for each BAM+interval+recal_table
     GATK_APPLYBQSR_RESULT = GATK_APPLYBQSR(
         ch_apply_input,
         reference_genome,
@@ -83,8 +66,6 @@ workflow BASE_RECALIBRATION {
 
     bams_base_recalibrated_ch = GATK_APPLYBQSR.out.recalibrated_bam
     ch_versions               = ch_versions.mix(GATK_APPLYBQSR.out.versions)
-
-    bams_base_recalibrated_ch.view { " Final BQSR Bams: $it" }
 
     emit:
     recalibrated_bams = bams_base_recalibrated_ch
