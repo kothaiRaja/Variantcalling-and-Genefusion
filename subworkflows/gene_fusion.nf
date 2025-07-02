@@ -13,29 +13,29 @@ workflow GENE_FUSION {
         gtf_annotation
         arriba_blacklist
         arriba_known_fusions
-		
 
     main:
 
-        log.info " Starting Gene Fusion Detection Workflow..."
+//        log.info " Starting Gene Fusion Detection Workflow..."
 
         ch_versions = Channel.empty()
 
-        // Step 1: Use sample_id only (no strandedness)
+        //  Use full meta Map (id + strandedness) for consistent downstream processing
         arriba_input_bam_ch = STAR_bam_output
-            .map { sample_id, _, bam, bai ->
-                tuple(sample_id, bam, bai)
-            }
-            .view { " arriba_input_bam_ch: ${it}" }
+            .map { meta, bam, bai -> tuple(meta, bam, bai) }
+            .view { "arriba_input_bam_ch: ${it}" }
+			
+		arriba_blacklist_ch = arriba_blacklist.collect()
+		arriba_known_fusions_ch = arriba_known_fusions.collect()
+		
 
         // Step 2: Run ARRIBA
         ARRIBA(
             arriba_input_bam_ch,
             reference_genome,
             gtf_annotation,
-            arriba_blacklist,
-            arriba_known_fusions
-			
+            arriba_blacklist_ch,
+            arriba_known_fusions_ch
         )
 
         ch_versions = ch_versions.mix(ARRIBA.out.versions.first())
@@ -43,7 +43,6 @@ workflow GENE_FUSION {
         // Step 3: Join for ARRIBA_VISUALIZATION
         fusion_viz_input_ch = arriba_input_bam_ch
             .join(ARRIBA.out.fusions, by: 0)
-            
 
         // Step 4: Visualization
         ARRIBA_VISUALIZATION(
@@ -54,7 +53,7 @@ workflow GENE_FUSION {
         fusion_visual_ch = ARRIBA_VISUALIZATION.out.fusion_plot
         ch_versions = ch_versions.mix(ARRIBA_VISUALIZATION.out.versions.first())
 
-        log.info " Gene Fusion Detection Workflow Completed."
+//        log.info " Gene Fusion Detection Workflow Completed."
 
     emit:
         fusion_results        = ARRIBA.out.fusions

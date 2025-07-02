@@ -27,15 +27,32 @@ workflow MAF_ANALYSIS {
 
     ch_maf = VCF2MAF.out.maf
     ch_versions = ch_versions.mix(VCF2MAF.out.versions)
+	
+//	ch_maf.view { "MAF INPUT TO VISUALIZATION: $it" }
 
-    // Step 2: Visualize MAF
-    ch_visualisation = MAF_VISUALIZATION(
-        ch_maf,
-        rscript
+
+    
+	
+	
+	// Step 1: Map sample_id and add suffix to distinguish annotation type
+ch_mapped = ch_maf.map { sample_id, maf_file ->
+    def suffix = maf_file.name.contains('snpeff') ? 'snpeff' : 'vep'
+    tuple("${sample_id}_${suffix}", maf_file)
+}
+
+// Step 2: Combine with R script
+ch_maf_for_viz = ch_mapped.combine(rscript)
+    .view { "DEBUG - Viz input: $it" }
+
+
+
+	MAF_VISUALIZATION(
+        ch_maf_for_viz
+		
     )
-
     ch_pdf = MAF_VISUALIZATION.out.maf_plots
     ch_versions = ch_versions.mix(MAF_VISUALIZATION.out.versions)
+
 
     emit:
     maf         = ch_maf

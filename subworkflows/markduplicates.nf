@@ -13,7 +13,7 @@ workflow MARK_DUPLICATES {
     main:
 	
 	ch_versions = Channel.empty()
-    log.info "Starting MarkDuplicates Workflow..."
+//    log.info "Starting MarkDuplicates Workflow..."
 
     
 
@@ -22,9 +22,11 @@ workflow MARK_DUPLICATES {
 	
 	dedup_bams_ch = GATK_MARK_DUPLICATES.out.marked_bams_bai
 	dedup_metrics_ch = GATK_MARK_DUPLICATES.out.marked_bams_bai_metrics
-		.collect { it[2] }
-		.ifEmpty([])
+    .map { meta, file -> file }
+    .ifEmpty([])
+
 	ch_versions = ch_versions.mix(GATK_MARK_DUPLICATES.out.versions.first())
+	
 	
 	
 
@@ -33,4 +35,5 @@ workflow MARK_DUPLICATES {
     marked_bams_bai = dedup_bams_ch
 	marked_bams_bai_metrics = dedup_metrics_ch
 	versions  = ch_versions
+	
 }

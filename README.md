@@ -134,7 +134,6 @@ nextflow run main.nf \
   -c test_data/test.config \
   --ref_base /path/to/test_data/new_test \
   --resultsdir /path/to/results \
-  --cache_dir /path/to/cache \
   -profile test,singularity
 ```
 
@@ -142,22 +141,24 @@ nextflow run main.nf \
 
 ### Step 3: Run with Real Data
 
+Before running the pipeline, create your own `custom.config` file.  
+This file should include paths to available reference files or URLs, required databases, `workDir`, and `ref_base`.
+
 ```bash
 nextflow run main.nf \
   -c path/to/custom.config \
-  --samplesheet path/to/sample_sheet.csv \
   --resultsdir path/to/final_results_directory \
-  --cache_dir /path/to/cache \
   -profile singularity
+  
 ```
-### Step 3a: Run with Real Data with reference files saving  
+
+### Step 3a: Run with Real Data with reference files saving (also can be given in CLI)
 ```bash
 nextflow run main.nf \
   -c path/to/custom.config \
   --ref_base /path/to/test_data/folder \
   --samplesheet path/to/sample_sheet.csv \
   --resultsdir path/to/final_results_directory \
-  --cache_dir /path/to/cache \
   -profile singularity
 ```
 
@@ -222,9 +223,7 @@ Detailed output directories configured in `params.config`:
 | `resultsdir`       | Directory for result summaries and final outputs       |
 | `ref_base`         | Base path for data, cache, and reference lookup        |
 | `run_fusion`       | Run Arriba fusion detection along with variant calling |
-| `only_qc`          | Run only QC steps (FastQC, Fastp, MultiQC)             |
 | `maftools`         | Enable MAF visual reporting using vcf2maf + maftools   |
-| `vep_enable`       | Enable or skip VEP cache and annotation steps          |
 | `annotation_tools` | List of tools to use: \['snpeff'], \['vep'], or both   |
 
 ---

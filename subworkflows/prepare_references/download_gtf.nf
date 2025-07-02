@@ -1,13 +1,13 @@
-include { DOWNLOAD_GTF }        from '../../modules/gtf_annotation/main.nf'
+include { DOWNLOAD_GTF }         from '../../modules/gtf_annotation/main.nf'
 include { GUNZIP as GUNZIP_GTF } from '../../modules/gunzip/main.nf'
-include { GENERATEEXONS_BED }   from '../../modules/references/exons_bed.nf'
+include { GENERATEEXONS_BED }    from '../../modules/references/exons_bed.nf'
 
 workflow DOWNLOAD_GTF_ANNOTATION {
 
     main:
 
-    gtf_ch       = Channel.empty()
-    exons_bed_ch = Channel.empty()
+    gtf_ch        = Channel.empty()
+    exons_bed_ch  = Channel.empty()
 
     // ======== Step 1: GTF file handling ========
     if (params.gtf_annotation) {
@@ -19,15 +19,12 @@ workflow DOWNLOAD_GTF_ANNOTATION {
             GUNZIP_GTF(gtf_path_ch)
             gtf_ch = GUNZIP_GTF.out.gunzip
         } else {
-            gtf_ch = gtf_path_ch.map { file -> [ file ] }.collect()
+            gtf_ch = gtf_path_ch
         }
 
     } else if (file("${params.ref_base}/reference/annotations.gtf").exists()) {
         println " Reusing annotation.gtf from ref_base"
-        gtf_ch = Channel
-            .fromPath("${params.ref_base}/reference/annotations.gtf", checkIfExists: true)
-            .map { file -> [ file ] }
-            .collect()
+        gtf_ch = Channel.fromPath("${params.ref_base}/reference/annotations.gtf", checkIfExists: true)
 
     } else {
         println " Downloading annotation.gtf.gz and unzipping..."
@@ -39,17 +36,11 @@ workflow DOWNLOAD_GTF_ANNOTATION {
     // ======== Step 2: Exons BED file handling ========
     if (params.exons_bed) {
         println " Using exons BED from config: ${params.exons_bed}"
-        exons_bed_ch = Channel
-            .fromPath(params.exons_bed, checkIfExists: true)
-            .map { file -> [ file ] }
-            .collect()
+        exons_bed_ch = Channel.fromPath(params.exons_bed, checkIfExists: true)
 
     } else if (file("${params.ref_base}/reference/exons.bed").exists()) {
         println " Reusing exons.bed from ref_base"
-        exons_bed_ch = Channel
-            .fromPath("${params.ref_base}/reference/exons.bed", checkIfExists: true)
-            .map { file -> [ file ] }
-            .collect()
+        exons_bed_ch = Channel.fromPath("${params.ref_base}/reference/exons.bed", checkIfExists: true)
 
     } else {
         println "️ Generating exons.bed from GTF..."

@@ -13,32 +13,45 @@ include { BCFTOOLS_QUERY } from '../modules/bcftools/query/main.nf'
 
 workflow VARIANT_CALLING {
     take:
-    recalibrated_bams_ch  
-	intervals_ch 
+    recalibrated_bams  
+	intervals 
     reference_genome
 	reference_genome_index
 	reference_genome_dict
-	known_variants
-	known_variants_index
+	known_snps_vcf
+	known_snps_vcf_index
 	
 	main:
 	
 	ch_versions = Channel.empty()
 
-    log.info " Starting Variant Calling Workflow..."
+//    log.info " Starting Variant Calling Workflow..."
 
-recalibrated_bams_ch
-    .map { tuple(it[0], it[1], it[2], it[3]) }
-    .combine(intervals_ch)
-    .map { sample_id, strandedness, bam, bai, interval -> 
-        tuple(sample_id, strandedness, bam, bai, interval)
+ch_haplotypecaller_input = recalibrated_bams
+    .combine(intervals) 
+    .map { meta, bam, bai, interval_meta, interval_file ->
+        def new_meta = meta.clone()
+        new_meta.id     = meta.id + "_" + interval_file.baseName
+        new_meta.sample = meta.id  
+        tuple(new_meta, bam, bai, interval_file)
     }
-    .set { ch_haplotypecaller_input }
+
+
+	ch_known_sites_vcf = known_snps_vcf.collect()
+	ch_known_sites_vcf_index = known_snps_vcf_index.collect()
+	
+
+
+
 
 
 
 	
-	GATK_variant_caller = GATK_HAPLOTYPE_CALLER(ch_haplotypecaller_input,reference_genome, reference_genome_index, reference_genome_dict, known_variants, known_variants_index)
+
+
+
+	
+	GATK_variant_caller = GATK_HAPLOTYPE_CALLER(ch_haplotypecaller_input, reference_genome, reference_genome_index, reference_genome_dict, ch_known_sites_vcf, ch_known_sites_vcf_index)
 	
 	ch_GATK_variant_caller = GATK_HAPLOTYPE_CALLER.out.vcf_output 
 	ch_versions = ch_versions.mix(GATK_HAPLOTYPE_CALLER.out.versions.first())
@@ -48,42 +61,49 @@ recalibrated_bams_ch
 
 
 
-	ch_GATK_variant_caller
-		.groupTuple() // Groups by sample ID
-		.map { sample_id, strandedness_list, vcf, tbi -> 
-			tuple(sample_id, strandedness_list.unique()[0], vcf.flatten(), tbi.flatten()) 
+	ch_merged_vcf_input = GATK_HAPLOTYPE_CALLER.out.vcf_output
+    .map { meta, vcf, tbi ->
+        def new_meta = [id: meta.sample, sample: meta.sample, strandedness: meta.strandedness]
+        tuple(new_meta, vcf, tbi)
     }
-		.set { ch_haplotypecaller_grouped }
+    .groupTuple() 
+
+
+
+
+
+
+
 
 	// Debug Output
-	ch_haplotypecaller_grouped.view { "Grouped VCFs for Merging: $it" }
+	ch_merged_vcf_input.view { "Grouped VCFs for Merging: $it" }
 
 
 	merged_vcf = GATK_MERGEVCFS(
-		ch_haplotypecaller_grouped.map { sample_id, strandedness, vcf_list, tbi_list -> 
-			tuple(sample_id, vcf_list, tbi_list)
-		}
+		ch_merged_vcf_input
 	)
 	
 	merged_vcf_ch = GATK_MERGEVCFS.out.merged_vcf
 	ch_versions = ch_versions.mix(GATK_MERGEVCFS.out.versions.first())
 	
+	// Correct assignment of the new channel
+	ch_merged_vcfs = merged_vcf_ch.map { meta, vcf, tbi -> 
+		tuple(meta, vcf, tbi)
+	}
 
-	bcftools_stats = BCFTOOLS_STATS(merged_vcf_ch)
+	// View the output
+	ch_merged_vcfs.view { it -> "Merged_vcf_output: $it" }
+
+	
+
+	bcftools_stats = BCFTOOLS_STATS(ch_merged_vcfs)
 	
 	bcftools_stats_ch = BCFTOOLS_STATS.out.stats_output
 	ch_versions = ch_versions.mix(BCFTOOLS_STATS.out.versions.first())
 	
 
 
-	// Correct assignment of the new channel
-	ch_merged_vcfs = merged_vcf_ch.map { sample_id, vcf, tbi -> 
-		tuple(sample_id, vcf, tbi)
-	}
-
-	// View the output
-	ch_merged_vcfs.view { it -> "Merged_vcf_output: $it" }
-
+	
 
 	// Choose filtering mode dynamically
 if (params.variant_filter_mode == "select") {

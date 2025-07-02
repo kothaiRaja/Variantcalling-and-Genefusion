@@ -1,5 +1,5 @@
 process GATK_BASERECALIBRATOR {
-    tag { "${sample_id}_${task.process}" }
+    tag { "${meta.id}_${task.process}" }
 
     label 'process_high'
 
@@ -7,50 +7,46 @@ process GATK_BASERECALIBRATOR {
     publishDir params.recalibration_table_outdir, mode: "copy"
 
     input:
-    tuple val(sample_id), val(strandedness), path(bam), path(bai)
+    tuple val(meta), path(bam), path(bai), path(intervals)
     path genome_fasta
     path index
     path dict
-    path known_sites
-	path known_sites_index
-	
+    path known_variants
+    path known_variants_index
+
     output:
-    tuple val(sample_id), val(strandedness), path("${sample_id}_recal_data.table"), emit: recal_table
+    tuple val(meta), path("${meta.id}_recal_data.table"), emit: recal_table
     path("versions.yml"), emit: versions
 
     script:
-    def avail_mem = 3
-    if (task.memory) {
-        avail_mem = task.memory.giga
-    } else {
-        log.info '[GATK BaseRecalibrator] No memory set — defaulting to 3GB.'
-    }
-	
-	def known_sites_args = known_sites.collect { "--known-sites ${it}" }.join(' ')
+    def avail_mem = task.memory ? task.memory.giga : 3
+    def interval_option = intervals ? "-L ${intervals}" : ""
+    def known_sites_command = known_variants.collect { "--known-sites ${it}" }.join(' ')
 
     """
     THREADS=${task.cpus}
 
-echo "Running GATK BaseRecalibrator for sample: ${sample_id}"
+    echo "Running GATK BaseRecalibrator for sample: ${meta.id}"
 
-gatk --java-options "-Xmx${avail_mem}g" BaseRecalibrator \\
-    -R "${genome_fasta}" \\
-    -I "${bam}" \\
-    ${known_sites_args} \\
-    -O "${sample_id}_recal_data.table"
+    gatk --java-options "-Xmx${avail_mem}g" BaseRecalibrator \\
+        -R "${genome_fasta}" \\
+        -I "${bam}" \\
+        ${known_sites_command} \\
+        ${interval_option} \\
+        -O "${meta.id}_recal_data.table"
 
-# Check if recalibration table was created
-if [ ! -s "${sample_id}_recal_data.table" ]; then
-    echo "Error: Recalibration table not generated for ${sample_id}" >&2
-    exit 1
-fi
+    if [ ! -s "${meta.id}_recal_data.table" ]; then
+        echo "Error: Recalibration table not generated for ${meta.id}" >&2
+        exit 1
+    fi
 
-gatk_version=\$(gatk --version | head -n 1)
-cat <<EOF > versions.yml
+    gatk_version=\$(gatk --version | head -n 1)
+
+    cat <<EOF > versions.yml
 "${task.process}":
   gatk: "\${gatk_version}"
 EOF
 
-echo "BaseRecalibrator completed for ${sample_id}"
+    echo "BaseRecalibrator completed for ${meta.id}"
     """
 }

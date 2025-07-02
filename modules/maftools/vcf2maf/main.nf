@@ -16,7 +16,8 @@ process VCF2MAF {
     path "versions.yml", emit: versions
 
     script:
-    def prefix     = sample_id
+    def vcf_base = vcf.getBaseName().replaceAll(/\.vcf(\.gz)?$/, '')
+    def prefix = "${sample_id}_${vcf_base}"
     def version    = '1.6.22'
     def args       = "--species homo_sapiens --ncbi-build GRCh38"
     def vep_path   = "--vep-path \$(dirname \$(which vep))"

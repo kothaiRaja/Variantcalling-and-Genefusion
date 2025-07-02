@@ -1,28 +1,28 @@
 process GATK_VARIANT_SELECT_FILTER {
-    tag { "${sample_id}_${task.process}" }
+    tag { "${meta.id}_${task.process}" }
 
     label 'process_high'
     publishDir params.variant_filter_outdir, mode: 'copy'
     container params.gatk_container
 
     input:
-    tuple val(sample_id), path(vcf_file), path(vcf_index)
+    tuple val(meta), path(vcf_file), path(vcf_index)
     path genome
     path genome_index
     path genome_dict
 
     output:
-    tuple val(sample_id),
-          path("${sample_id}_filtered.vcf"), emit: filtered_vcf
+    tuple val(meta.id), path("${meta.id}_filtered.vcf"), emit: filtered_vcf
     path("versions.yml"), emit: versions
 
     script:
+    def sample_id = meta.id
     def avail_mem = 3
-if (task.memory) {
-    avail_mem = task.memory.giga
-} else {
-    log.info '[GATK VariantFiltration] No memory set — defaulting to 3GB.'
-}
+    if (task.memory) {
+        avail_mem = task.memory.giga
+    } else {
+        log.info '[GATK VariantFiltration] No memory set — defaulting to 3GB.'
+    }
 
     """
     echo "Selecting and filtering variants for sample: ${sample_id}"
@@ -62,7 +62,6 @@ if (task.memory) {
         -I ${sample_id}_snps_filtered.vcf \\
         -I ${sample_id}_indels_filtered.vcf \\
         -O ${sample_id}_filtered.vcf
-
 
     # 6. Capture GATK version
     gatk_version=\$(gatk --version | head -n 1)

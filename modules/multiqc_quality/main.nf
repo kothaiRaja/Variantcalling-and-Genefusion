@@ -1,29 +1,38 @@
 process MultiQC {
-  tag "MultiQC"
-  label 'process_low'
 
-  publishDir params.multiqc_quality_outdir, mode: "copy"
-  container params.multiqc_quality_container
+    tag { "MultiQC" }
+    label 'process_low'
 
-  input:
-    path report_dir
+    container params.multiqc_container
+    publishDir params.multiqc_outdir, mode: 'copy'
 
-  output:
-    path "multiqc_report.html", emit: report
-    path "versions.yml", emit: versions
+    input:
+    path(report_files)
 
-  script:
-  """
-  echo "Running MultiQC in ${report_dir}"
-  ls -lh ${report_dir}
+    output:
+    path "multiqc_report.html", emit: multiqc_report
+    path "multiqc_data",        optional: true, emit: data
+    path "multiqc_plots",       optional: true, emit: plots
+    path "versions.yml",        emit: versions
 
-  multiqc ${report_dir} -o .
+    script:
+    """
+    echo " Running MultiQC on collected files..."
+    mkdir multiqc_inputs
 
-  # Capture MultiQC version
-multiqc_version=\$(multiqc --version | grep -oP '[0-9]+\\.[0-9]+(\\.[0-9]+)?')
-cat <<EOF > versions.yml
- "${task.process}":
-multiqc: "\${multiqc_version}"
+    for file in ${report_files}; do
+        cp \$file multiqc_inputs/
+    done
+
+    ls -lh multiqc_inputs
+
+    multiqc multiqc_inputs -c multiqc_config.yml -o .
+
+    # Capture MultiQC version
+    multiqc_version=\$(multiqc --version | grep -oP '[0-9]+\\.[0-9]+(\\.[0-9]+)?')
+    cat <<EOF > versions.yml
+"MultiQC":
+  multiqc: "\$multiqc_version"
 EOF
-  """
+    """
 }

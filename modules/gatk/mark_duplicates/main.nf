@@ -1,6 +1,6 @@
 process GATK_MARK_DUPLICATES {
    
-    tag { "${sample_id}_${task.process}" }
+    tag { "${meta.id}_${task.process}" }
 
 	label 'process_high'
 	
@@ -8,37 +8,32 @@ process GATK_MARK_DUPLICATES {
     publishDir params.markduplicates_outdir, mode: "copy"
 
     input:
-    tuple val(sample_id),val(strandedness), path(sorted_bam), path(sorted_bam_index)
+    tuple val(meta), path(sorted_bam), path(sorted_bam_index)
 
     output:
-    tuple val(sample_id), val(strandedness), path("${sample_id}_marked_duplicates.bam"), path("${sample_id}_marked_duplicates.bai"), emit: marked_bams_bai
-	tuple val(sample_id), val(strandedness), path("${sample_id}_dup_metrics.txt"), emit: marked_bams_bai_metrics
-	path("versions.yml"), emit: versions
+    tuple val(meta), path("${meta.id}_marked_duplicates.bam"), path("${meta.id}_marked_duplicates.bai"), emit: marked_bams_bai
+    tuple val(meta), path("${meta.id}_dup_metrics.txt"), emit: marked_bams_bai_metrics
+    path("versions.yml"), emit: versions
 
     script:
-	
-	def avail_mem = 3  // default to 3 GB
-    if (task.memory) {
-        avail_mem = task.memory.giga
-    } else {
-        log.info '[GATK MarkDuplicates] No memory set — defaulting to 3 GB.'
-    }
+    def sample_id   = meta.id
+    def avail_mem   = task.memory ? task.memory.giga : 3
 	
     """
 	
 	
-    THREADS=${task.cpus}
+    TTHREADS=${task.cpus}
 
-    gatk --java-options "-Xmx${avail_mem}g" MarkDuplicates \
-        -I ${sorted_bam} \
-        -O ${sample_id}_marked_duplicates.bam \
-        -M ${sample_id}_dup_metrics.txt \
-        --CREATE_INDEX true \
-		--ASSUME_SORTED true \
-		--REMOVE_DUPLICATES ${params.remove_duplicates ? 'true' : 'false'} \
+    gatk --java-options "-Xmx${avail_mem}g" MarkDuplicates \\
+        -I ${sorted_bam} \\
+        -O ${sample_id}_marked_duplicates.bam \\
+        -M ${sample_id}_dup_metrics.txt \\
+        --CREATE_INDEX true \\
+        --ASSUME_SORTED true \\
+        --REMOVE_DUPLICATES ${params.remove_duplicates ? 'true' : 'false'} \\
         --VALIDATION_STRINGENCY ${params.validation_stringency ?: 'LENIENT'}
-		
-	# Check if output BAM is generated
+
+    # Check if output BAM is generated
     if [ ! -s ${sample_id}_marked_duplicates.bam ]; then
         echo "Error: Marked duplicates BAM file not generated for ${sample_id}" >&2
         exit 1
@@ -49,13 +44,15 @@ process GATK_MARK_DUPLICATES {
         echo "Error: Duplicate metrics file not generated for ${sample_id}" >&2
         exit 1
     fi
-	
-	#  capture version
-	gatk_version=\$(gatk --version | head -n 1)
-	
+
+    # Capture version
+    gatk_version=\$(gatk --version | head -n 1)
+
 cat <<EOF > versions.yml
-"${task.process}": 
+"${task.process}":
   gatk: "\${gatk_version}"
 EOF
+
     """
+
 }

@@ -1,4 +1,5 @@
 process BCFTOOLS_STATS {
+
     tag { "${sample_id}_${task.process}" }
     label 'process_low'
 
@@ -18,9 +19,8 @@ process BCFTOOLS_STATS {
 
     bcftools stats "${vcf}" > "${sample_id}_bcftools_stats.txt"
 
-    # Capture bcftools version
     bcftools_version=\$(bcftools --version | head -n 1 | awk '{print \$2}')
-cat <<EOF > versions.yml
+    cat <<EOF > versions.yml
 "${task.process}":
   bcftools: "\${bcftools_version}"
 EOF

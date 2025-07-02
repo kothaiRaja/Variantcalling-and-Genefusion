@@ -1,26 +1,26 @@
 process ARRIBA {
-    tag { "${sample_id}_${task.process}" }
+
+    tag { "${meta.id}_${task.process}" }
     label 'process_high'
 
     container params.arriba_container
     publishDir params.arriba_outdir, mode: 'copy'
 
     input:
-    tuple val(sample_id), path(bam), path(bai)
+    tuple val(meta), path(bam), path(bai)
     path fasta
     path gtf
     path blacklist
     path known_fusions
-    
 
     output:
-    tuple val(sample_id), path("*.fusions.tsv"), emit: fusions
-    tuple val(sample_id), path("*.fusions.discarded.tsv"), emit: fusions_discarded
+    tuple val(meta), path("*.fusions.tsv"), emit: fusions
+    tuple val(meta), path("*.fusions.discarded.tsv"), emit: fusions_discarded
     path("versions.yml"), emit: versions
 
     script:
     """
-    echo "Running Arriba for Sample: ${sample_id}"
+    echo "Running Arriba for Sample: ${meta.id}"
 
     arriba \\
          -x "${bam}" \\
@@ -28,14 +28,16 @@ process ARRIBA {
          -g "${gtf}" \\
          -b "${blacklist}" \\
          -k "${known_fusions}" \\
-         -o "${sample_id}.fusions.tsv" \\
-         -O "${sample_id}.fusions.discarded.tsv"
+         -o "${meta.id}.fusions.tsv" \\
+         -O "${meta.id}.fusions.discarded.tsv"
 
-    echo "Arriba finished for Sample: ${sample_id}"
+    echo "Arriba finished for Sample: ${meta.id}"
 
-cat <<-END_VERSIONS > versions.yml
+    arriba_version=\$(arriba -h 2>&1 | grep 'Version:' | sed 's/Version: //')
+
+    cat <<-END_VERSIONS > versions.yml
 "${task.process}":
-  arriba: "\$(arriba -h 2>&1 | grep 'Version:' | sed 's/Version: //')"
+  arriba: "\${arriba_version}"
 END_VERSIONS
     """
 }

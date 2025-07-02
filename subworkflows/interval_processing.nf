@@ -21,7 +21,7 @@ workflow INTERVAL_PROCESSING {
 		interval_list = BED_TO_INTERVAL_LIST(bed_file_ch, reference_genome, reference_genome_dict)
 		
 		interval_list_ch = BED_TO_INTERVAL_LIST.out.interval_list
-		ch_versions = ch_versions.mix(BED_TO_INTERVAL_LIST.out.versions.first())
+		ch_versions = ch_versions.mix(BED_TO_INTERVAL_LIST.out.versions)
 		
 		
 
@@ -36,7 +36,7 @@ workflow INTERVAL_PROCESSING {
 								.flatten()
         
         scattered_intervals_ch.view { file -> " Scattered interval: $file" }
-        ch_versions = ch_versions.mix(SCATTER_INTERVAL_LIST.out.versions.first())
+        ch_versions = ch_versions.mix(SCATTER_INTERVAL_LIST.out.versions)
     } else {
         log.info " Using full interval list without scattering..."
         scattered_intervals_ch = interval_list_ch.map { _, file -> file }  

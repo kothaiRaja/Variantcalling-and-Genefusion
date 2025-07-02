@@ -9,34 +9,17 @@ include { SNPEFF_SETUP }                   from './prepare_references/snpeff_set
 include { ARRIBA_SETUP }                   from './prepare_references/arriba.nf'
 include { VEP_SETUP }                      from './prepare_references/VEP_setup.nf'
 
+
 workflow BUILD_REFERENCES {
 
     take:
-    
-	samplesheet
+   
 	genome_id
 	
 
     main:
 
-	samples_ch = Channel
-        .fromPath(samplesheet, checkIfExists: true)
-        .splitCsv(header: true)
-        .map { row ->
-            if (!row.sample_id || !row.fastq_1 || !row.fastq_2) {
-                error " Missing required fields in samplesheet. Each row must have: sample_id, fastq_1, fastq_2"
-            }
-            def strandedness = row.strandedness ?: "unstranded"
-            tuple(row.sample_id, [file(row.fastq_1), file(row.fastq_2)], strandedness)
-        }
-
-
-
-
-
-
-    
-    // Download genome + indexes
+	// Download genome + indexes
     genome_refs = DOWNLOAD_REFERENCE_GENOME()
     reference_genome_ch       = genome_refs.genome
     reference_genome_index_ch = genome_refs.genome_index
@@ -81,5 +64,5 @@ workflow BUILD_REFERENCES {
     arriba_dir              = arriba_dir_ch
     vep_cache               = vep_cache_ch
     vep_plugins             = vep_plugins_ch
-	validated_reads			= samples_ch
+	
 }
