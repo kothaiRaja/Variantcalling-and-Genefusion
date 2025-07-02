@@ -315,7 +315,7 @@ all_reports_ch = Channel
     .mix(ch_multiqc_config.ifEmpty([]))
     .filter { it instanceof Path && it.exists() }
     .unique { it.name }
-    .view { it -> "🔍 MultiQC input file: ${it?.getClass()?.getSimpleName()} - ${it}" }
+    .view { it -> " MultiQC input file: ${it?.getClass()?.getSimpleName()} - ${it}" }
     .collect()
     
 // Run MultiQC
