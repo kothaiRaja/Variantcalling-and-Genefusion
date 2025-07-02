@@ -7,12 +7,12 @@ if (length(args) < 2) {
 
 input_maf <- args[1]
 sample_id <- args[2]
-outdir <- paste0("plots_", sample_id)
+outdir <- "plots"
 dir.create(outdir, showWarnings = FALSE)
 
 suppressMessages(library(maftools))
 
-# Read MAF
+# Read MAF with error handling
 maf <- tryCatch({
   read.maf(maf = input_maf, vc_nonSyn = NULL)
 }, error = function(e) {
@@ -20,35 +20,75 @@ maf <- tryCatch({
   quit(status = 0)
 })
 
-# Placeholder if empty
+# Define output filenames
+plot_files <- c(
+  paste0(sample_id, "_maf_summary.pdf"),
+  paste0(sample_id, "_oncoplot.pdf"),
+  paste0(sample_id, "_titv.pdf"),
+  paste0(sample_id, "_rainfall.pdf")
+)
+
+# Placeholder for empty MAF
 if (nrow(maf@data) == 0) {
   cat("⚠️ No mutations found. Creating placeholder plots.\n")
-  pdf(file.path(outdir, "maf_summary_plot.pdf")); plot.new(); title("No mutations found"); dev.off()
-  pdf(file.path(outdir, "oncoplot_top10.pdf")); plot.new(); title("No mutations found"); dev.off()
-  pdf(file.path(outdir, "titv_plot.pdf")); plot.new(); title("No mutations found"); dev.off()
-  pdf(file.path(outdir, "rainfall_plot.pdf")); plot.new(); title("No mutations found"); dev.off()
+  for (f in plot_files) {
+    pdf(file.path(outdir, f))
+    plot.new()
+    title(paste("No mutations found -", sample_id))
+    dev.off()
+  }
   quit(status = 0)
 }
 
-# Summary plot
-pdf(file.path(outdir, "maf_summary_plot.pdf"), width = 10, height = 6)
+# Generate main plots
+pdf(file.path(outdir, plot_files[1]), width = 10, height = 6)
 plotmafSummary(maf, dashboard = TRUE, addStat = 'median')
 dev.off()
 
-# Oncoplot
-pdf(file.path(outdir, "oncoplot_top10.pdf"), width = 8, height = 6)
+pdf(file.path(outdir, plot_files[2]), width = 8, height = 6)
 oncoplot(maf, top = 10)
 dev.off()
 
-# TiTv
-titv_res <- titv(maf, plot = FALSE)
-pdf(file.path(outdir, "titv_plot.pdf"), width = 7, height = 5)
-plotTiTv(titv_res)
+pdf(file.path(outdir, plot_files[3]), width = 7, height = 5)
+plotTiTv(titv(maf, plot = FALSE))
 dev.off()
 
-# Rainfall plot
-pdf(file.path(outdir, "rainfall_plot.pdf"), width = 10, height = 4)
+pdf(file.path(outdir, plot_files[4]), width = 10, height = 4)
 rainfallPlot(maf)
 dev.off()
 
-cat("✅ Basic plots completed in:", outdir, "\n")
+# Lollipop plot for top mutated gene (safe)
+top_gene <- tryCatch({
+  getGeneSummary(maf)[1, "Hugo_Symbol"]
+}, error = function(e) {
+  NA
+})
+
+if (!is.na(top_gene)) {
+  tryCatch({
+    pdf(file.path(outdir, paste0(sample_id, "_lollipop_", top_gene, ".pdf")), width = 10, height = 4)
+    lollipopPlot(maf, gene = top_gene)
+    dev.off()
+  }, error = function(e) {
+    cat(sprintf("⚠️ Skipping lollipop plot for gene %s: %s\n", top_gene, conditionMessage(e)))
+  })
+}
+
+
+# Save gene summary as TSV
+tryCatch({
+  write.table(getGeneSummary(maf),
+              file = file.path(outdir, paste0(sample_id, "_gene_summary.tsv")),
+              sep = "\t", quote = FALSE, row.names = FALSE)
+}, error = function(e) {
+  cat("⚠️ Failed to write gene summary:", conditionMessage(e), "\n")
+})
+
+# Save session info
+writeLines(capture.output(sessionInfo()),
+           con = file.path(outdir, paste0(sample_id, "_sessionInfo.txt")))
+
+# Final report
+cat("✅ Plots created in:", outdir, "\n")
+cat("Files created:\n")
+print(list.files(outdir, full.names = TRUE))
