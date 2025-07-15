@@ -73,18 +73,17 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	//========================Input channel ==================================
 	INPUT_PAIRED_READS(ch_input)
 	reads_ch = INPUT_PAIRED_READS.out.paired_reads
-	reads_ch.view { "READS_CH: $it" }
+//	reads_ch.view { "READS_CH: $it" }
 
 	// ============================ PREPROCESSING ============================
 	PREPROCESSING(reads_ch)
 
-	reports_ch = reports_ch.mix(PREPROCESSING.out.qc_results.map { it[1] }.ifEmpty([]))
-	reports_ch = reports_ch.mix(PREPROCESSING.out.fastp_reports.map { it[1] }.ifEmpty([]))
+	reports_ch = reports_ch.mix(PREPROCESSING.out.reports.ifEmpty([]))
 	trimmed_reads_ch = PREPROCESSING.out.trimmed_reads
 	ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
 
 	// ========================== STAR ALIGNMENT LOGIC ==========================
-	log.info " Running STAR Alignment..."
+//	log.info " Running STAR Alignment..."
 
 	STAR_ALIGN(
 		trimmed_reads_ch, 
@@ -107,7 +106,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 
 		
 	// ===================== Intervals Processing ===================== //
-		log.info "Starting Interval Processing..."
+//		log.info "Starting Interval Processing..."
 		
 		// **Step 1: Convert BED to Interval List**
 		BED_TO_INTERVAL_LIST(ch_exons_bed_tuple, reference_genome_ch, reference_genome_dict_ch)
@@ -177,7 +176,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 
 	
 
-	  ch_recalib_input.view {"recalib_bams : $it "}
+//	  ch_recalib_input.view {"recalib_bams : $it "}
 
 
 
@@ -245,7 +244,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 		
     )
 
-    log.info "Variant annotation complete!"
+//    log.info "Variant annotation complete!"
 
 	final_annotated_vcf = ANNOTATE.out.final_vcf_annotated
 	uncompressed_annotated_vcf = ANNOTATE.out.uncompressed_vcf_annotated
@@ -255,7 +254,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	//=====================Maftools Visualisation======================//
 	
 	if (params.maftools) {
-        log.info "Running MAF_ANALYSIS Subworkflow..."
+//        log.info "Running MAF_ANALYSIS Subworkflow..."
 
         MAF_ANALYSIS(
             uncompressed_annotated_vcf,
@@ -275,7 +274,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	//================== Step 8: Run Gene Fusion Analysis Independently ================//
 
 if (params.run_fusion) {
-    log.info " Running Gene Fusion Analysis..."
+//    log.info " Running Gene Fusion Analysis..."
 
     fusions = GENE_FUSION(
         star_bam_ch,  

@@ -10,7 +10,7 @@ process GATK_MERGEVCFS {
     tuple val(meta), path(vcf_list), path(tbi_list)
 
     output:
-    tuple val(meta.id), 
+    tuple val(meta), 
           path("merged_${meta.id}.vcf.gz"), 
           path("merged_${meta.id}.vcf.gz.tbi"), emit: merged_vcf
     path("versions.yml"), emit: versions

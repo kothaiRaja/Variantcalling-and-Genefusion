@@ -1,6 +1,9 @@
 process ARRIBA_VISUALIZATION {
 
     tag { "${meta.id}" }
+	
+	container params.arriba_container
+    publishDir params.arriba_outdir, mode: 'copy'
 
     input:
     tuple val(meta), path(fusions_file), path(bam_file), path(bai_file)

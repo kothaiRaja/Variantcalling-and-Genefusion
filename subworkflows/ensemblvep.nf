@@ -15,7 +15,7 @@ workflow VEP_ANNOTATION_WORKFLOW {
 	vep_plugins
 	
     main:
-    log.info "Starting Ensembl VEP annotation..."
+//    log.info "Starting Ensembl VEP annotation..."
 	
 	ch_versions = Channel.empty()
 

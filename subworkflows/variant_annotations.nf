@@ -30,11 +30,11 @@ workflow ANNOTATE {
 	uncompressed_vcf = Channel.empty()
     
 	
-	log.info "Starting variant annotation workflow..."
+//	log.info "Starting variant annotation workflow..."
 
     // Case 1: Run SnpEff (if 'snpeff' or 'combine' is selected)
     if (tools.contains('snpeff') || tools.contains('combine')) {
-        log.info "Running SnpEff annotation..."
+//        log.info "Running SnpEff annotation..."
 		
 		VARIANT_ANNOTATION(
 		vcf,  

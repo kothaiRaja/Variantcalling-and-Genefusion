@@ -1,5 +1,6 @@
 process GATK_VARIANT_FILTER {
-    tag { "${sample_id}_${task.process}" }
+
+    tag { "${meta.id}_${task.process}" }
 
     label 'process_high'
 
@@ -7,31 +8,24 @@ process GATK_VARIANT_FILTER {
     publishDir params.variant_filter_outdir, mode: "copy"
 
     input:
-    tuple val(sample_id), path(vcf_file), path(vcf_index)
+    tuple val(meta), path(vcf_file), path(vcf_index)
     path genome
     path genome_index
     path genome_dict
 
     output:
-    tuple val(sample_id), 
-          path("${sample_id}_filtered.vcf.gz"), 
-          path("${sample_id}_filtered.vcf.gz.tbi"), emit: filtered_vcf
+    tuple val(meta), 
+          path("filtered_${meta.id}.vcf.gz"), 
+          path("filtered_${meta.id}.vcf.gz.tbi"), emit: filtered_vcf
     path("versions.yml"), emit: versions
 
     script:
-	
-	def avail_mem = 3
-if (task.memory) {
-    avail_mem = task.memory.giga
-} else {
-    log.info '[GATK VariantFiltration] No memory set — defaulting to 3GB.'
-}
+    def avail_mem = task.memory ? task.memory.giga : 3
 
-	
     """
     THREADS=${task.cpus}
 
-    echo "Running GATK VariantFiltration for sample: ${sample_id}"
+    echo "Running GATK VariantFiltration for sample: ${meta.id}"
 
     gatk --java-options "-Xmx${avail_mem}g" VariantFiltration \\
         -R "${genome}" \\
@@ -45,17 +39,15 @@ if (task.memory) {
         --filter-name "HighSOR"        --filter-expression "SOR > ${params.gatk_vf_sor_filter}" \\
         --filter-name "LowReadPosRankSum" --filter-expression "ReadPosRankSum < ${params.gatk_vf_read_pos_filter}" \\
         --filter-name "LowBaseQRankSum"  --filter-expression "BaseQRankSum < ${params.gatk_vf_baseq_filter}" \\
-        -O "${sample_id}_filtered.vcf.gz"
+        -O "filtered_${meta.id}.vcf.gz"
 
-    gatk --java-options "-Xmx${avail_mem}g" IndexFeatureFile -I "${sample_id}_filtered.vcf.gz"
+    gatk --java-options "-Xmx${avail_mem}g" IndexFeatureFile -I "filtered_${meta.id}.vcf.gz"
 
-
-    if [ ! -s "${sample_id}_filtered.vcf.gz" ] || [ ! -s "${sample_id}_filtered.vcf.gz.tbi" ]; then
-        echo "Error: Filtered VCF or index is empty for ${sample_id}" >&2
+    if [ ! -s "filtered_${meta.id}.vcf.gz" ] || [ ! -s "filtered_${meta.id}.vcf.gz.tbi" ]; then
+        echo "Error: Filtered VCF or index is empty for ${meta.id}" >&2
         exit 1
     fi
 
-    # Capture version
     gatk_version=\$(gatk --version | head -n 1)
 cat <<EOF > versions.yml
 "${task.process}":

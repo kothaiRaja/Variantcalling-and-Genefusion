@@ -18,7 +18,7 @@ workflow VARIANT_ANNOTATION {
     main:
 	ch_versions = Channel.empty()
 	
-    log.info " Starting Variant Annotation Workflow..."
+//    log.info " Starting Variant Annotation Workflow..."
 
    annotated_variants = ANNOTATE_VARIANTS(filtered_variants_ch, snpEffJar, snpEffConfig, snpEffDbDir, genomedb)
    annotated_variants_ch = ANNOTATE_VARIANTS.out.annotated_vcf

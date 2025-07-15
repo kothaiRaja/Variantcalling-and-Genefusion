@@ -1,5 +1,5 @@
 process ANNOTATEVARIANTS_VEP {
-    tag { "${meta}_${task.process}" }
+    tag { "${meta.id}_${task.process}" }
 
     label 'process_medium'
     container params.annotate_vep_container
@@ -14,8 +14,8 @@ process ANNOTATEVARIANTS_VEP {
     path vep_plugins
 
     output:
-    tuple val(meta), path("vep_annotated_${meta}.vcf"), emit: annotated_vcf  
-    path("vep_annotated_${meta}.vep.html"), emit: summary
+    tuple val(meta), path("vep_annotated_${meta.id}.vcf"), emit: annotated_vcf  
+    path("vep_annotated_${meta.id}.vep.html"), emit: summary
     path("versions.yml"), emit: versions
 
     script:
@@ -26,7 +26,7 @@ process ANNOTATEVARIANTS_VEP {
     def buffer_size = (avail_mem < 8) ? 100 : (avail_mem < 20 ? 200 : 500)
 
     """
-    echo "Running VEP for sample: ${meta}"
+    echo "Running VEP for sample: ${meta.id}"
 
     if [ ! -d "${vep_cache}" ]; then
         echo "ERROR: VEP cache directory does not exist at: \$(realpath ${vep_cache})" >&2
@@ -35,8 +35,8 @@ process ANNOTATEVARIANTS_VEP {
 
     vep \\
         --input_file "${input_vcf}" \\
-        --output_file "vep_annotated_${meta}.vcf" \\
-        --stats_file "vep_annotated_${meta}.vep.html" \\
+        --output_file "vep_annotated_${meta.id}.vcf" \\
+        --stats_file "vep_annotated_${meta.id}.vep.html" \\
         --cache \\
         --dir_cache "${vep_cache}" \\
         --dir_plugins "${vep_plugins}" \\

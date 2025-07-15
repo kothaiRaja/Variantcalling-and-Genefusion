@@ -1,12 +1,12 @@
 process MAF_VISUALIZATION {
-    tag { "${sample_id}" }
+    tag { "${meta}" }
     label 'process_low'
+
     container params.maftools_visualisation_container
-    publishDir "${params.maftools_visual_outdir}/${sample_id}", mode: "copy"
+    publishDir "${params.maftools_visual_outdir}/${meta}", mode: "copy"
 
     input:
-    tuple val(sample_id), path(maf_file),path(r_script)
-   
+    tuple val(meta), path(maf_file), path(r_script)
 
     output:
     path "plots/*", emit: maf_plots
@@ -14,16 +14,15 @@ process MAF_VISUALIZATION {
 
     script:
     """
-    # Create the exact directory structure Nextflow expects
     mkdir -p plots
-    
-    # Run with explicit output directory
-    Rscript ${r_script} ${maf_file} ${sample_id}
-    
+
+    Rscript ${r_script} ${maf_file} ${meta}
+
     MAFTOOLS_VERSION=\$(Rscript -e "cat(as.character(packageVersion('maftools')))")
+
     cat <<-EOF > versions.yml
-    "${task.process}":
-      maftools: "\$MAFTOOLS_VERSION"
-    EOF
+"${task.process}":
+  maftools: "\$MAFTOOLS_VERSION"
+EOF
     """
 }

@@ -1,5 +1,5 @@
 process BCFTOOLS_QUERY {
-    tag { "${meta}_${task.process}" }
+    tag { "${meta.id}_${task.process}" }
     label 'process_low'
 
     container params.bcftools_container
@@ -9,14 +9,14 @@ process BCFTOOLS_QUERY {
     tuple val(meta), path(filtered_vcf), path(tbi)
 
     output:
-    tuple val(meta), path("${meta}_variant_summary.txt"), emit: query_output
+    tuple val(meta), path("${meta.id}_variant_summary.txt"), emit: query_output
     path("versions.yml"), emit: versions
 
     script:
     """
-    echo "Querying variant fields for sample: ${meta}"
+    echo "Querying variant fields for sample: ${meta.id}"
 
-    bcftools query -f '%CHROM\\t%POS\\t%REF\\t%ALT\\t%INFO/DP\\t%INFO/AF\\n' "${filtered_vcf}" > "${meta}_variant_summary.txt"
+    bcftools query -f '%CHROM\\t%POS\\t%REF\\t%ALT\\t%INFO/DP\\t%INFO/AF\\n' "${filtered_vcf}" > "${meta.id}_variant_summary.txt"
 
     # Capture bcftools version
     bcftools_version=\$(bcftools --version | head -n 1 | awk '{print \$2}')

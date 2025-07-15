@@ -17,19 +17,12 @@ process MultiQC {
 
     script:
     """
-    echo " Running MultiQC on collected files..."
-    mkdir multiqc_inputs
+    echo "Running MultiQC on directly passed files..."
 
-    for file in ${report_files}; do
-        cp \$file multiqc_inputs/
-    done
-
-    ls -lh multiqc_inputs
-
-    multiqc multiqc_inputs -c multiqc_config.yml -o .
+    multiqc ${report_files.join(' ')} -c multiqc_config.yml -o .
 
     # Capture MultiQC version
-    multiqc_version=\$(multiqc --version | grep -oP '[0-9]+\\.[0-9]+(\\.[0-9]+)?')
+    multiqc_version=\$(multiqc --version | grep -oP '[0-9]+\\.[0-9]+(\\.[0-9]+)?' || echo "not_detected")
     cat <<EOF > versions.yml
 "MultiQC":
   multiqc: "\$multiqc_version"

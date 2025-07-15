@@ -42,7 +42,11 @@ workflow GENE_FUSION {
 
         // Step 3: Join for ARRIBA_VISUALIZATION
         fusion_viz_input_ch = arriba_input_bam_ch
-            .join(ARRIBA.out.fusions, by: 0)
+			.join(ARRIBA.out.fusions, by: 0)
+			.map { meta, bam, bai, fusions_file -> 
+			tuple(meta, fusions_file, bam, bai)
+    }
+
 
         // Step 4: Visualization
         ARRIBA_VISUALIZATION(

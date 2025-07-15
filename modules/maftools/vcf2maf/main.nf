@@ -1,27 +1,25 @@
 process VCF2MAF {
 
-	tag { "${sample_id}_${task.process}" }
+    tag { "${meta.id}_${task.process}" }
     label 'process_low'
 
     container params.maftools_container
-	publishDir params.maftools_outdir, mode: "copy"
+    publishDir params.maftools_outdir, mode: "copy"
 
     input:
-    tuple val(sample_id), path(vcf)
+    tuple val(meta), path(vcf)
     path fasta
     path vep_cache
 
     output:
-    tuple val(sample_id), path("*.maf"), emit: maf
+    tuple val(meta), path("*.maf"), emit: maf
     path "versions.yml", emit: versions
 
     script:
-    def vcf_base = vcf.getBaseName().replaceAll(/\.vcf(\.gz)?$/, '')
-    def prefix = "${sample_id}_${vcf_base}"
-    def version    = '1.6.22'
-    def args       = "--species homo_sapiens --ncbi-build GRCh38"
-    def vep_path   = "--vep-path \$(dirname \$(which vep))"
-    def vep_data   = "--vep-data $vep_cache"
+    def prefix = "${meta.id}_${vcf.getBaseName().replaceAll(/\.vcf(\.gz)?$/, '')}"
+    def args = "--species homo_sapiens --ncbi-build GRCh38"
+    def vep_path = "--vep-path \$(dirname \$(which vep))"
+    def vep_data = "--vep-data $vep_cache"
 
     """
     set -euo pipefail
@@ -29,25 +27,25 @@ process VCF2MAF {
     echo "VCF FILE: $vcf"
     echo "FASTA: $fasta"
     echo "VEP CACHE: $vep_cache"
-    echo "Sample ID: $prefix"
+    echo "Sample ID: ${meta.id}"
 
     vcf2maf.pl \\
       --input-vcf $vcf \\
       --output-maf ${prefix}.maf \\
-      --tumor-id ${prefix} \\
-      --vcf-tumor-id ${prefix} \\
+      --tumor-id ${meta.id} \\
+      --vcf-tumor-id ${meta.id} \\
       --ref-fasta $fasta \\
       $vep_path \\
       $vep_data \\
       $args
 
-VCF2MAF_VERSION=\$(vcf2maf.pl --help 2>&1 | grep -i 'vcf2maf' | grep -oP 'v[0-9.]+' || echo "not_detected")
-VEP_VERSION=\$(vep --help 2>&1 | grep -i 'ensembl-vep' | grep -oP '[0-9.]+' || echo "not_detected")
+    VCF2MAF_VERSION=\$(vcf2maf.pl --help 2>&1 | grep -i 'vcf2maf' | grep -oP 'v[0-9.]+' || echo "not_detected")
+    VEP_VERSION=\$(vep --help 2>&1 | grep -i 'ensembl-vep' | grep -oP '[0-9.]+' || echo "not_detected")
 
 cat <<-END_VERSIONS > versions.yml
 "${task.process}":
-  vcf2maf: "\${VCF2MAF_VERSION}"
-  ensembl-vep: "\${VEP_VERSION}"
+ vcf2maf: "\${VCF2MAF_VERSION}"
+ ensembl-vep: "\${VEP_VERSION}"
 END_VERSIONS
     """
 }

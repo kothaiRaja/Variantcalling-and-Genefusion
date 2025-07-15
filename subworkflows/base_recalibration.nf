@@ -24,7 +24,7 @@ workflow BASE_RECALIBRATION {
 
 
 
-//    //  Combine known sites (VCFs)
+    // Combine known sites (VCFs)
     // Merge VCFs
 ch_known_sites_vcf = known_snps_vcf
     .concat(known_indels_vcf)

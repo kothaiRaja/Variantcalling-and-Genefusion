@@ -11,7 +11,7 @@ workflow PREPROCESSING {
     validated_reads
 
     main:
-    log.info " Starting Preprocessing Steps..."
+//    log.info " Starting Preprocessing Steps..."
 
     ch_versions       = Channel.empty()
     qc_results_ch     = Channel.empty()
@@ -26,11 +26,17 @@ workflow PREPROCESSING {
         }
 
     // Step 2: Run FastQC on raw reads
-    qc_results = FASTQC_RAW(concatenated_reads_ch)
+	qc_results = FASTQC_RAW(concatenated_reads_ch)
+	qc_results_ch = qc_results_ch.mix(FASTQC_RAW.out.qc_results)
+	reports_ch = reports_ch
+		.mix(FASTQC_RAW.out.qc_results.map { meta, r1_zip, r1_html, r2_zip, r2_html -> r1_zip })
+		.mix(FASTQC_RAW.out.qc_results.map { meta, r1_zip, r1_html, r2_zip, r2_html -> r1_html })
+		.mix(FASTQC_RAW.out.qc_results.map { meta, r1_zip, r1_html, r2_zip, r2_html -> r2_zip })
+		.mix(FASTQC_RAW.out.qc_results.map { meta, r1_zip, r1_html, r2_zip, r2_html -> r2_html })
 
-    qc_results_ch     = qc_results_ch.mix(FASTQC_RAW.out.qc_results)
-    reports_ch = reports_ch.mix(FASTQC_RAW.out.qc_results.map { it[1] })
-    ch_versions       = ch_versions.mix(FASTQC_RAW.out.versions.first())
+	// Version tracking remains unchanged
+	ch_versions = ch_versions.mix(FASTQC_RAW.out.versions.first())
+
 
     // Step 3: Trim reads using Fastp
     trimmed_reads = TRIM_READS(concatenated_reads_ch)
@@ -42,9 +48,11 @@ workflow PREPROCESSING {
 
     ch_versions       = ch_versions.mix(TRIM_READS.out.versions.first())
 
-    trimmed_reads_ch.view { " TRIMMED READ: $it" }
+//    trimmed_reads_ch.view { " TRIMMED READ: $it" }
+//	reports_ch.view { "  REPORT FOR MULTIQC: $it" }
 
-    log.info " Preprocessing Completed."
+
+//    log.info " Preprocessing Completed."
 
     emit:
         qc_results     = qc_results_ch

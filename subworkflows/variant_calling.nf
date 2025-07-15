@@ -41,23 +41,13 @@ ch_haplotypecaller_input = recalibrated_bams
 	ch_known_sites_vcf_index = known_snps_vcf_index.collect()
 	
 
-
-
-
-
-
-	
-
-
-
-	
 	GATK_variant_caller = GATK_HAPLOTYPE_CALLER(ch_haplotypecaller_input, reference_genome, reference_genome_index, reference_genome_dict, ch_known_sites_vcf, ch_known_sites_vcf_index)
 	
 	ch_GATK_variant_caller = GATK_HAPLOTYPE_CALLER.out.vcf_output 
 	ch_versions = ch_versions.mix(GATK_HAPLOTYPE_CALLER.out.versions.first())
 
 
-	ch_GATK_variant_caller.view { "HaplotypeCaller_output: $it " }
+//	ch_GATK_variant_caller.view { "HaplotypeCaller_output: $it " }
 
 
 
@@ -68,15 +58,8 @@ ch_haplotypecaller_input = recalibrated_bams
     }
     .groupTuple() 
 
-
-
-
-
-
-
-
 	// Debug Output
-	ch_merged_vcf_input.view { "Grouped VCFs for Merging: $it" }
+//	ch_merged_vcf_input.view { "Grouped VCFs for Merging: $it" }
 
 
 	merged_vcf = GATK_MERGEVCFS(
@@ -92,7 +75,7 @@ ch_haplotypecaller_input = recalibrated_bams
 	}
 
 	// View the output
-	ch_merged_vcfs.view { it -> "Merged_vcf_output: $it" }
+//	ch_merged_vcfs.view { it -> "Merged_vcf_output: $it" }
 
 	
 
@@ -106,10 +89,10 @@ ch_haplotypecaller_input = recalibrated_bams
 	
 
 	// Choose filtering mode dynamically
-if (params.variant_filter_mode == "select") {
-    variant_filter = GATK_VARIANT_SELECT_FILTER(ch_merged_vcfs, reference_genome, reference_genome_index, reference_genome_dict)
-    ch_variant_filter_uncompressed = GATK_VARIANT_SELECT_FILTER.out.filtered_vcf
-    ch_versions = ch_versions.mix(GATK_VARIANT_SELECT_FILTER.out.versions.first())
+	if (params.variant_filter_mode == "select") {
+		variant_filter = GATK_VARIANT_SELECT_FILTER(ch_merged_vcfs, reference_genome, reference_genome_index, reference_genome_dict)
+		ch_variant_filter_uncompressed = GATK_VARIANT_SELECT_FILTER.out.filtered_vcf
+		ch_versions = ch_versions.mix(GATK_VARIANT_SELECT_FILTER.out.versions.first())
 
     // Compress and index (bgzip + tabix)
     compressed_vcf = BGZIP_TABIX_VCF(
@@ -127,7 +110,7 @@ if (params.variant_filter_mode == "select") {
 
 	
         
-	ch_compressed_vcf.view { "Filtered VCF (compressed & indexed): $it" }
+//	ch_compressed_vcf.view { "Filtered VCF (compressed & indexed): $it" }
 
 	
 

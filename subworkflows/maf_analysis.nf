@@ -14,7 +14,7 @@ workflow MAF_ANALYSIS {
 
     main:
 
-    log.info " Starting maftools analysis workflow..."
+//    log.info " Starting maftools analysis workflow..."
 	
 	ch_versions = Channel.empty()
 

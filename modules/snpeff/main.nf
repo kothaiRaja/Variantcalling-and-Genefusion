@@ -1,5 +1,5 @@
 process ANNOTATE_VARIANTS {
-    tag { "${meta}_${task.process}" }
+    tag { "${meta.id}_${task.process}" }
 
     label 'process_medium'
     container params.annotate_container_snpeff
@@ -13,9 +13,9 @@ process ANNOTATE_VARIANTS {
     val(genomedb)
 
     output:
-    tuple val(meta), path("snpeff_annotated_${meta}.vcf"), emit: annotated_vcf
-    path "snpeff_${meta}.summary.html", emit: summary_html
-    path "snpeff_${meta}.snpeff_summary.csv", emit: summary
+    tuple val(meta), path("snpeff_annotated_${meta.id}.vcf"), emit: annotated_vcf
+    path "snpeff_${meta.id}.summary.html", emit: summary_html
+    path "snpeff_${meta.id}.snpeff_summary.csv", emit: summary
     path "versions.yml", emit: versions
 
     script:
@@ -24,11 +24,12 @@ process ANNOTATE_VARIANTS {
 """
 THREADS=${task.cpus}
 
-echo "Annotating variants for sample: ${meta}"
+echo "Annotating variants for sample: ${meta.id}"
 
 config_file=\$(realpath ${snpEffConfig})
 data_dir=\$(realpath ${snpEffDbDir})
 
+# Patch config file if needed
 if ! grep -q "^${genomedb}\\.genome" "\$config_file"; then
     echo "${genomedb}.genome : Homo_sapiens" >> "\$config_file"
 fi
@@ -39,20 +40,22 @@ fi
 
 ls -l \$data_dir/${genomedb} || echo "  Warning: SnpEff DB folder not found at expected location."
 
+# Run annotation
 java -Xmx${avail_mem}G -jar ${snpEffJar} \\
     -v ${genomedb} \\
     -c \$config_file \\
     -dataDir \$data_dir \\
-    -stats snpeff_${meta}.summary.html \\
-    -csvStats snpeff_${meta}.snpeff_summary.csv \\
-    ${vcf} > snpeff_annotated_${meta}.vcf
+    -stats snpeff_${meta.id}.summary.html \\
+    -csvStats snpeff_${meta.id}.snpeff_summary.csv \\
+    ${vcf} > snpeff_annotated_${meta.id}.vcf
 
+# Version info
 snpeff_version=\$(java -jar ${snpEffJar} -version | head -n 1)
 cat <<EOF > versions.yml
 "${task.process}":
   snpeff: "\${snpeff_version}"
 EOF
 
-echo "Annotation complete for sample: ${meta}"
+echo "Annotation complete for sample: ${meta.id}"
 """
 }
