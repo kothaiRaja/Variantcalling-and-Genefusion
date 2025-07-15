@@ -16,7 +16,7 @@ process VCF2MAF {
     path "versions.yml", emit: versions
 
     script:
-    def prefix = "${meta.id}_${vcf.getBaseName().replaceAll(/\.vcf(\.gz)?$/, '')}"
+    def prefix = "${meta.id}_annotated"
     def args = "--species homo_sapiens --ncbi-build GRCh38"
     def vep_path = "--vep-path \$(dirname \$(which vep))"
     def vep_data = "--vep-data $vep_cache"
