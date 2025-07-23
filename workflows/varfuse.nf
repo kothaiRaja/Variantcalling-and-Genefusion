@@ -106,34 +106,58 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 
 		
 	// ===================== Intervals Processing ===================== //
-//		log.info "Starting Interval Processing..."
-		
-		// **Step 1: Convert BED to Interval List**
-		BED_TO_INTERVAL_LIST(ch_exons_bed_tuple, reference_genome_ch, reference_genome_dict_ch)
-		def interval_list = BED_TO_INTERVAL_LIST.out.interval_list
-		
-		
 
-		
-		
 
-	// Step 2: Scatter if enabled, else use the full list
-    def scattered_intervals_ch = Channel.empty()
+
+// ===================== Intervals Processing ===================== //
+log.info "Starting Interval Processing..."
+
+def intervals_ch = Channel.empty()
+def interval_list_ch = Channel.empty()
+
+if (params.no_intervals) {
+    log.info "Running without intervals (full BAMs)..."
+
+    def dummy_bed = file("${params.resultsdir}/dummy_no_intervals.bed")
+    dummy_bed.text = "no_intervals\n"
+
+    intervals_ch = Channel.fromPath(file("${params.resultsdir}/dummy_no_intervals.bed"))
+                    .map { it -> [it] }
+
+    interval_list_ch = Channel.fromPath(file("${params.resultsdir}/dummy_no_intervals.bed"))
+                       .map { interval_path -> tuple("dummy", interval_path) }
+
+} else {
+    BED_TO_INTERVAL_LIST(
+        ch_exons_bed_tuple,
+        reference_genome_ch,
+        reference_genome_dict_ch
+    )
+    interval_list_ch = BED_TO_INTERVAL_LIST.out.interval_list
 
     if (params.scatterintervals) {
-        log.info " Scattering intervals for parallel execution..." 
-		SCATTER_INTERVAL_LIST(interval_list, reference_genome_ch, reference_genome_index_ch, reference_genome_dict_ch)
-		scattered_intervals_ch = SCATTER_INTERVAL_LIST.out.scattered_intervals
-								.map{ _meta, bed -> [bed] }.collect()
-        
-        scattered_intervals_ch.view { file -> " Scattered interval: $file" }
-        ch_versions = ch_versions.mix(SCATTER_INTERVAL_LIST.out.versions)
-    } else {
-        log.info " Using full interval list without scattering..."
-        scattered_intervals_ch = interval_list.map { _meta, bed -> bed }  
+        log.info "Scattering intervals for parallel execution..."
 
+        SCATTER_INTERVAL_LIST(
+            interval_list_ch,
+            reference_genome_ch,
+            reference_genome_index_ch,
+            reference_genome_dict_ch
+        )
+
+        intervals_ch = SCATTER_INTERVAL_LIST.out.scattered_intervals
+                      .map { _meta, bed -> bed }.flatten()
+
+        ch_versions = ch_versions.mix(SCATTER_INTERVAL_LIST.out.versions)
+
+    } else {
+        log.info "Using full interval list without scattering..."
+        intervals_ch = interval_list_ch.map { _meta, bed -> bed }
     }
-	
+}
+
+
+
 	//===================================Markduplicates==============================//
 	
 	
@@ -150,7 +174,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 
 	SPLIT_MERGE_BAMS(
 		dedup_bam_ch,        
-		scattered_intervals_ch,		
+		intervals_ch,		
 		reference_genome_ch,
 		reference_genome_index_ch,
 		reference_genome_dict_ch
@@ -163,7 +187,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	
 	//==========================BASE_RECALIBRATION======================//
 	
-	def intervals_ch_recalib = interval_list.map { meta_id, interval_path -> tuple(meta_id, interval_path) }
+	def intervals_ch_recalib = interval_list_ch.map { meta_id, interval_path -> tuple(meta_id, interval_path) }
 	ch_recalib_input = final_bams_ch
     .combine(intervals_ch_recalib)
     .map { bam_meta, bam, bai, interval_meta, interval_file ->
@@ -201,7 +225,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	
 	VARIANT_CALLING(
         recalibrated_bams_ch,            
-		scattered_intervals_ch,
+		intervals_ch,
         reference_genome_ch,
 		reference_genome_index_ch,
 		reference_genome_dict_ch,

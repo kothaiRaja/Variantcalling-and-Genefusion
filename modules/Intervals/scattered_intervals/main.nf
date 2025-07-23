@@ -1,3 +1,4 @@
+
 process SCATTER_INTERVAL_LIST {
     tag { "${task.process}" }
     label 'process_medium'

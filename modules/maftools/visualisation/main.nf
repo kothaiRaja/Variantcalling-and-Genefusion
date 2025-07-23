@@ -1,9 +1,9 @@
 process MAF_VISUALIZATION {
-    tag { "${meta}" }
+    
     label 'process_low'
 
     container params.maftools_visualisation_container
-    publishDir "${params.maftools_visual_outdir}/${meta}", mode: "copy"
+    publishDir "${params.maftools_visual_outdir}", mode: "copy"
 
     input:
     tuple val(meta), path(maf_file), path(r_script)

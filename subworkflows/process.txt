@@ -1,0 +1,381 @@
+Parsed sample: [[id:sample1, strandedness:unstranded], [/home/kothai/cq-git-sample/test_data/data/HBR_Rep1_ERCC-Mix2_Build37-ErccTranscripts-chr22.read1.fastq.gz, /home/kothai/cq-git-sample/test_data/data/HBR_Rep1_ERCC-Mix2_Build37-ErccTranscripts-chr22.read2.fastq.gz]]
+Parsed sample: [[id:sample2, strandedness:unstranded], [/home/kothai/cq-git-sample/test_data/data/HBR_Rep2_ERCC-Mix2_Build37-ErccTranscripts-chr22.read1.fastq.gz, /home/kothai/cq-git-sample/test_data/data/HBR_Rep2_ERCC-Mix2_Build37-ErccTranscripts-chr22.read2.fastq.gz]]
+Parsed sample: [[id:sample3, strandedness:unstranded], [/home/kothai/cq-git-sample/test_data/data/HBR_Rep3_ERCC-Mix2_Build37-ErccTranscripts-chr22.read1.fastq.gz, /home/kothai/cq-git-sample/test_data/data/HBR_Rep3_ERCC-Mix2_Build37-ErccTranscripts-chr22.read2.fastq.gz]]
+READS_CH: [[id:sample1, strandedness:unstranded], [/home/kothai/cq-git-sample/test_data/data/HBR_Rep1_ERCC-Mix2_Build37-ErccTranscripts-chr22.read1.fastq.gz, /home/kothai/cq-git-sample/test_data/data/HBR_Rep1_ERCC-Mix2_Build37-ErccTranscripts-chr22.read2.fastq.gz]]
+READS_CH: [[id:sample2, strandedness:unstranded], [/home/kothai/cq-git-sample/test_data/data/HBR_Rep2_ERCC-Mix2_Build37-ErccTranscripts-chr22.read1.fastq.gz, /home/kothai/cq-git-sample/test_data/data/HBR_Rep2_ERCC-Mix2_Build37-ErccTranscripts-chr22.read2.fastq.gz]]
+READS_CH: [[id:sample3, strandedness:unstranded], [/home/kothai/cq-git-sample/test_data/data/HBR_Rep3_ERCC-Mix2_Build37-ErccTranscripts-chr22.read1.fastq.gz, /home/kothai/cq-git-sample/test_data/data/HBR_Rep3_ERCC-Mix2_Build37-ErccTranscripts-chr22.read2.fastq.gz]]
+ TRIMMED READ: [[id:sample1, strandedness:unstranded], /home/kothai/cq-git-sample/variant_calling/work/42/c0a730d59ef5a1e0231caa3d9d5eac/trimmed_sample1_R1.fastq.gz, /home/kothai/cq-git-sample/variant_calling/work/42/c0a730d59ef5a1e0231caa3d9d5eac/trimmed_sample1_R2.fastq.gz]
+ TRIMMED READ: [[id:sample3, strandedness:unstranded], /home/kothai/cq-git-sample/variant_calling/work/21/39212f940770c0017bf732ff2c74ff/trimmed_sample3_R1.fastq.gz, /home/kothai/cq-git-sample/variant_calling/work/21/39212f940770c0017bf732ff2c74ff/trimmed_sample3_R2.fastq.gz]
+ TRIMMED READ: [[id:sample2, strandedness:unstranded], /home/kothai/cq-git-sample/variant_calling/work/8c/8fb3ac0512fab612e4c38914774ee8/trimmed_sample2_R1.fastq.gz, /home/kothai/cq-git-sample/variant_calling/work/8c/8fb3ac0512fab612e4c38914774ee8/trimmed_sample2_R2.fastq.gz]
+ 
+ [be/f7905d] RNA…N:BUILD_REFERENCES:DOWNLOAD_REFERENCE_GENOME:GUNZIP (genome.fa.gz) | 1 of 1 ✔
+[b2/a7dfd4] RNA…REFERENCES:DOWNLOAD_GTF_ANNOTATION:GUNZIP_GTF (annotations.gtf.gz) | 1 of 1 ✔
+[44/b9a36f] RNA…(sample1_RNA_VARIANT_CALLING_GENE_FUSION:PREPROCESSING:FASTQC_RAW) | 3 of 3 ✔
+[8c/8fb3ac] RNA…(sample2_RNA_VARIANT_CALLING_GENE_FUSION:PREPROCESSING:TRIM_READS) | 3 of 3 ✔
+[ce/e2014d] RNA…sample1_RNA_VARIANT_CALLING_GENE_FUSION:STAR_ALIGN:STAR_ALIGNMENT) | 1 of 1 ✔
+[6f/c0b597] RNA…e1_RNA_VARIANT_CALLING_GENE_FUSION:STAR_ALIGN:SAMTOOLS_SORT_INDEX) | 1 of 1 ✔
+[aa/daf298] RNA…sample1_RNA_VARIANT_CALLING_GENE_FUSION:STAR_ALIGN:SAMTOOLS_STATS) | 1 of 1 ✔
+[4f/3e7475] RNA…NA_VARIANT_CALLING_GENE_FUSION:STAR_ALIGN:SAMTOOLS_FILTER_ORPHANS) | 1 of 1 ✔
+[b6/a6998c] RNA…ple1_RNA_VARIANT_CALLING_GENE_FUSION:STAR_ALIGN:SAMTOOLS_FLAGSTAT) | 1 of 1 ✔
+Completed at: 01-Jul-2025 10:05:37
+Duration    : 1m 54s
+CPU hours   : 0.3
+Succeeded   : 13
+
+and this is my initial script
+
+nextflow.enable.dsl = 2
+
+// Convert params to channels
+ch_input				   = file(params.samplesheet)
+ch_genomedb                = params.genomedb                ? Channel.value(params.genomedb) : Channel.empty()
+ch_annotation_tools        = params.annotation_tools        ? Channel.value(params.annotation_tools) : Channel.empty()
+ch_rscript                 = params.rscript                 ? Channel.fromPath(params.rscript) : Channel.empty()
+ch_ver_script 			   = params.dump_script				? Channel.fromPath(params.dump_script) : Channel.empty()
+
+ch_arriba_blacklist        = params.arriba_blacklist        ? Channel.fromPath(params.arriba_blacklist) : Channel.empty()
+ch_arriba_known_fusions    = params.arriba_known_fusions    ? Channel.fromPath(params.arriba_known_fusions) : Channel.empty()
+
+ch_genome_assembly         = params.genome_assembly         ? Channel.value(params.genome_assembly) : Channel.empty()
+ch_species                 = params.species                 ? Channel.value(params.species) : Channel.empty()
+ch_cache_version           = params.cache_version           ? Channel.value(params.cache_version) : Channel.empty()
+
+ch_known_snps_vcf     	   = params.known_snps_vcf     ? Channel.fromPath(params.known_snps_vcf, checkIfExists: true) : Channel.empty()
+ch_known_snps_index   	   = params.known_snps_vcf_index     ? Channel.fromPath("${params.known_snps_vcf_index}", checkIfExists: true) : Channel.empty()
+
+ch_known_indels_vcf  	   = params.known_indels_vcf   ? Channel.fromPath(params.known_indels_vcf, checkIfExists: true) : Channel.empty()
+ch_known_indels_index 	   = params.known_indels_vcf_index   ? Channel.fromPath("${params.known_indels_vcf_index}", checkIfExists: true) : Channel.empty()
+
+ch_multiqc_config        = Channel.fromPath(file("$projectDir/assets/multiqc_config.yml", checkIfExists: true))
+
+// Import subworkflows for reference files 
+include { BUILD_REFERENCES } from '../subworkflows/build_references.nf'
+
+
+
+
+
+
+
+// Import subworkflows
+include { INPUT_PAIRED_READS } from '../subworkflows/input.nf'
+include { PREPROCESSING } from '../subworkflows/preprocessing.nf'
+include { STAR_ALIGN } from '../subworkflows/star_align.nf'
+include { INTERVAL_PROCESSING } from '../subworkflows/interval_processing.nf'
+include { MARK_DUPLICATES } from '../subworkflows/markduplicates.nf'
+include { SPLIT_MERGE_BAMS } from '../subworkflows/split_merge_bams.nf'
+include { BASE_RECALIBRATION } from '../subworkflows/base_recalibration.nf'
+include { VARIANT_CALLING } from '../subworkflows/variant_calling.nf'
+include { ANNOTATE } from '../subworkflows/variant_annotations.nf'
+include { GENE_FUSION } from '../subworkflows/gene_fusion.nf'
+include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nfcore/software_versions/main.nf'
+include { MultiQC } from '../modules/multiqc_quality/main.nf'
+include { GATK_VCF_TO_TABLE } from '../modules/gatk/vcf2table/main.nf'
+include { MAF_ANALYSIS } from '../subworkflows/maf_analysis.nf'
+
+
+
+
+
+
+
+
+
+
+
+
+workflow RNA_VARIANT_CALLING_GENE_FUSION {
+
+    ch_versions = Channel.empty()
+	reports_ch = Channel.empty()
+	
+	//===========================Building References======================
+	
+	BUILD_REFERENCES(ch_genomedb)
+	
+	reference_genome_ch        = BUILD_REFERENCES.out.reference_genome
+	reference_genome_index_ch  = BUILD_REFERENCES.out.reference_genome_index
+	reference_genome_dict_ch   = BUILD_REFERENCES.out.reference_genome_dict
+
+	gtf_ch        = BUILD_REFERENCES.out.gtf_annotation
+	exons_bed_ch  = BUILD_REFERENCES.out.exons_BED
+
+	star_index_ch = BUILD_REFERENCES.out.star_genome_index
+
+	snpeff_jar_ch    = BUILD_REFERENCES.out.snpeff_jar
+	snpeff_config_ch = BUILD_REFERENCES.out.snpeff_config
+	snpeff_db_dir_ch = BUILD_REFERENCES.out.snpeff_db_dir
+
+	arriba_dir_ch    = BUILD_REFERENCES.out.arriba_dir
+
+	vep_cache_ch     = BUILD_REFERENCES.out.vep_cache
+	vep_plugins_ch   = BUILD_REFERENCES.out.vep_plugins
+
+
+	//========================Input channel ==================================
+	  INPUT_PAIRED_READS(ch_input)
+	  reads_ch = INPUT_PAIRED_READS.out.paired_reads
+	  reads_ch.view { "READS_CH: $it" }
+
+
+	// ============================ PREPROCESSING ============================
+
+
+	PREPROCESSING(reads_ch )
+
+	reports_ch        = reports_ch.mix(PREPROCESSING.out.qc_results.collect { it[1] }.ifEmpty([]))
+	reports_ch        = reports_ch.mix(PREPROCESSING.out.fastp_reports.collect { it[1] }.ifEmpty([]))
+	trimmed_reads_ch  = PREPROCESSING.out.trimmed_reads
+	ch_versions       = ch_versions.mix(PREPROCESSING.out.versions)
+
+    // ========================== STAR ALIGNMENT LOGIC ==========================
+        log.info " Running STAR Alignment..."
+
+        
+        STAR_ALIGN(
+            trimmed_reads_ch, 
+            star_index_ch, 
+            gtf_ch
+        )
+
+        star_bam_ch        = STAR_ALIGN.out.bam_sorted
+        chimeric_reads_ch  = STAR_ALIGN.out.chimeric_reads
+		chimeric_junction_ch = STAR_ALIGN.out.chimeric_junction
+        filtered_bams_ch   = STAR_ALIGN.out.filtered_bams
+		flagstats_ch 	   = STAR_ALIGN.out.flagstats
+		align_stats_ch     = STAR_ALIGN.out.align_stats
+		star_logs_ch       = STAR_ALIGN.out.star_logs
+        ch_versions        = ch_versions.mix(STAR_ALIGN.out.versions)
+		reports_ch = reports_ch.mix(flagstats_ch.collect { it[2] }.ifEmpty([]))
+							.mix(align_stats_ch.collect { it[2] }.ifEmpty([]))
+							.mix(star_logs_ch.collect { it[2] }.ifEmpty([]))
+							
+		
+							
+							
+	
+
+}
+	
+	
+
+This is the sunworkflow 
+
+// Preprocessing 
+
+nextflow.enable.dsl = 2
+
+// Include required processes
+include { CONCAT_FASTQ } from '../modules/cat_fastq/main.nf'
+include { FASTQC_RAW   } from '../modules/fastqc/main.nf'
+include { TRIM_READS   } from '../modules/fastp/main.nf'
+
+workflow PREPROCESSING {
+
+    take:
+    validated_reads
+
+    main:
+    log.info " Starting Preprocessing Steps..."
+
+    ch_versions       = Channel.empty()
+    qc_results_ch     = Channel.empty()
+    trimmed_reads_ch  = Channel.empty()
+    reports_ch        = Channel.empty()
+
+    // Step 1: Concatenate FASTQs (optional)
+    concatenated_reads_ch = params.concatenate ?
+        CONCAT_FASTQ(validated_reads) :
+        validated_reads.map { meta, reads ->
+            tuple(meta, reads[0], reads[1])
+        }
+
+    // Step 2: Run FastQC on raw reads
+    qc_results = FASTQC_RAW(concatenated_reads_ch)
+
+    qc_results_ch     = qc_results_ch.mix(FASTQC_RAW.out.qc_results)
+    reports_ch        = reports_ch.mix(FASTQC_RAW.out.qc_results.map { it[1] }) // HTML files
+    ch_versions       = ch_versions.mix(FASTQC_RAW.out.versions.first())
+
+    // Step 3: Trim reads using Fastp
+    trimmed_reads = TRIM_READS(concatenated_reads_ch)
+
+    trimmed_reads_ch  = trimmed_reads_ch.mix(TRIM_READS.out.trimmed_reads)
+    fastp_reports_ch  = TRIM_READS.out.fastp_reports
+    reports_ch        = reports_ch.mix(fastp_reports_ch.map { it[1] })
+    ch_versions       = ch_versions.mix(TRIM_READS.out.versions.first())
+
+    trimmed_reads_ch.view { " TRIMMED READ: $it" }
+
+    log.info " Preprocessing Completed."
+
+    emit:
+        qc_results     = qc_results_ch
+        fastp_reports  = fastp_reports_ch
+        trimmed_reads  = trimmed_reads_ch
+        reports        = reports_ch
+        versions       = ch_versions
+}
+
+// Alignment 
+
+nextflow.enable.dsl=2
+
+include { STAR_ALIGNMENT }          from '../modules/star/main.nf'
+include { SAMTOOLS_SORT_INDEX }     from '../modules/samtools/sort/main.nf'
+include { SAMTOOLS_STATS }          from '../modules/samtools/stats/main.nf'
+include { SAMTOOLS_FILTER_ORPHANS } from '../modules/samtools/filter_orphans/main.nf'
+include { SAMTOOLS_FLAGSTAT }       from '../modules/samtools/flagstat/main.nf'
+
+workflow STAR_ALIGN {
+    take:
+    trimmed_reads
+    star_index
+    gtf_file
+
+    main:
+
+    def ch_versions = Channel.empty()
+
+
+    // =========================
+    // Step 4: STAR Alignment
+    // =========================
+    log.info "Running STAR alignment..."
+    star_output = STAR_ALIGNMENT(trimmed_reads, star_index, gtf_file)
+
+    // Direct assignments 
+    star_bam_ch          = star_output.bam
+    chimeric_reads_ch    = star_output.chimeric_sam
+    chimeric_junction_ch = star_output.chimeric_junction
+    star_logs_ch         = star_output.log_final
+    ch_versions = ch_versions.mix(star_output.versions)
+
+    // =========================
+    // Step 5: Sort BAMs
+    // =========================
+    sorted_bams = SAMTOOLS_SORT_INDEX(star_bam_ch)
+    sorted_bams_ch = SAMTOOLS_SORT_INDEX.out.bam_sorted
+    ch_versions = ch_versions.mix(SAMTOOLS_SORT_INDEX.out.versions)
+
+    // =========================
+    // Step 6: Alignment Stats
+    // =========================
+    align_stats = SAMTOOLS_STATS(sorted_bams_ch)
+    align_stats_ch = SAMTOOLS_STATS.out.stats
+    ch_versions = ch_versions.mix(SAMTOOLS_STATS.out.versions)
+
+    // =========================
+    // Step 7: Filter Orphans
+    // =========================
+    filtered_bams = SAMTOOLS_FILTER_ORPHANS(sorted_bams_ch)
+    filtered_bams_ch = SAMTOOLS_FILTER_ORPHANS.out.filtered_sorted_bams
+    ch_versions = ch_versions.mix(SAMTOOLS_FILTER_ORPHANS.out.versions)
+
+    // =========================
+    // Step 8: Flagstat
+    // =========================
+    flagstats_filtered_bam = SAMTOOLS_FLAGSTAT(filtered_bams_ch)
+    flagstats_ch = SAMTOOLS_FLAGSTAT.out.flagstat
+    ch_versions = ch_versions.mix(SAMTOOLS_FLAGSTAT.out.versions)
+
+    emit:
+    bam_sorted         = sorted_bams_ch
+    chimeric_reads     = chimeric_reads_ch
+    chimeric_junction  = chimeric_junction_ch
+    flagstats          = flagstats_ch
+    align_stats        = align_stats_ch
+    star_logs          = star_logs_ch
+    filtered_bams      = filtered_bams_ch
+    versions           = ch_versions
+}
+
+	
+and this is star alignment modules/gatk/vcf2table/main
+
+process STAR_ALIGNMENT {
+    tag { "${meta.id}_${task.process}" }
+
+    label 'process_high'
+
+    container params.star_container
+    publishDir params.star_outdir, mode: "copy"
+
+    input:
+    tuple val(meta), path(read1), path(read2)
+    path star_index_dir
+    path gtf_file
+
+    output:
+    tuple val(meta), path("${meta.id}_Aligned.sortedByCoord.out.bam"), emit: bam
+    tuple val(meta), path("${meta.id}_Aligned.toTranscriptome.out.bam"), emit: transcriptome_bam
+    tuple val(meta), path("${meta.id}_Chimeric.out.sam"), optional: true, emit: chimeric_sam
+	tuple val(meta), path("${meta.id}_Chimeric.out.junction"), optional: true, emit: chimeric_junction
+    tuple val(meta), path("${meta.id}_SJ.out.tab"), emit: junctions
+    tuple val(meta), path("${meta.id}_ReadsPerGene.out.tab"), emit: gene_counts
+    tuple val(meta), path("${meta.id}_Log.final.out"), emit: log_final
+    tuple val(meta), path("${meta.id}_Log.out"), emit: log_out
+    tuple val(meta), path("${meta.id}_Log.progress.out"), emit: log_progress
+    path("versions.yml"), emit: versions
+
+    script:
+    def sample_id     = meta.id
+    def strandedness  = meta.strandedness
+    def extra_args    = params.get('star_extra_args', '') 
+    def out_sam_attr  = "--outSAMattrRGline ID:${sample_id} LB:library PL:${params.get('seq_platform', 'ILLUMINA')} PU:machine SM:${sample_id} CN:${params.get('seq_center', 'Unknown')}"
+    def RAM_LIMIT     = task.memory.toMega() * 1000000
+    def strand_option = (strandedness == 'unstranded') ? "--outSAMstrandField intronMotif" : ""
+    def sjdb_overhang = params.read_length ? "--sjdbOverhang ${params.read_length - 1}" : ""
+    def gtf_flag      = params.star_ignore_sjdbgtf ? "" : "--sjdbGTFfile ${gtf_file}"
+    def intron_min    = "--alignIntronMin ${params.get('star_alignIntronMin', 20)}"
+    def intron_max    = "--alignIntronMax ${params.get('star_alignIntronMax', 1000000)}"
+
+    """
+    echo "Running STAR Alignment for Sample: ${sample_id}"
+
+    THREADS=${task.cpus}
+    RAM_LIMIT=${RAM_LIMIT}
+
+    STAR --genomeDir ${star_index_dir} \
+          --readFilesIn ${read1.join(",")} ${read2.join(",")} \
+         --readFilesCommand zcat \
+         --runThreadN \$THREADS \
+         --twopassMode Basic \
+         $sjdb_overhang \
+         $gtf_flag \
+         $intron_min \
+         $intron_max \
+         --outFilterType BySJout \
+         --alignSJoverhangMin ${params.get('star_alignSJoverhangMin', 8)} \
+         --alignSJDBoverhangMin ${params.get('star_alignSJDBoverhangMin', 1)} \
+         --outFilterMismatchNmax ${params.get('star_outFilterMismatchNmax', 999)} \
+         --outFilterMatchNmin ${params.get('star_outFilterMatchNmin', 16)} \
+         --outFilterMatchNminOverLread ${params.get('star_outFilterMatchNminOverLread', 0.3)} \
+         --outFilterScoreMinOverLread ${params.get('star_outFilterScoreMinOverLread', 0.3)} \
+         --outFilterMismatchNoverReadLmax ${params.get('star_mismatchNoverLmax', 0.04)} \
+         --outSAMmapqUnique ${params.get('star_outSAMmapqUnique', 60)} \
+         --chimSegmentMin ${params.get('star_chimSegmentMin', 10)} \
+         --chimJunctionOverhangMin ${params.get('star_chimJunctionOverhangMin', 10)} \
+         --chimScoreJunctionNonGTAG ${params.get('star_chimScoreJunctionNonGTAG', -4)} \
+         --chimScoreMin ${params.get('star_chimScoreMin', 1)} \
+         --chimOutType WithinBAM HardClip \
+         --chimScoreDropMax ${params.get('star_chimScoreDropMax', 50)} \
+         --chimScoreSeparation ${params.get('star_chimScoreSeparation', 10)} \
+         --limitBAMsortRAM \$RAM_LIMIT \
+         --outSAMunmapped Within \
+         --quantMode TranscriptomeSAM GeneCounts \
+         --outSAMtype BAM SortedByCoordinate \
+         --outFileNamePrefix ${sample_id}_ \
+         ${out_sam_attr} \
+         $strand_option \
+         $extra_args
+
+
+    """
+}
+	
+
+   
+	
+	
+    

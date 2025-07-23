@@ -15,13 +15,17 @@ process GATK_HAPLOTYPE_CALLER {
     path(known_sites_vcf_index)
 
     output:
-	tuple val(meta), path("output_${meta.id}_split_${interval.baseName}.vcf.gz"), path("output_${meta.id}_split_${interval.baseName}.vcf.gz.tbi"), emit: vcf_output
+	
+	tuple val(meta), path("output_${meta.id}_split_*.vcf.gz"), path("output_${meta.id}_split_*.vcf.gz.tbi"), emit: vcf_output
 	path("versions.yml"), emit: versions
 
     script:
     def sample_id = meta.id
     def avail_mem = task.memory ? task.memory.giga : 3
-    def interval_command = interval ? "--intervals ${interval}" : ""
+    def interval_command = (interval && interval.name != "dummy_no_intervals.bed") ? "--intervals ${interval}" : ""
+	def interval_suffix = (interval && interval.name != "dummy_no_intervals.bed") ? interval.baseName : "no_intervals"
+
+
 
     """
     THREADS=${task.cpus}
@@ -32,7 +36,7 @@ process GATK_HAPLOTYPE_CALLER {
         --native-pair-hmm-threads \${THREADS} \\
         --R "${genome}" \\
         -I "${bam}" \\
-        --output "output_${sample_id}_split_${interval.baseName}.vcf.gz" \\
+        --output "output_${sample_id}_split_${interval_suffix}.vcf.gz" \\
         --standard-min-confidence-threshold-for-calling 30.0 \\
         --output-mode EMIT_VARIANTS_ONLY \\
         --dont-use-soft-clipped-bases \\
@@ -41,7 +45,7 @@ process GATK_HAPLOTYPE_CALLER {
         --verbosity INFO \\
         ${interval_command}
 
-    if [ ! -s "output_${sample_id}_split_${interval.baseName}.vcf.gz" ]; then
+    if [ ! -s "output_${sample_id}_split_${interval_suffix}.vcf.gz" ]; then
         echo "Error: VCF file not generated!" >&2
         exit 1
     fi

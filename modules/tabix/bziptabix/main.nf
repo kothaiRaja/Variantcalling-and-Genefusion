@@ -4,7 +4,7 @@ process BGZIP_TABIX_ANNOTATIONS {
     label 'process_low'
 
     container "https://depot.galaxyproject.org/singularity/tabix:1.11--hdfd78af_0"
-    publishDir "params.annotated_vcf_compressed", mode: 'copy'
+    publishDir params.annotated_vcf_compressed, mode: 'copy'
 
     input:
     tuple val(meta), path(annotated_vcf)
