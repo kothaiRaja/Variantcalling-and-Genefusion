@@ -105,15 +105,14 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 							
 
 		
-	// ===================== Intervals Processing ===================== //
 
 
 
 // ===================== Intervals Processing ===================== //
 log.info "Starting Interval Processing..."
 
-def intervals_ch = Channel.empty()
-def interval_list_ch = Channel.empty()
+intervals_ch = Channel.empty()
+interval_list_ch = Channel.empty()
 
 if (params.no_intervals) {
     log.info "Running without intervals (full BAMs)..."
