@@ -1,24 +1,27 @@
+# plot_maf_report.R
 #!/usr/bin/env Rscript
-
 args <- commandArgs(trailingOnly = TRUE)
-if (length(args) < 2) {
-  stop("Usage: Rscript plot_maf_report.R <input_maf_file> <sample_id>")
-}
+if (length(args) < 2) stop("Usage: Rscript plot_maf_report.R <input_maf_file> <meta_string>")
 
 input_maf <- args[1]
-sample_id <- args[2]
+raw_meta  <- args[2]
+
+# Keep meta, just make a filename-safe label from it
+sample_id <- gsub("[^A-Za-z0-9_.-]", "_", raw_meta)
+
 outdir <- "plots"
 dir.create(outdir, showWarnings = FALSE)
 
 suppressMessages(library(maftools))
 
-# Read MAF with error handling
 maf <- tryCatch({
   read.maf(maf = input_maf, vc_nonSyn = NULL)
 }, error = function(e) {
-  cat("⚠️ read.maf() failed:", conditionMessage(e), "\n")
+  cat(" read.maf() failed:", conditionMessage(e), "\n")
   quit(status = 0)
 })
+
+
 
 # Define output filenames
 plot_files <- c(
@@ -30,7 +33,7 @@ plot_files <- c(
 
 # Placeholder for empty MAF
 if (nrow(maf@data) == 0) {
-  cat("⚠️ No mutations found. Creating placeholder plots.\n")
+  cat(" No mutations found. Creating placeholder plots.\n")
   for (f in plot_files) {
     pdf(file.path(outdir, f))
     plot.new()
@@ -70,7 +73,7 @@ if (!is.na(top_gene)) {
     lollipopPlot(maf, gene = top_gene)
     dev.off()
   }, error = function(e) {
-    cat(sprintf("⚠️ Skipping lollipop plot for gene %s: %s\n", top_gene, conditionMessage(e)))
+    cat(sprintf(" Skipping lollipop plot for gene %s: %s\n", top_gene, conditionMessage(e)))
   })
 }
 
@@ -81,7 +84,7 @@ tryCatch({
               file = file.path(outdir, paste0(sample_id, "_gene_summary.tsv")),
               sep = "\t", quote = FALSE, row.names = FALSE)
 }, error = function(e) {
-  cat("⚠️ Failed to write gene summary:", conditionMessage(e), "\n")
+  cat(" Failed to write gene summary:", conditionMessage(e), "\n")
 })
 
 # Save session info
@@ -89,6 +92,6 @@ writeLines(capture.output(sessionInfo()),
            con = file.path(outdir, paste0(sample_id, "_sessionInfo.txt")))
 
 # Final report
-cat("✅ Plots created in:", outdir, "\n")
+cat("Plots created in:", outdir, "\n")
 cat("Files created:\n")
 print(list.files(outdir, full.names = TRUE))

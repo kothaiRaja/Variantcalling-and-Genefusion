@@ -22,6 +22,9 @@ include { MAF_ANALYSIS } from '../subworkflows/maf_analysis.nf'
 
 workflow RNA_VARIANT_CALLING_GENE_FUSION {
 
+	// ensure log directory exists 
+    new File("${params.resultsdir}/logs").mkdirs()
+
 	// Convert params to channels
 	ch_input = file(params.samplesheet)
 	ch_genomedb = params.genomedb ? Channel.value(params.genomedb) : Channel.empty()
@@ -109,7 +112,7 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 
 
 // ===================== Intervals Processing ===================== //
-log.info "Starting Interval Processing..."
+// log.info "Starting Interval Processing..."
 
 intervals_ch = Channel.empty()
 interval_list_ch = Channel.empty()
@@ -337,7 +340,7 @@ all_reports_ch = Channel
     .mix(ch_multiqc_config.ifEmpty([]))
     .filter { it instanceof Path && it.exists() }
     .unique { it.name }
-    .view { it -> " MultiQC input file: ${it?.getClass()?.getSimpleName()} - ${it}" }
+//    .view { it -> " MultiQC input file: ${it?.getClass()?.getSimpleName()} - ${it}" }
     .collect()
     
 // Run MultiQC

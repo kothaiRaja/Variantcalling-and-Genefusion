@@ -8,8 +8,10 @@ process GENERATEEXONS_BED {
     input:
     path(annotation_gtf)
 
+   
     output:
-    tuple val("exons"), path("exons.bed"), emit: exons_bed
+	path "exons.bed", emit: exons_bed
+
 
     when:
     !params.exons_bed && !file("${params.ref_base}/reference/exons.bed").exists()

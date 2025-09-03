@@ -20,12 +20,18 @@ workflow SPLIT_MERGE_BAMS {
 //    log.info " Starting Split & Merge BAMs Workflow..."
 
     // STEP 1: Combine BAMs with intervals (scatter)
-    bam_input_ch
-        .combine(intervals_ch)
-        .map { meta, bam, bai, interval ->
-            tuple(meta + [id: "${meta.id}_${interval.baseName}"], bam, bai, interval)
-        }
-        .set { ch_splitncigar_bam_bai_interval }
+   
+bam_input_ch
+    .combine(intervals_ch)             
+    .map { meta, bam, bai, interval ->
+        def m = meta.clone()
+        m.sample = meta.sample ?: meta.id     
+        m.id     = m.sample                   
+        m.shard  = interval.baseName          
+        tuple(m, bam, bai, interval)
+    }
+    .set { ch_splitncigar_bam_bai_interval }
+
 
 //    ch_splitncigar_bam_bai_interval.view { " SPLIT INPUT: $it" }
 
@@ -43,23 +49,21 @@ workflow SPLIT_MERGE_BAMS {
 //    split_bams_ch.view { " Split BAM: $it" }
 
     split_bams_ch
-    .map { meta, bam, bai -> 
-        tuple(meta.id, [meta, bam, bai])  // group by meta.id
+    .map { m, bam, bai -> 
+        tuple(m.sample, [m, bam, bai]) 
     }
     .groupTuple()
-    .map { sample_id, entries ->
-        def meta = entries[0][0]
-        def bams = entries.collect { it[1] }
-        def bais = entries.collect { it[2] }
-        tuple(meta, bams, bais)
-    }
-    .set { ch_merged_bams }
+  .map { sample_id, entries ->
+      def m = entries[0][0].clone()
+      m.id = m.sample        
+      def bams = entries.collect { it[1] }
+      def bais = entries.collect { it[2] }
+      tuple(m, bams, bais)
+  }
+  .set { ch_merged_bams }
 
-// ch_merged_bams.view { " Merged Input: $it" }
-
-
-
-   
+ ch_merged_bams.view { " Merged Input: $it" }
+  
 
     // STEP 4: Merge BAMs
     merged_bams = MERGE_BAMS(ch_merged_bams)

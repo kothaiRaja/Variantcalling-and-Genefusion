@@ -14,6 +14,7 @@ process MAF_VISUALIZATION {
 
     script:
     """
+	set -euo pipefail
     mkdir -p plots
 
     Rscript ${r_script} ${maf_file} ${meta}
