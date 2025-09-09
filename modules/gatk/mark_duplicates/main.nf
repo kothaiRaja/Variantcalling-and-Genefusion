@@ -22,7 +22,7 @@ process GATK_MARK_DUPLICATES {
     """
 	
 	
-    TTHREADS=${task.cpus}
+    THREADS=${task.cpus}
 
     gatk --java-options "-Xmx${avail_mem}g" MarkDuplicates \\
         -I ${sorted_bam} \\

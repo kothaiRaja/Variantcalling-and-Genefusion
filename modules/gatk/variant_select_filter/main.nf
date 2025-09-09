@@ -12,7 +12,7 @@ process GATK_VARIANT_SELECT_FILTER {
     path genome_dict
 
     output:
-    tuple val(meta.id), path("${meta.id}_filtered.vcf"), emit: filtered_vcf
+    tuple val(meta), path("${meta.id}_filtered.vcf"), emit: filtered_vcf
     path("versions.yml"), emit: versions
 
     script:

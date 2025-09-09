@@ -120,7 +120,7 @@ interval_list_ch = Channel.empty()
 if (params.no_intervals) {
     log.info "Running without intervals (full BAMs)..."
 
-    def dummy_bed = file("${params.resultsdir}/dummy_no_intervals.bed")
+    dummy_bed = file("${params.resultsdir}/dummy_no_intervals.bed")
     dummy_bed.text = "no_intervals\n"
 
     intervals_ch = Channel.fromPath(file("${params.resultsdir}/dummy_no_intervals.bed"))
@@ -189,7 +189,7 @@ if (params.no_intervals) {
 	
 	//==========================BASE_RECALIBRATION======================//
 	
-	def intervals_ch_recalib = interval_list_ch.map { meta_id, interval_path -> tuple(meta_id, interval_path) }
+	intervals_ch_recalib = interval_list_ch.map { meta_id, interval_path -> tuple(meta_id, interval_path) }
 	ch_recalib_input = final_bams_ch
     .combine(intervals_ch_recalib)
     .map { bam_meta, bam, bai, interval_meta, interval_file ->
