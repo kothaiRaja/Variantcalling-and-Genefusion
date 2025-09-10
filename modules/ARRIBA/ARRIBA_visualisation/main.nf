@@ -1,41 +1,45 @@
 process ARRIBA_VISUALIZATION {
 
-    tag { "${meta.id}" }
-	label 'process_medium'
-	container params.arriba_container
-    publishDir params.arriba_outdir, mode: 'copy'
+  tag { "${meta.id}" }
+  label 'process_medium'
+  container params.arriba_container
+  publishDir params.arriba_outdir, mode: 'copy'
 
-    input:
-    tuple val(meta), path(fusions_file), path(bam_file), path(bai_file)
-    path gtf
+  input:
+  tuple val(meta), path(fusions_file), path(bam_file), path(bai_file)
+  path gtf
 
-    output:
-    path("*.pdf"), emit: fusion_plot
-    path("versions.yml"), emit: versions
+  output:
+  path("*.pdf"), emit: fusion_plot
+  path("versions.yml"), emit: versions
 
-    script:
-    """
-    set -euo pipefail
+  script:
+  """
+  set -euo pipefail
 
-    echo "Running fusion visualization for sample: ${meta.id} (${meta.strandedness})"
-    echo "Fusions file: \$(realpath ${fusions_file})"
-    echo "GTF file: \$(realpath ${gtf})"
+  echo "Running fusion visualization for sample: ${meta.id} (${meta.strandedness})"
+  echo "Fusions file: \$(realpath ${fusions_file})"
+  echo "GTF file: \$(realpath ${gtf})"
 
-    if [ ! -s "${fusions_file}" ] || ! awk 'NR > 1 { exit 1 }' "${fusions_file}"; then
-        echo "No fusions detected for ${meta.id}. Creating placeholder plot."
-        touch "${meta.id}_${meta.strandedness}.fusion_plot.pdf"
-    else
-        echo "Fusions detected, generating plot..."
-        draw_fusions.R \
-            --fusions="${fusions_file}" \
-            --alignments="${bam_file}" \
-            --output="${meta.id}_${meta.strandedness}.fusion_plot.pdf" \
-            --annotation="${gtf}"
-    fi
+  # Is there at least one data row (beyond header)?
+  has_data=\$(awk 'NR>1{print 1; exit} END{print 0}' "${fusions_file}")
 
-    cat <<-END_VERSIONS > versions.yml
-    "ARRIBA_VISUALIZATION":
-      arriba: "\$(arriba -h 2>&1 | grep 'Version:' | sed 's/Version: //')"
-    END_VERSIONS
-    """
+  if [ ! -s "${fusions_file}" ] || [ "\$has_data" -eq 0 ]; then
+    echo "No fusions detected for ${meta.id}. Creating empty PDF."
+    printf "%s\n" "%PDF-1.1" "%EOF" > "${meta.id}_${meta.strandedness}.fusion_plot.pdf" || touch "${meta.id}_${meta.strandedness}.fusion_plot.pdf"
+  else
+    echo "Fusions detected, generating plot..."
+    draw_fusions.R \
+      --fusions="${fusions_file}" \
+      --alignments="${bam_file}" \
+      --output="${meta.id}_${meta.strandedness}.fusion_plot.pdf" \
+      --annotation="${gtf}" \
+    || { echo "draw_fusions.R failed — creating empty PDF"; printf "%s\n" "%PDF-1.1" "%EOF" > "${meta.id}_${meta.strandedness}.fusion_plot.pdf" || touch "${meta.id}_${meta.strandedness}.fusion_plot.pdf"; }
+  fi
+
+  cat <<-END_VERSIONS > versions.yml
+"ARRIBA_VISUALIZATION":
+  arriba: "\$(arriba -h 2>&1 | grep 'Version:' | sed 's/Version: //')"
+END_VERSIONS
+  """
 }
