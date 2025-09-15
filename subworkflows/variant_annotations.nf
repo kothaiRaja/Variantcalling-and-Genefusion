@@ -5,6 +5,8 @@ nextflow.enable.dsl = 2
 include { VARIANT_ANNOTATION } from '../subworkflows/snpeff_annotations.nf'
 include { VEP_ANNOTATION_WORKFLOW as COMBINED_ANNOTATE } from '../subworkflows/ensemblvep.nf'
 include { VEP_ANNOTATION_WORKFLOW } from '../subworkflows/ensemblvep.nf'
+include { COLLECT_VARIANT_CALLING_METRICS } from '../modules/gatk/variant_metrics/main.nf'
+
 
 workflow ANNOTATE {
     take:
@@ -19,6 +21,10 @@ workflow ANNOTATE {
     vep_version
     vep_cache
 	vep_plugins
+	dbsnp_vcf
+    dbsnp_tbi
+    ref_fasta
+    ref_dict
 	
 	
 	main:
@@ -87,9 +93,18 @@ workflow ANNOTATE {
         
     }
 	
+	COLLECT_VARIANT_CALLING_METRICS(
+        annotated_vcfs,   // tuple: val(meta), path(vcf.gz), path(.tbi)
+        dbsnp_vcf, dbsnp_tbi,
+        ref_fasta, ref_dict
+    )
+    metrics_tables = COLLECT_VARIANT_CALLING_METRICS.out.metrics
+    ch_versions    = ch_versions.mix(COLLECT_VARIANT_CALLING_METRICS.out.versions)
+	
 	emit: 
 		final_vcf_annotated     = annotated_vcfs
 		uncompressed_vcf_annotated = uncompressed_vcf
+		metrics                    = metrics_tables
         reports_html     		= annotation_reports
 		versions 				= ch_versions
 		

@@ -41,13 +41,13 @@ fi
 ls -l \$data_dir/${genomedb} || echo "  Warning: SnpEff DB folder not found at expected location."
 
 # Run annotation
-java -Xmx${avail_mem}G -jar ${snpEffJar} \\
+java -Xmx${avail_mem}G -XX:-UsePerfData -jar ${snpEffJar} \\
     -v ${genomedb} \\
     -c \$config_file \\
     -dataDir \$data_dir \\
     -stats snpeff_${meta.id}.summary.html \\
     -csvStats snpeff_${meta.id}.snpeff_summary.csv \\
-    ${vcf} > snpeff_annotated_${meta.id}.vcf
+    "${vcf}" > snpeff_annotated_${meta.id}.vcf 2> snpeff_${meta.id}.log
 
 # Version info
 snpeff_version=\$(java -jar ${snpEffJar} -version | head -n 1)

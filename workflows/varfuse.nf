@@ -266,7 +266,11 @@ if (params.no_intervals) {
 		ch_species,
 		ch_cache_version,
 		vep_cache_ch,
-		vep_plugins_ch
+		vep_plugins_ch,
+		ch_known_snps_vcf,
+		ch_known_snps_index,
+		reference_genome_ch,
+		reference_genome_dict_ch
 		
     )
 
@@ -274,6 +278,7 @@ if (params.no_intervals) {
 
 	final_annotated_vcf = ANNOTATE.out.final_vcf_annotated
 	uncompressed_annotated_vcf = ANNOTATE.out.uncompressed_vcf_annotated
+	variant_metrics = ANNOTATE.out.metrics
 	reports_ch   		= reports_ch.mix(ANNOTATE.out.reports_html.ifEmpty([]))
 	ch_versions        = ch_versions.mix(ANNOTATE.out.versions)
 	

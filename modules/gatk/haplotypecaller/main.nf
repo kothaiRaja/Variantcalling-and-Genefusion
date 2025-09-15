@@ -37,7 +37,7 @@ process GATK_HAPLOTYPE_CALLER {
         --R "${genome}" \\
         -I "${bam}" \\
         --output "output_${sample_id}_split_${interval_suffix}.vcf.gz" \\
-        --standard-min-confidence-threshold-for-calling 30.0 \\
+        --standard-min-confidence-threshold-for-calling 20.0 \\
         --output-mode EMIT_VARIANTS_ONLY \\
         --dont-use-soft-clipped-bases \\
         --create-output-variant-index true \\

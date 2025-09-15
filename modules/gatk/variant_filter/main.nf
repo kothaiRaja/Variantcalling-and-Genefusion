@@ -1,7 +1,5 @@
 process GATK_VARIANT_FILTER {
-
     tag { "${meta.id}_${task.process}" }
-
     label 'process_high'
 
     container params.gatk_container
@@ -14,44 +12,107 @@ process GATK_VARIANT_FILTER {
     path genome_dict
 
     output:
-    tuple val(meta), 
-          path("filtered_${meta.id}.vcf.gz"), 
-          path("filtered_${meta.id}.vcf.gz.tbi"), emit: filtered_vcf
+    
+    tuple val(meta),
+          path("filtered_${meta.id}.vcf.gz"),
+          path("filtered_${meta.id}.vcf.gz.tbi"),
+          emit: filtered_vcf
+    
+    tuple val(meta),
+          path("hardfiltered_${meta.id}.vcf.gz"),
+          path("hardfiltered_${meta.id}.vcf.gz.tbi"),
+          emit: hardfiltered_vcf
+    
     path("versions.yml"), emit: versions
 
     script:
-    def avail_mem = task.memory ? task.memory.giga : 3
+    // Tunables with sane defaults
+    def mem    = task.memory?.giga ?: 6
+    def win    = params.gatk_vf_window_size ?: 35
+    def clu    = params.gatk_vf_cluster_size ?: 3
+    def minDP  = params.min_dp ?: 10
+    def minVAF = params.min_vaf ?: 0.20
+    def minGQ  = params.min_gq ?: 20
+    def splitMulti = params.split_multiallelic ?: false
 
     """
+    set -euo pipefail
     THREADS=${task.cpus}
+    SAMPLE='${meta.id}'
+    echo "[GATK_VARIANT_FILTER] RNA-aware filtering for: \$SAMPLE"
 
-    echo "Running GATK VariantFiltration for sample: ${meta.id}"
-
-    gatk --java-options "-Xmx${avail_mem}g" VariantFiltration \\
-        -R "${genome}" \\
-        -V "${vcf_file}" \\
-        --cluster-window-size ${params.gatk_vf_window_size} \\
-        --cluster-size ${params.gatk_vf_cluster_size} \\
-        --filter-name "LowQual"        --filter-expression "QUAL < ${params.gatk_vf_qual_filter}" \\
-        --filter-name "LowQD"          --filter-expression "QD < ${params.gatk_vf_qd_filter}" \\
-        --filter-name "HighFS"         --filter-expression "FS > ${params.gatk_vf_fs_filter}" \\
-        --filter-name "LowMQ"          --filter-expression "MQ < ${params.gatk_vf_mq_filter}" \\
-        --filter-name "HighSOR"        --filter-expression "SOR > ${params.gatk_vf_sor_filter}" \\
-        --filter-name "LowReadPosRankSum" --filter-expression "ReadPosRankSum < ${params.gatk_vf_read_pos_filter}" \\
-        --filter-name "LowBaseQRankSum"  --filter-expression "BaseQRankSum < ${params.gatk_vf_baseq_filter}" \\
-        -O "filtered_${meta.id}.vcf.gz"
-
-    gatk --java-options "-Xmx${avail_mem}g" IndexFeatureFile -I "filtered_${meta.id}.vcf.gz"
-
-    if [ ! -s "filtered_${meta.id}.vcf.gz" ] || [ ! -s "filtered_${meta.id}.vcf.gz.tbi" ]; then
-        echo "Error: Filtered VCF or index is empty for ${meta.id}" >&2
-        exit 1
+    # 0) (Optional) split multi-allelic sites so AD[1] maps to the single ALT
+    INVCF="${vcf_file}"
+    if ${splitMulti}; then
+      echo "[GATK_VARIANT_FILTER] Splitting multiallelic records (-m -any)"
+      bcftools norm -m -any -Oz -o tmp_\${SAMPLE}.split.vcf.gz "${vcf_file}"
+      tabix -p vcf tmp_\${SAMPLE}.split.vcf.gz
+      INVCF="tmp_\${SAMPLE}.split.vcf.gz"
     fi
 
-    gatk_version=\$(gatk --version | head -n 1)
+    # Count before (for quick QC)
+    gatk CountVariants -V "\$INVCF" > pre_${meta.id}.count.txt || true
+
+    # 1) VARIANT-LEVEL hard filters (type-aware) + clustering
+    gatk --java-options "-Xmx${mem}g" VariantFiltration \
+      -R "${genome}" \
+      -V "\$INVCF" \
+      --cluster-window-size ${win} \
+      --cluster-size ${clu} \
+      \
+      --filter-name "QD2_SNP"         --filter-expression "vc.isSNP()  && QD  < 2.0" \
+      --filter-name "QD2_INDEL"       --filter-expression "vc.isIndel()&& QD  < 2.0" \
+      --filter-name "FS30_SNP"        --filter-expression "vc.isSNP()  && FS  > 30.0" \
+      --filter-name "FS200_INDEL"     --filter-expression "vc.isIndel()&& FS  > 200.0" \
+      --filter-name "SOR3_SNP"        --filter-expression "vc.isSNP()  && SOR > 3.0" \
+      --filter-name "SOR10_INDEL"     --filter-expression "vc.isIndel()&& SOR > 10.0" \
+      --filter-name "MQ40_SNP"        --filter-expression "vc.isSNP()  && MQ  < 40.0" \
+      --filter-name "MQRankSum12.5"   --filter-expression "vc.isSNP()  && MQRankSum < -12.5" \
+      --filter-name "ReadPosRankSum8" --filter-expression "ReadPosRankSum < -8.0" \
+      --filter-name "BaseQRankSum8"   --filter-expression "BaseQRankSum < -8.0" \
+      -O "hardfiltered_${meta.id}.vcf.gz"
+
+    gatk IndexFeatureFile -I "hardfiltered_${meta.id}.vcf.gz"
+    gatk CountVariants -V "hardfiltered_${meta.id}.vcf.gz" > hard_${meta.id}.count.txt || true
+
+    # 2) GENOTYPE-LEVEL filters: 
+    gatk --java-options "-Xmx${mem}g" VariantFiltration \
+      -R "${genome}" \
+      -V "hardfiltered_${meta.id}.vcf.gz" \
+      --genotype-filter-name "LowDP" \
+      --genotype-filter-expression "DP < ${minDP}" \
+      --genotype-filter-name "LowGQ" \
+      --genotype-filter-expression "GQ < ${minGQ}" \
+      --set-filtered-genotype-to-no-call \
+      -O "tmp_${meta.id}.gtfiltered.vcf.gz"
+
+    gatk IndexFeatureFile -I "tmp_${meta.id}.gtfiltered.vcf.gz"
+    gatk CountVariants -V "tmp_${meta.id}.gtfiltered.vcf.gz" > gt_${meta.id}.count.txt || true
+
+    # 3) Keep only site-level PASS, drop non-variants and unused ALTs after no-calls
+    gatk --java-options "-Xmx${mem}g" SelectVariants \
+      -R "${genome}" \
+      -V "tmp_${meta.id}.gtfiltered.vcf.gz" \
+      --exclude-filtered true \
+      --remove-unused-alternates true \
+      --exclude-non-variants true \
+      -O "filtered_${meta.id}.vcf.gz"
+
+    gatk IndexFeatureFile -I "filtered_${meta.id}.vcf.gz"
+    gatk CountVariants -V "filtered_${meta.id}.vcf.gz" > post_${meta.id}.count.txt || true
+
+    # Sanity check
+    if [ ! -s "filtered_${meta.id}.vcf.gz" ] || [ ! -s "filtered_${meta.id}.vcf.gz.tbi" ]; then
+      echo "Error: Filtered VCF or index is empty for ${meta.id}" >&2
+      exit 1
+    fi
+
+# Versions
+gatk_version=\$(gatk --version | head -n 1)
 cat <<EOF > versions.yml
 "${task.process}":
   gatk: "\${gatk_version}"
 EOF
+ 
     """
 }

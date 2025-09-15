@@ -4,7 +4,8 @@ include { GENERATEEXONS_BED } from '../modules/references/exons_bed.nf'
 
 workflow DOWNLOAD_GTF_ANNOTATION {
 
-    main:
+	
+	main:
 
     gtf_ch       = Channel.empty()
     exons_bed_ch = Channel.empty()

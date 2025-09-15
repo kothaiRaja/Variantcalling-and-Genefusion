@@ -4,6 +4,7 @@
 
 include { DOWNLOAD_REFERENCE_GENOME }      from './prepare_references/download_genome.nf'
 include { DOWNLOAD_GTF_ANNOTATION }        from './prepare_references/download_gtf.nf'
+include { SORT_BED_BY_FAIDX } 			   from './prepare_references/sort_BED.nf'
 include { BUILD_STAR_INDEX }               from './prepare_references/star_index.nf'
 include { SNPEFF_SETUP }                   from './prepare_references/snpeff_setup.nf'
 include { ARRIBA_SETUP }                   from './prepare_references/arriba.nf'
@@ -15,6 +16,7 @@ workflow BUILD_REFERENCES {
     take:
    
 	genome_id
+	
 	
 
     main:
@@ -30,7 +32,9 @@ workflow BUILD_REFERENCES {
     gtf_ch       = gtf_outputs.gtf
     exons_bed_ch = gtf_outputs.exons_bed
 
-    
+    // Re-sort exons.bed using the .fai
+    exons_sorted = SORT_BED_BY_FAIDX(exons_bed_ch, reference_genome_index_ch)
+    exons_bed_sorted_ch = exons_sorted.bed_sorted
 
     // Build STAR index
     star_out = BUILD_STAR_INDEX(reference_genome_ch, gtf_ch)
@@ -56,7 +60,7 @@ workflow BUILD_REFERENCES {
     reference_genome_index  = reference_genome_index_ch
     reference_genome_dict   = reference_genome_dict_ch
     gtf_annotation          = gtf_ch
-    exons_BED               = exons_bed_ch
+    exons_BED               = exons_bed_sorted_ch
     star_genome_index       = star_index_ch
     snpeff_jar              = snpeff_jar_ch
     snpeff_config           = snpeff_config_ch
