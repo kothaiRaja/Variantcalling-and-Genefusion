@@ -21,8 +21,8 @@ workflow ANNOTATE {
     vep_version
     vep_cache
 	vep_plugins
-	dbsnp_vcf
-    dbsnp_tbi
+	known_snps_vcf
+    known_snps_vcf_index
     ref_fasta
     ref_dict
 	
@@ -34,6 +34,10 @@ workflow ANNOTATE {
     annotation_reports = Channel.empty()
 	ch_versions = Channel.empty()
 	uncompressed_vcf = Channel.empty()
+	
+	// Collect known sites 
+    ch_known_sites_vcf       = known_snps_vcf.collect()
+    ch_known_sites_vcf_index = known_snps_vcf_index.collect()
     
 	
 //	log.info "Starting variant annotation workflow..."
@@ -94,8 +98,8 @@ workflow ANNOTATE {
     }
 	
 	COLLECT_VARIANT_CALLING_METRICS(
-        annotated_vcfs,   // tuple: val(meta), path(vcf.gz), path(.tbi)
-        dbsnp_vcf, dbsnp_tbi,
+        annotated_vcfs,   
+        ch_known_sites_vcf, ch_known_sites_vcf_index,
         ref_fasta, ref_dict
     )
     metrics_tables = COLLECT_VARIANT_CALLING_METRICS.out.metrics
