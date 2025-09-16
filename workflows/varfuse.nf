@@ -34,6 +34,8 @@ workflow RNA_VARIANT_CALLING_GENE_FUSION {
 	
 	ch_arriba_blacklist = params.arriba_blacklist ? Channel.fromPath(params.arriba_blacklist) : Channel.empty()
 	ch_arriba_known_fusions = params.arriba_known_fusions ? Channel.fromPath(params.arriba_known_fusions) : Channel.empty()
+	ch_arriba_protein_domains = params.arriba_protein_domains ? Channel.fromPath(params.arriba_protein_domains, checkIfExists: true) : Channel.empty()
+	ch_arriba_cytobands       = params.arriba_cytobands ? Channel.fromPath(params.arriba_cytobands, checkIfExists: true) : Channel.empty()
 
 	ch_genome_assembly = params.genome_assembly ? Channel.value(params.genome_assembly) : Channel.empty()
 	ch_species = params.species ? Channel.value(params.species) : Channel.empty()
@@ -312,7 +314,9 @@ if (params.run_fusion) {
         reference_genome_ch,
         gtf_ch,
         ch_arriba_blacklist,
-        ch_arriba_known_fusions
+        ch_arriba_known_fusions,
+		ch_arriba_protein_domains,
+		ch_arriba_cytobands
 		
 		
     )

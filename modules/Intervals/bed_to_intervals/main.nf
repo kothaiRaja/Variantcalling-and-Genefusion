@@ -1,5 +1,5 @@
 process BED_TO_INTERVAL_LIST {
-    tag { "${meta_id}_${bed_file.baseName}_${task.process}" }
+    tag { "${meta_id}_${task.process}" }
 
     label 'process_medium'
 

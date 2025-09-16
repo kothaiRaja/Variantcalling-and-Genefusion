@@ -6,15 +6,23 @@ process ARRIBA_VISUALIZATION {
   publishDir params.arriba_outdir, mode: 'copy'
 
   input:
-  tuple val(meta), path(fusions_file), path(bam_file), path(bai_file)
-  path gtf
+	tuple val(meta), path(fusions_file), path(bam_file), path(bai_file)
+	path gtf
+	path protein_domains
+	path cytobands
+
 
   output:
   path("*.pdf"), emit: fusion_plot
   path("versions.yml"), emit: versions
 
   script:
+  
+  def cytobands        = cytobands        ? "--cytobands=${cytobands}" : ""
+  def protein_domains  = protein_domains  ? "--proteinDomains=${protein_domains}" : ""
+  
   """
+
   set -euo pipefail
 
   echo "Running fusion visualization for sample: ${meta.id} (${meta.strandedness})"
@@ -34,6 +42,8 @@ process ARRIBA_VISUALIZATION {
       --alignments="${bam_file}" \
       --output="${meta.id}_${meta.strandedness}.fusion_plot.pdf" \
       --annotation="${gtf}" \
+      ${cytobands} \
+      ${protein_domains} \
     || { echo "draw_fusions.R failed — creating empty PDF"; printf "%s\n" "%PDF-1.1" "%EOF" > "${meta.id}_${meta.strandedness}.fusion_plot.pdf" || touch "${meta.id}_${meta.strandedness}.fusion_plot.pdf"; }
   fi
 

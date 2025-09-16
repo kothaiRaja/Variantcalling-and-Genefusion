@@ -13,6 +13,8 @@ workflow GENE_FUSION {
         gtf_annotation
         arriba_blacklist
         arriba_known_fusions
+		protein_domain
+		cytobands
 
     main:
 
@@ -27,6 +29,8 @@ workflow GENE_FUSION {
 			
 		arriba_blacklist_ch = arriba_blacklist.collect()
 		arriba_known_fusions_ch = arriba_known_fusions.collect()
+		arriba_protein_domain_ch = protein_domain.collect()
+		arriba_cytobands_ch = cytobands.collect()
 		
 
         // Step 2: Run ARRIBA
@@ -51,7 +55,9 @@ workflow GENE_FUSION {
         // Step 4: Visualization
         ARRIBA_VISUALIZATION(
             fusion_viz_input_ch,
-            gtf_annotation
+            gtf_annotation,
+			arriba_protein_domain_ch,
+			arriba_cytobands_ch
         )
 
         fusion_visual_ch = ARRIBA_VISUALIZATION.out.fusion_plot
