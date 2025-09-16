@@ -1,5 +1,5 @@
 process MAF_VISUALIZATION {
-    
+    tag { "${meta.id}_${task.process}" }
     label 'process_low'
 
     container params.maftools_visualisation_container

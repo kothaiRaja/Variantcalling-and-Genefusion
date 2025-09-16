@@ -30,7 +30,7 @@ process GATK_VARIANT_FILTER {
     def mem    = task.memory?.giga ?: 6
     def win    = params.gatk_vf_window_size ?: 35
     def clu    = params.gatk_vf_cluster_size ?: 3
-    def minDP  = params.min_dp ?: 10
+    def minDP  = params.min_dp ?: 6
     def minVAF = params.min_vaf ?: 0.20
     def minGQ  = params.min_gq ?: 20
     def splitMulti = params.split_multiallelic ?: false
