@@ -12,48 +12,31 @@ process GATK_VARIANT_FILTER {
     path genome_dict
 
     output:
-    
-    tuple val(meta),
-          path("filtered_${meta.id}.vcf.gz"),
-          path("filtered_${meta.id}.vcf.gz.tbi"),
-          emit: filtered_vcf
-    
-    tuple val(meta),
-          path("hardfiltered_${meta.id}.vcf.gz"),
-          path("hardfiltered_${meta.id}.vcf.gz.tbi"),
-          emit: hardfiltered_vcf
-    
+    tuple val(meta), path("filtered_${meta.id}.vcf.gz"), path("filtered_${meta.id}.vcf.gz.tbi"), emit: filtered_vcf
+    tuple val(meta), path("hardfiltered_${meta.id}.vcf.gz"), path("hardfiltered_${meta.id}.vcf.gz.tbi"), emit: hardfiltered_vcf
     path("versions.yml"), emit: versions
 
     script:
-    
-    def mem    = task.memory?.giga ?: 6
-    def win    = params.gatk_vf_window_size ?: 35
-    def clu    = params.gatk_vf_cluster_size ?: 3
-    def minDP  = params.min_dp ?: 6
-    def minVAF = params.min_vaf ?: 0.20
-    def minGQ  = params.min_gq ?: 20
-    def splitMulti = params.split_multiallelic ?: false
+    def mem   = task.memory?.giga ?: 6
+    def win   = params.gatk_vf_window_size ?: 35
+    def clu   = params.gatk_vf_cluster_size ?: 3
+    def minDP = params.min_dp ?: 6
+    def minGQ = params.min_gq ?: 20
 
     """
     set -euo pipefail
-    THREADS=${task.cpus}
     SAMPLE='${meta.id}'
-    echo "[GATK_VARIANT_FILTER] RNA-aware filtering for: \$SAMPLE"
-
     INVCF="${vcf_file}"
-    
 
-    # Count before (for quick QC)
+    # Quick count before
     gatk CountVariants -V "\$INVCF" > pre_${meta.id}.count.txt || true
 
-    # 1) VARIANT-LEVEL hard filters (type-aware) + clustering
+    # 1) Site-level hard filters (flags only)
     gatk --java-options "-Xmx${mem}g" VariantFiltration \
       -R "${genome}" \
       -V "\$INVCF" \
       --cluster-window-size ${win} \
       --cluster-size ${clu} \
-      \
       --filter-name "QD2_SNP"         --filter-expression "vc.isSNP()  && QD  < 2.0" \
       --filter-name "QD2_INDEL"       --filter-expression "vc.isIndel()&& QD  < 2.0" \
       --filter-name "FS30_SNP"        --filter-expression "vc.isSNP()  && FS  > 30.0" \
@@ -69,21 +52,19 @@ process GATK_VARIANT_FILTER {
     gatk IndexFeatureFile -I "hardfiltered_${meta.id}.vcf.gz"
     gatk CountVariants -V "hardfiltered_${meta.id}.vcf.gz" > hard_${meta.id}.count.txt || true
 
-    # 2) GENOTYPE-LEVEL filters: 
+    # 2) Minimal genotype filters (DP & GQ)
     gatk --java-options "-Xmx${mem}g" VariantFiltration \
       -R "${genome}" \
       -V "hardfiltered_${meta.id}.vcf.gz" \
-      --genotype-filter-name "LowDP" \
-      --genotype-filter-expression "DP < ${minDP}" \
-      --genotype-filter-name "LowGQ" \
-      --genotype-filter-expression "GQ < ${minGQ}" \
+      --genotype-filter-name "LowDP" --genotype-filter-expression "DP < ${minDP}" \
+      --genotype-filter-name "LowGQ" --genotype-filter-expression "GQ < ${minGQ}" \
       --set-filtered-genotype-to-no-call \
       -O "tmp_${meta.id}.gtfiltered.vcf.gz"
 
     gatk IndexFeatureFile -I "tmp_${meta.id}.gtfiltered.vcf.gz"
     gatk CountVariants -V "tmp_${meta.id}.gtfiltered.vcf.gz" > gt_${meta.id}.count.txt || true
 
-    # 3) Keep only site-level PASS, drop non-variants and unused ALTs after no-calls
+    # 3) Keep only PASS sites; drop non-variants & unused ALTs
     gatk --java-options "-Xmx${mem}g" SelectVariants \
       -R "${genome}" \
       -V "tmp_${meta.id}.gtfiltered.vcf.gz" \
@@ -95,18 +76,11 @@ process GATK_VARIANT_FILTER {
     gatk IndexFeatureFile -I "filtered_${meta.id}.vcf.gz"
     gatk CountVariants -V "filtered_${meta.id}.vcf.gz" > post_${meta.id}.count.txt || true
 
-    #  check
-    if [ ! -s "filtered_${meta.id}.vcf.gz" ] || [ ! -s "filtered_${meta.id}.vcf.gz.tbi" ]; then
-      echo "Error: Filtered VCF or index is empty for ${meta.id}" >&2
-      exit 1
-    fi
-
-# Versions
-gatk_version=\$(gatk --version | head -n 1)
-cat <<EOF > versions.yml
+    # Versions
+    gatk_version=\$(gatk --version | head -n 1)
+    cat <<EOF > versions.yml
 "${task.process}":
   gatk: "\${gatk_version}"
 EOF
- 
     """
 }
