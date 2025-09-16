@@ -1,6 +1,6 @@
 process ARRIBA_VISUALIZATION {
 
-  tag { "${meta.id}" }
+  tag { "${meta.id}_${task.process}" }
   label 'process_medium'
   container params.arriba_container
   publishDir params.arriba_outdir, mode: 'copy'
