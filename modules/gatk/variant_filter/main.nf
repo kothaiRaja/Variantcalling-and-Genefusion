@@ -26,7 +26,7 @@ process GATK_VARIANT_FILTER {
     path("versions.yml"), emit: versions
 
     script:
-    // Tunables with sane defaults
+    
     def mem    = task.memory?.giga ?: 6
     def win    = params.gatk_vf_window_size ?: 35
     def clu    = params.gatk_vf_cluster_size ?: 3
@@ -41,14 +41,8 @@ process GATK_VARIANT_FILTER {
     SAMPLE='${meta.id}'
     echo "[GATK_VARIANT_FILTER] RNA-aware filtering for: \$SAMPLE"
 
-    # 0) (Optional) split multi-allelic sites so AD[1] maps to the single ALT
     INVCF="${vcf_file}"
-    if ${splitMulti}; then
-      echo "[GATK_VARIANT_FILTER] Splitting multiallelic records (-m -any)"
-      bcftools norm -m -any -Oz -o tmp_\${SAMPLE}.split.vcf.gz "${vcf_file}"
-      tabix -p vcf tmp_\${SAMPLE}.split.vcf.gz
-      INVCF="tmp_\${SAMPLE}.split.vcf.gz"
-    fi
+    
 
     # Count before (for quick QC)
     gatk CountVariants -V "\$INVCF" > pre_${meta.id}.count.txt || true
@@ -101,7 +95,7 @@ process GATK_VARIANT_FILTER {
     gatk IndexFeatureFile -I "filtered_${meta.id}.vcf.gz"
     gatk CountVariants -V "filtered_${meta.id}.vcf.gz" > post_${meta.id}.count.txt || true
 
-    # Sanity check
+    #  check
     if [ ! -s "filtered_${meta.id}.vcf.gz" ] || [ ! -s "filtered_${meta.id}.vcf.gz.tbi" ]; then
       echo "Error: Filtered VCF or index is empty for ${meta.id}" >&2
       exit 1
