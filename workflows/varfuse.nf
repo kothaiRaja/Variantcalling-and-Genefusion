@@ -354,12 +354,6 @@ all_reports_ch = Channel
     
 // Run MultiQC
 multiqc_quality = MultiQC(all_reports_ch)
-
-
-
-
-
-
 	
 		
 } 
