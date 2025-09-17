@@ -5,7 +5,7 @@ nextflow.enable.dsl = 2
 include { VARIANT_ANNOTATION } from '../subworkflows/snpeff_annotations.nf'
 include { VEP_ANNOTATION_WORKFLOW as COMBINED_ANNOTATE } from '../subworkflows/ensemblvep.nf'
 include { VEP_ANNOTATION_WORKFLOW } from '../subworkflows/ensemblvep.nf'
-include { COLLECT_VARIANT_CALLING_METRICS } from '../modules/gatk/variant_metrics/main.nf'
+// include { COLLECT_VARIANT_CALLING_METRICS } from '../modules/gatk/variant_metrics/main.nf'
 
 
 workflow ANNOTATE {
@@ -21,10 +21,7 @@ workflow ANNOTATE {
     vep_version
     vep_cache
 	vep_plugins
-	known_snps_vcf
-    known_snps_vcf_index
-    ref_fasta
-    ref_dict
+	
 	
 	
 	main:
@@ -34,10 +31,7 @@ workflow ANNOTATE {
     annotation_reports = Channel.empty()
 	ch_versions = Channel.empty()
 	uncompressed_vcf = Channel.empty()
-	
-	// Collect known sites 
-    ch_known_sites_vcf       = known_snps_vcf.collect()
-    ch_known_sites_vcf_index = known_snps_vcf_index.collect()
+
     
 	
 //	log.info "Starting variant annotation workflow..."
@@ -97,18 +91,11 @@ workflow ANNOTATE {
         
     }
 	
-	COLLECT_VARIANT_CALLING_METRICS(
-        annotated_vcfs,   
-        ch_known_sites_vcf, ch_known_sites_vcf_index,
-        ref_fasta, ref_dict
-    )
-    metrics_tables = COLLECT_VARIANT_CALLING_METRICS.out.metrics
-    ch_versions    = ch_versions.mix(COLLECT_VARIANT_CALLING_METRICS.out.versions)
+	
 	
 	emit: 
 		final_vcf_annotated     = annotated_vcfs
 		uncompressed_vcf_annotated = uncompressed_vcf
-		metrics                    = metrics_tables
         reports_html     		= annotation_reports
 		versions 				= ch_versions
 		

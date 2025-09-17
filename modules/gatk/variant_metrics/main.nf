@@ -1,7 +1,7 @@
 process COLLECT_VARIANT_CALLING_METRICS {
 
   tag { "${meta.id}_${task.process}" }
-  label 'process_low'
+  label 'process_medium'
   
   container params.gatk_container
   publishDir params.variant_metrics_outdir, mode: 'copy'
